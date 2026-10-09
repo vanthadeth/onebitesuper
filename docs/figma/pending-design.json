@@ -1,0 +1,575 @@
+{
+  "pos": [
+    {
+      "index": 18,
+      "name": "19 · Handover — discrepancy and two confirmations",
+      "fields": [
+        [
+          "Expected balance",
+          "៛ 110,000"
+        ],
+        [
+          "Actual KHR-equivalent balance",
+          "៛ 109,500"
+        ]
+      ],
+      "warning": "Shortage ៛ 500 recorded",
+      "confirmations": [
+        "Outgoing Sokha confirms actual 109,500",
+        "Incoming Sreynang authenticates and confirms same 109,500"
+      ],
+      "action": "Confirm and receive shift",
+      "rules": [
+        "Online after queued transactions reconciled",
+        "All actual cash becomes next shift opening cash"
+      ]
+    },
+    {
+      "index": 19,
+      "name": "20 · Close — retain overnight",
+      "total": "៛ 110,000",
+      "choices": [
+        "Current staff retains until tomorrow",
+        "Supervisor or Owner collects"
+      ],
+      "action": "Close shift and retain cash",
+      "rules": [
+        "Custody continues after shift closure",
+        "Collection requires both cash holder and collector confirmation",
+        "Retained balance supplies next day's opening balance without double-counting"
+      ]
+    },
+    {
+      "index": 20,
+      "name": "21 · USD / KHR calculator",
+      "fields": [
+        [
+          "KHR",
+          "4,000"
+        ],
+        [
+          "USD",
+          "4.00"
+        ]
+      ],
+      "total": "20,000 KHR",
+      "rate": "4,000 KHR / USD",
+      "action": "Use total 20,000",
+      "rules": [
+        "Record only equivalent KHR total, not currency breakdown"
+      ]
+    },
+    {
+      "index": 21,
+      "name": "22 · Offline — within 24 hours",
+      "badge": "Offline · 18 hours remaining",
+      "rows": [
+        "4 queued invoices saved on this device",
+        "Last full sync 09 Oct 2026 08:00 Phnom Penh",
+        "Sales and free allowances use cached rules",
+        "Handover and withdrawals locked until online and reconciled"
+      ],
+      "actions": [
+        "Continue selling",
+        "Retry sync"
+      ]
+    },
+    {
+      "index": 22,
+      "name": "23 · Offline — limit reached",
+      "badge": "More than 24 hours since full sync",
+      "rows": [
+        "4 invoices safely retained pending sync",
+        "New ordering blocked",
+        "View saved invoices"
+      ],
+      "actions": [
+        "Reconnect and fully sync",
+        "View saved orders"
+      ]
+    },
+    {
+      "index": 23,
+      "name": "24 · English language preview",
+      "basedOn": "04 · Sell — blank cart",
+      "translate": [
+        "header",
+        "online status",
+        "product labels",
+        "cart action",
+        "bottom navigation"
+      ],
+      "menu": [
+        [
+          "Fried dumplings",
+          "Small · 5 pieces",
+          "5,000"
+        ],
+        [
+          "Fried dumplings",
+          "Large · 10 pieces",
+          "9,000"
+        ],
+        [
+          "Fried meatballs",
+          "Small · 10 pieces",
+          "5,000"
+        ],
+        [
+          "Fried meatballs",
+          "Large · 20 pieces",
+          "9,000"
+        ],
+        [
+          "Lemon tea",
+          "One size",
+          "4,000"
+        ],
+        [
+          "Frozen dumplings",
+          "Bag · 20 pieces",
+          "15,000"
+        ]
+      ]
+    },
+    {
+      "index": 24,
+      "name": "25 · Free allowance insufficient",
+      "badge": "Only 4 dumplings remain",
+      "request": "Small box requires 5 units",
+      "action": "Keep item paid",
+      "disabledAction": "Make complimentary",
+      "rules": [
+        "Block the whole complimentary selection",
+        "No partial free quantity silently granted"
+      ]
+    },
+    {
+      "index": 25,
+      "name": "26 · Discount above hard limit",
+      "fields": [
+        [
+          "Item discount %",
+          "16%"
+        ]
+      ],
+      "error": "Maximum 15%; reduce the value",
+      "disabledAction": "Apply discount",
+      "rules": [
+        "No override for Cashier, Supervisor, or Owner during sale"
+      ]
+    },
+    {
+      "index": 26,
+      "name": "27 · POS already active on another device",
+      "rows": [
+        "Site 01 · ordering device: Sokha's phone",
+        "This device can use permitted non-ordering functions"
+      ],
+      "action": "View shift",
+      "rules": [
+        "Ordering disabled on this device",
+        "Online device transfer requires old POS to sync and release first"
+      ]
+    },
+    {
+      "index": 27,
+      "name": "28 · Install apps",
+      "rows": [
+        "OneBite POS · install on site ordering device",
+        "OneBite Admin · separately installable",
+        "Attendance and Inventory · later"
+      ],
+      "actions": [
+        "Install POS",
+        "Installation instructions"
+      ],
+      "rules": [
+        "Use native browser install prompt where supported",
+        "Provide platform-specific instructions otherwise"
+      ]
+    }
+  ],
+  "admin": [
+    {
+      "index": 0,
+      "name": "01 · Owner dashboard",
+      "metrics": [
+        [
+          "Today's sales",
+          "165,000 KHR"
+        ],
+        [
+          "Active sites",
+          "3 / 3"
+        ]
+      ],
+      "rows": [
+        [
+          "Site 01 · Toul Tom Poung",
+          "Sokha + Dara · active",
+          "110k cash"
+        ],
+        [
+          "Site 02 · Riverside",
+          "Shared shift active",
+          "92k cash"
+        ],
+        [
+          "Site 03 · Campus",
+          "Shared shift active",
+          "67k cash"
+        ]
+      ],
+      "actions": [
+        "Sites",
+        "Users and roles",
+        "Items",
+        "Discounts and free allowances",
+        "Business settings"
+      ]
+    },
+    {
+      "index": 1,
+      "name": "02 · Sites",
+      "rows": [
+        "Site 01 · Toul Tom Poung · 2 staff · POS active",
+        "Site 02 · Riverside · 2 staff · POS active",
+        "Site 03 · Campus · 2 staff · POS active"
+      ],
+      "action": "Add site",
+      "rules": [
+        "Owner edits site configuration"
+      ]
+    },
+    {
+      "index": 2,
+      "name": "03 · Site details",
+      "fields": [
+        [
+          "Name",
+          "Toul Tom Poung"
+        ],
+        [
+          "Code",
+          "OB-01"
+        ]
+      ],
+      "rows": [
+        "Status · Active",
+        "Assigned staff · Sokha, Dara",
+        "Additional assigned staff · mobile staff",
+        "POS device · Sokha's phone"
+      ],
+      "actions": [
+        "Edit assignments",
+        "View device and shift"
+      ],
+      "rules": [
+        "Do not remotely overwrite an unsynced ordering device lease"
+      ]
+    },
+    {
+      "index": 3,
+      "name": "04 · Users and roles",
+      "rows": [
+        "Sokha · Cashier · Site 01",
+        "Dara · Cashier · Site 01",
+        "Sreynang · Cashier · Sites 01, 02, 03",
+        "Vannak · Owner · all sites"
+      ],
+      "actions": [
+        "Create user",
+        "Roles and permissions"
+      ],
+      "rules": [
+        "Internal individual username / PIN accounts"
+      ]
+    },
+    {
+      "index": 4,
+      "name": "05 · User details",
+      "fields": [
+        [
+          "Display name",
+          "Sokha"
+        ],
+        [
+          "Username",
+          "sokha"
+        ],
+        [
+          "Role",
+          "Cashier"
+        ]
+      ],
+      "choices": [
+        "Site 01 selected",
+        "Site 02",
+        "Site 03"
+      ],
+      "actions": [
+        "Save user",
+        "Reset 6-digit PIN"
+      ],
+      "rules": [
+        "Owner manages accounts and roles",
+        "Supervisor can assign existing staff only to managed sites",
+        "No public registration"
+      ]
+    },
+    {
+      "index": 5,
+      "name": "06 · Permissions",
+      "columns": [
+        "Capability",
+        "Cashier",
+        "Supervisor",
+        "Owner"
+      ],
+      "rows": [
+        [
+          "Order on active POS",
+          "Assigned",
+          "Managed",
+          "All"
+        ],
+        [
+          "Configure prices / promotions",
+          "No",
+          "No",
+          "Yes"
+        ],
+        [
+          "Assign staff to sites",
+          "No",
+          "Managed only",
+          "All"
+        ],
+        [
+          "Withdraw cash with holder confirmation",
+          "No",
+          "Managed",
+          "All"
+        ],
+        [
+          "Override discount cap",
+          "No",
+          "No",
+          "No"
+        ],
+        [
+          "Refund paid order",
+          "No",
+          "No",
+          "No"
+        ]
+      ]
+    },
+    {
+      "index": 6,
+      "name": "07 · Items",
+      "rows": [
+        "Fried dumplings small · 5 pieces · 5,000",
+        "Fried dumplings large · 10 pieces · 9,000",
+        "Fried meatballs small · 10 pieces · 5,000",
+        "Fried meatballs large · 20 pieces · 9,000",
+        "Lemon tea · 4,000",
+        "Frozen dumplings bag · 20 pieces · 15,000"
+      ],
+      "action": "Add item",
+      "rules": [
+        "All listed amounts are mock fixtures"
+      ]
+    },
+    {
+      "index": 7,
+      "name": "08 · Item details and site prices",
+      "fields": [
+        [
+          "Name (Khmer)",
+          "គាវចៀន · ប្រអប់តូច"
+        ],
+        [
+          "Name (English)",
+          "Fried dumplings · Small box"
+        ],
+        [
+          "Base unit",
+          "Dumpling"
+        ],
+        [
+          "Units per sale",
+          "5"
+        ]
+      ],
+      "toggles": [
+        "Sellable on"
+      ],
+      "rows": [
+        "Site 01 · 5,000 KHR",
+        "Site 02 · 5,000 KHR",
+        "Site 03 · 5,000 KHR"
+      ],
+      "actions": [
+        "Save",
+        "Configure sauces",
+        "Configure discount caps"
+      ]
+    },
+    {
+      "index": 8,
+      "name": "09 · Sauces and extras",
+      "item": "Fried dumplings small",
+      "choices": [
+        "Original enabled · default · included",
+        "Chilly enabled · included",
+        "Sichuan enabled · surcharge 500"
+      ],
+      "extras": [
+        [
+          "Original",
+          "500"
+        ],
+        [
+          "Chilly",
+          "500"
+        ],
+        [
+          "Sichuan",
+          "1,000"
+        ]
+      ],
+      "toggles": [
+        "Sauce selection required"
+      ],
+      "rules": [
+        "Owner controls item-to-sauce eligibility",
+        "Extra sauce selected independently from same sauce list",
+        "Mock prices; do not hardcode into production"
+      ]
+    },
+    {
+      "index": 9,
+      "name": "10 · Discount limits",
+      "fields": [
+        [
+          "Receipt maximum percentage",
+          "20%"
+        ],
+        [
+          "Item maximum percentage",
+          "15%"
+        ],
+        [
+          "Item fixed maximum per sale unit",
+          "1,000 KHR"
+        ]
+      ],
+      "rules": [
+        "Both item caps enforced when configured",
+        "Receipt discount never stacks",
+        "Compare item fixed and receipt percent by amount on same full unit price",
+        "Higher discount wins, then item caps apply",
+        "Applies to sauces and extras",
+        "Fixed discount multiplies by quantity",
+        "No POS override"
+      ]
+    },
+    {
+      "index": 10,
+      "name": "11 · Complimentary pools",
+      "rows": [
+        "Dumplings · Site 01 · 100 base units / day · 15 remaining",
+        "Dumplings · Site 02 · 100 base units / day",
+        "Dumplings · Site 03 · 100 base units / day"
+      ],
+      "action": "Create allowance pool"
+    },
+    {
+      "index": 11,
+      "name": "12 · Allowance pool details",
+      "fields": [
+        [
+          "Pool",
+          "Dumplings"
+        ],
+        [
+          "Site",
+          "Site 01"
+        ],
+        [
+          "Daily allowance",
+          "100 dumplings"
+        ],
+        [
+          "Period start",
+          "09 Oct 2026"
+        ],
+        [
+          "Period end",
+          "31 Oct 2026"
+        ]
+      ],
+      "choices": [
+        "Small fried dumplings · 5 units / box",
+        "Large fried dumplings · 10 units / box"
+      ],
+      "rules": [
+        "Owner chooses which items share pool",
+        "Use base units times sold quantity",
+        "Discounted item may become free",
+        "All sauces and extras also free",
+        "Insufficient remaining units blocks free selection",
+        "Cancellation of unpaid order restores reserved quantity"
+      ]
+    },
+    {
+      "index": 12,
+      "name": "13 · Business settings",
+      "fields": [
+        [
+          "KHR per USD",
+          "4,000"
+        ],
+        [
+          "Default language",
+          "Khmer"
+        ]
+      ],
+      "toggles": [
+        "Split Cash / QR payments enabled"
+      ],
+      "rows": [
+        "Offline sales window · 24h",
+        "Receipt rounding · 100 KHR",
+        "Timezone · Asia/Phnom_Penh"
+      ],
+      "rules": [
+        "Rounding direction proposed nearest 100 half-up; review pending",
+        "Offline full-sync window fixed by confirmed requirement"
+      ]
+    }
+  ],
+  "responsive": [
+    {
+      "name": "POS · Tablet · 1024 × 768",
+      "layout": "Left rail navigation; header with site/shift/sync; menu occupies 60%; current cart 40%; sticky totals/payment; all six menu items visible in 3 columns; shared components."
+    },
+    {
+      "name": "Admin · Desktop · 1440 × 1024",
+      "layout": "Left navigation 240px; top header with site filter and owner identity; dashboard metric row; site cash/shift table; configuration shortcuts and sync exceptions."
+    }
+  ],
+  "reviewFixes": [
+    "Resize first six mobile instances to match revised shared control heights: button48, badge36, choice56, nav64, status20, header64. Their earlier manual resizing can preserve old heights.",
+    "Reflow variant grids from final actual bounds; revised button width must not extend outside component-set wrapper.",
+    "Keep cart and payment totals visible above sticky actions; shorten cart rows or move total into action region. Initial cart screenshot showed total clipped by footer.",
+    "Separate Original and Chilly extra-sauce choices. Both must be independently selectable with their own mock price; current compact customization screen groups them.",
+    "Use a distinct required base-sauce choice and an explicit default marker.",
+    "Show quantity selector and unit-price result without hiding it beneath customization footer.",
+    "Mark main menu content as vertically scrollable; fixed footer and bottom navigation remain visible.",
+    "Visually inspect all screens for Khmer clipping, text wrapping, contrasting selected states, and touch targets >=48px.",
+    "Add relevant simple prototype links only after verifying supported reaction API; no clickable prototype is currently claimed."
+  ]
+}

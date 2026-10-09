@@ -1,0 +1,3 @@
+[functions.admin-access]
+# The function validates publishable keys and custom opaque sessions itself.
+verify_jwt = false

@@ -1,0 +1,47 @@
+-- Integration checks run in one transaction and roll back all sample records.
+begin;
+do $$
+declare r jsonb; owner_id uuid; cashier_id uuid; supervisor_id uuid; rev bigint; owner_token text:=repeat('a',64); cashier_token text:=repeat('b',64); supervisor_token text:=repeat('c',64);
+begin
+ if exists(select 1 from public.onebite_users) then raise exception 'Verification requires an empty account database';end if;
+ update public.onebite_access_settings set bootstrap_hash=repeat('d',64);
+ r:=public.onebite_access_api('bootstrap',jsonb_build_object('bootstrap_hash',repeat('d',64),'new_session_hash',owner_token,'name','Verification Owner','username','verify.owner','pin','846291'));
+ if r ? 'error' then raise exception 'Owner setup failed: %',r;end if;
+ owner_id:=(r->'actor'->>'id')::uuid;
+ r:=public.onebite_access_api('bootstrap',jsonb_build_object('bootstrap_hash',repeat('d',64),'new_session_hash',repeat('e',64),'name','Other','username','other','pin','846291'));
+ if r->>'error'<>'invalid_setup' then raise exception 'Repeated bootstrap accepted';end if;
+ rev:=(select revision from public.onebite_access_settings);
+ r:=public.onebite_access_api('user.update',jsonb_build_object('id',owner_id,'name','Verification Owner','username','verify.owner','role','Cashier','active',true,'sites',jsonb_build_array(0),'revision',rev),owner_token);
+ if r->>'error'<>'last_owner' then raise exception 'Last Owner protection failed: %',r;end if;
+ r:=public.onebite_access_api('user.create',jsonb_build_object('name','Verification Cashier','username','verify.cashier','role','Cashier','active',true,'sites',jsonb_build_array(0,2),'pin','846291','revision',rev),owner_token);
+ if r ? 'error' then raise exception 'Create Cashier failed: %',r;end if;
+ select id into cashier_id from public.onebite_users where username='verify.cashier';
+ r:=public.onebite_access_api('login',jsonb_build_object('username','verify.cashier','pin','846291','new_session_hash',cashier_token));
+ if r->>'mustChangePin'<>'true' then raise exception 'Temporary PIN change not required';end if;
+ r:=public.onebite_access_api('sites.assign',jsonb_build_object('id',cashier_id,'sites',jsonb_build_array(1),'revision',(select revision from public.onebite_access_settings)),cashier_token);
+ if r->>'error'<>'pin_change_required' then raise exception 'Temporary PIN allowed mutation';end if;
+ r:=public.onebite_access_api('pin.change',jsonb_build_object('current_pin','846291','pin','975318'),cashier_token);
+ if r ? 'error' then raise exception 'PIN change failed: %',r;end if;
+ r:=public.onebite_access_api('user.create',jsonb_build_object('name','Unauthorized','username','unauthorized','role','Owner','active',true,'pin','846291','revision',(select revision from public.onebite_access_settings)),cashier_token);
+ if r->>'error'<>'forbidden' then raise exception 'Cashier escalated access: %',r;end if;
+ r:=public.onebite_access_api('user.create',jsonb_build_object('name','Verification Supervisor','username','verify.supervisor','role','Supervisor','active',true,'sites',jsonb_build_array(0,1),'pin','846291','revision',(select revision from public.onebite_access_settings)),owner_token);
+ if r ? 'error' then raise exception 'Create Supervisor failed: %',r;end if;
+ select id into supervisor_id from public.onebite_users where username='verify.supervisor';
+ r:=public.onebite_access_api('login',jsonb_build_object('username','verify.supervisor','pin','846291','new_session_hash',supervisor_token));
+ r:=public.onebite_access_api('pin.change',jsonb_build_object('current_pin','846291','pin','975318'),supervisor_token);
+ r:=public.onebite_access_api('sites.assign',jsonb_build_object('id',cashier_id,'sites',jsonb_build_array(0,1),'revision',(select revision from public.onebite_access_settings)),supervisor_token);
+ if r->>'error'<>'forbidden' then raise exception 'Supervisor removed outside assignment: %',r;end if;
+ r:=public.onebite_access_api('sites.assign',jsonb_build_object('id',cashier_id,'sites',jsonb_build_array(1,2),'revision',(select revision from public.onebite_access_settings)),supervisor_token);
+ if r ? 'error' then raise exception 'Scoped assignment rejected: %',r;end if;
+ r:=public.onebite_access_api('permissions.update',jsonb_build_object('role','Cashier','permissions',jsonb_build_array('orders.refund'),'revision',(select revision from public.onebite_access_settings)),owner_token);
+ if r->>'error'<>'permission_ceiling' then raise exception 'Forbidden refund grant accepted: %',r;end if;
+ r:=public.onebite_access_api('pin.reset',jsonb_build_object('id',cashier_id,'pin','531864','revision',0),owner_token);
+ if r->>'error'<>'stale_revision' then raise exception 'Stale edit accepted: %',r;end if;
+ r:=public.onebite_access_api('pin.reset',jsonb_build_object('id',cashier_id,'pin','531864','revision',(select revision from public.onebite_access_settings)),owner_token);
+ if r ? 'error' then raise exception 'PIN reset failed: %',r;end if;
+ r:=public.onebite_access_api('me','{}',cashier_token);
+ if r->>'error'<>'unauthorized' then raise exception 'Reset failed to revoke sessions';end if;
+ if exists(select 1 from public.onebite_credentials where pin_hash in ('846291','975318','531864')) then raise exception 'Plaintext PIN stored';end if;
+end $$;
+rollback;
+select jsonb_build_object('verification','passed','users_after_rollback',(select count(*) from public.onebite_users),'owner_created',public.onebite_access_api('bootstrap.status')) as result;

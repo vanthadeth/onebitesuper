@@ -1,0 +1,125 @@
+{
+  "runId": "onebite-ui-20261009",
+  "fileKey": "MqVPDfppPO4uULnphyPEEt",
+  "url": "https://www.figma.com/design/MqVPDfppPO4uULnphyPEEt",
+  "scope": "Mobile POS and essential Admin UI; focused shared component families; key tablet/desktop adaptations",
+  "pages": {
+    "components": "0:1",
+    "pos": "3:2",
+    "admin": "3:3"
+  },
+  "completedSteps": [
+    "discovery",
+    "foundations",
+    "shared components",
+    "18 POS mobile screens"
+  ],
+  "pendingValidations": [
+    "Apply supplied brand vectors, exact #F57921 palette, accessible orange-button labels, and verified Google Sans English/Khmer text styles",
+    "Normalize first six screen instance heights after main-component update",
+    "Review and fix mobile content clipping",
+    "Complete POS handover/overnight/calculator/offline/English screens",
+    "Create Admin screens",
+    "Create tablet POS and desktop Admin layouts"
+  ],
+  "components": {
+    "Icon/bag": "6:24",
+    "Icon/users": "6:40",
+    "Icon/gift": "6:56",
+    "Icon/clock": "6:72",
+    "Icon/search": "6:88",
+    "Icon/plus": "6:104",
+    "Icon/check": "6:120",
+    "Icon/settings": "6:136",
+    "Icon/home": "6:152",
+    "Icon/offline": "6:168",
+    "Icon/wallet": "6:171",
+    "Icon/qr": "6:175",
+    "DataRow": "6:236",
+    "Metric": "6:241",
+    "Product": "6:245",
+    "CartLine": "6:253",
+    "Toggle": "6:257",
+    "StatusBar": "7:20",
+    "AppHeader": "7:24",
+    "Total": "7:29",
+    "Food/Dumplings": "7:33",
+    "Food/Meatballs": "7:38",
+    "Food/Tea": "7:47",
+    "Food/Frozen": "7:54"
+  },
+  "families": {
+    "Button": [
+      "6:189",
+      "6:191",
+      "6:193",
+      "6:195",
+      "6:197",
+      "6:199"
+    ],
+    "Badge": [
+      "6:201",
+      "6:203",
+      "6:205",
+      "6:207"
+    ],
+    "Field": [
+      "6:209",
+      "6:212"
+    ],
+    "Choice": [
+      "6:216",
+      "6:221"
+    ],
+    "NavItem": [
+      "6:226",
+      "6:231"
+    ]
+  },
+  "food": {
+    "Dumplings": "7:33",
+    "Meatballs": "7:38",
+    "Tea": "7:47",
+    "Frozen": "7:54"
+  },
+  "posBoard": "8:24",
+  "screens": {
+    "01 \u00b7 Sign in": "9:24",
+    "02 \u00b7 Site and POS device": "9:77",
+    "03 \u00b7 Open shift": "9:116",
+    "04 \u00b7 Sell \u2014 blank cart": "9:148",
+    "05 \u00b7 Customize item": "9:293",
+    "06 \u00b7 Cart": "9:351",
+    "07 \u00b7 Discounts \u2014 hard limits": "10:231",
+    "08 \u00b7 Complimentary allowance": "10:263",
+    "09 \u00b7 Held carts": "10:299",
+    "10 \u00b7 Cash payment": "10:359",
+    "11 \u00b7 QR payment \u2014 manual": "10:392",
+    "12 \u00b7 Split payment": "10:455",
+    "13 \u00b7 Free order \u2014 no payment": "11:382",
+    "14 \u00b7 Paid invoice": "11:409",
+    "15 \u00b7 Invoices": "11:440",
+    "16 \u00b7 Cancel unpaid invoice": "11:512",
+    "17 \u00b7 Active shared shift": "11:540",
+    "18 \u00b7 Withdraw cash \u2014 dual confirmation": "11:609"
+  },
+  "blocker": "Figma Starter MCP tool-call limit reached on 2026-10-09",
+  "brand": {
+    "resourceFolder": "resources/brand",
+    "originalSvgCount": 10,
+    "exactLogoOrange": "#F57921",
+    "exactLogoBlack": "#000000",
+    "exactLogoWhite": "#FFFFFF",
+    "requestedUiFont": "Google Sans",
+    "scripts": [
+      "Khmer",
+      "English"
+    ],
+    "guideline": "resources/brand/brand-guidelines.md",
+    "tokens": "resources/brand/brand-tokens.json",
+    "importBoard": "resources/brand/onebite-brand-guidelines.svg",
+    "figmaApplied": false,
+    "fontAvailabilityVerified": false,
+    "status": "Local guideline prepared; Starter MCP tool-call limit still blocks Figma changes"
+  }
+}

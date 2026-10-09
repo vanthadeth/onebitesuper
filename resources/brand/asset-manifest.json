@@ -1,0 +1,72 @@
+[
+  {
+    "file": "one-bite-icon-black.svg",
+    "bytes": 25391,
+    "sha256": "9ecbf5d5af862c5f4d7cee0ad4276f82e287c2081ed8359bba393de62339a08f",
+    "viewBox": "0 0 152 144",
+    "preservedOriginal": true
+  },
+  {
+    "file": "one-bite-icon-orange.svg",
+    "bytes": 25391,
+    "sha256": "7379e5f83d906f1f21c111ba6a27738e898f862453ede85a180b6067bb42032e",
+    "viewBox": "0 0 152 144",
+    "preservedOriginal": true
+  },
+  {
+    "file": "one-bite-icon-white.svg",
+    "bytes": 25391,
+    "sha256": "21396463fef8f74f82d26f4ce78c57bc0e8a13cf66a86584a3ffbe53ad159379",
+    "viewBox": "0 0 152 144",
+    "preservedOriginal": true
+  },
+  {
+    "file": "one-bite-logo-black.svg",
+    "bytes": 42312,
+    "sha256": "6bb85a04507a9a091bc50e58a74cc6c5b3da039115e7fb8e6d713579fa266e93",
+    "viewBox": "0 0 325 144",
+    "preservedOriginal": true
+  },
+  {
+    "file": "one-bite-logo-kit.svg",
+    "bytes": 84572,
+    "sha256": "2a37aeabbcfc2548ce5fbf80195cf12965cde549f928642c43c362253d2a3f53",
+    "viewBox": "0 0 385 388",
+    "preservedOriginal": true
+  },
+  {
+    "file": "one-bite-logo-orange.svg",
+    "bytes": 42312,
+    "sha256": "9aa5f21c72b056d1c33da16c16c40cd387fd417d888d7310f600d19461f5ee5f",
+    "viewBox": "0 0 325 144",
+    "preservedOriginal": true
+  },
+  {
+    "file": "one-bite-logo-white.svg",
+    "bytes": 42312,
+    "sha256": "d1fe25d492a812b2710cbf3bcd784e07ee228ec4204827fc17521e706fb9caa0",
+    "viewBox": "0 0 325 144",
+    "preservedOriginal": true
+  },
+  {
+    "file": "one-bite-wordmark-black.svg",
+    "bytes": 17027,
+    "sha256": "4aba266b296a6cbeb73b9d41bccfa9640138f4d1116c0fe63766c418512de8b4",
+    "viewBox": "0 0 147 124",
+    "preservedOriginal": true
+  },
+  {
+    "file": "one-bite-wordmark-orange.svg",
+    "bytes": 17027,
+    "sha256": "12b0c1a644c140321ed9401b682b56d780175daae308ee9f891cfe5252a9ae96",
+    "viewBox": "0 0 147 124",
+    "preservedOriginal": true
+  },
+  {
+    "file": "one-bite-wordmark-white.svg",
+    "bytes": 17027,
+    "sha256": "6564b01f09e1a2eb898d8782ca80caa88fef46e8c20b5c2900f73258de736f58",
+    "viewBox": "0 0 147 124",
+    "preservedOriginal": true
+  }
+]

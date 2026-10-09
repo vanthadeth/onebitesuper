@@ -1,0 +1,15 @@
+{
+  "name": "@onebite/admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5174 --strictPort",
+    "build": "vite build && node ../../scripts/pwa.mjs admin",
+    "preview": "vite preview --host 0.0.0.0 --port 5174 --strictPort"
+  },
+  "dependencies": {
+    "@onebite/core": "0.1.0",
+    "@onebite/ui": "0.1.0"
+  }
+}

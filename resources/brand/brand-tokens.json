@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "status": "Local proposal derived from supplied logos; Figma application pending tool access",
+  "source": {
+    "orange": "one-bite-logo-orange.svg",
+    "black": "one-bite-logo-black.svg",
+    "white": "one-bite-logo-white.svg"
+  },
+  "primitive": {
+    "brand/orange": "#F57921",
+    "brand/black": "#000000",
+    "brand/white": "#FFFFFF",
+    "neutral/ink": "#1A1A1A",
+    "neutral/muted": "#66615C",
+    "neutral/canvas": "#FFF9F4",
+    "neutral/line": "#E7DDD4",
+    "orange/soft": "#FFF3E8",
+    "orange/text": "#A94800",
+    "status/success": "#297A46",
+    "status/success-bg": "#EAF5EE",
+    "status/warning": "#A96300",
+    "status/warning-bg": "#FFF3D6",
+    "status/danger": "#B3261E",
+    "status/danger-bg": "#FCEDEA"
+  },
+  "semantic": {
+    "color/brand": "brand/orange",
+    "color/action/primary": "brand/orange",
+    "color/action/on-primary": "neutral/ink",
+    "color/action/subtle": "orange/soft",
+    "color/action/text": "orange/text",
+    "color/bg/canvas": "neutral/canvas",
+    "color/bg/surface": "brand/white",
+    "color/text/primary": "neutral/ink",
+    "color/text/secondary": "neutral/muted",
+    "color/text/inverse": "brand/white",
+    "color/border": "neutral/line",
+    "color/success": "status/success",
+    "color/success/bg": "status/success-bg",
+    "color/warning": "status/warning",
+    "color/warning/bg": "status/warning-bg",
+    "color/danger": "status/danger",
+    "color/danger/bg": "status/danger-bg"
+  },
+  "typography": {
+    "family": "Google Sans",
+    "scripts": [
+      "Khmer",
+      "Latin"
+    ],
+    "availability": "Not verified in Figma because tool access is blocked",
+    "styles": {
+      "Display": {
+        "weight": 700,
+        "size": 32,
+        "lineHeight": 48
+      },
+      "Heading": {
+        "weight": 700,
+        "size": 24,
+        "lineHeight": 36
+      },
+      "Title": {
+        "weight": 500,
+        "size": 18,
+        "lineHeight": 30
+      },
+      "Body": {
+        "weight": 400,
+        "size": 16,
+        "lineHeight": 28
+      },
+      "Label": {
+        "weight": 500,
+        "size": 14,
+        "lineHeight": 24
+      },
+      "Small": {
+        "weight": 400,
+        "size": 14,
+        "lineHeight": 24
+      },
+      "Caption": {
+        "weight": 400,
+        "size": 12,
+        "lineHeight": 22
+      },
+      "Money": {
+        "weight": 700,
+        "size": 26,
+        "lineHeight": 40
+      },
+      "Brand": {
+        "weight": 700,
+        "size": 26,
+        "lineHeight": 40
+      }
+    }
+  },
+  "geometry": {
+    "spacing": [
+      4,
+      8,
+      12,
+      16,
+      20,
+      24,
+      32,
+      48,
+      64
+    ],
+    "radii": {
+      "inputs": 12,
+      "cards": 16,
+      "sheets": 24,
+      "pills": 999
+    },
+    "touchMinimum": 48
+  },
+  "contrast": [
+    {
+      "foreground": "#1A1A1A",
+      "background": "#F57921",
+      "ratio": 6.33
+    },
+    {
+      "foreground": "#FFFFFF",
+      "background": "#F57921",
+      "ratio": 2.75,
+      "use": "Logo artwork only; avoid normal small UI text"
+    },
+    {
+      "foreground": "#A94800",
+      "background": "#FFFFFF",
+      "ratio": 5.81
+    }
+  ],
+  "figma": {
+    "fileKey": "MqVPDfppPO4uULnphyPEEt",
+    "pageId": "0:1",
+    "proposedFrameName": "OneBite · Brand guidelines"
+  }
+}

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="km">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#F57921">
+  <title>OneBite · Component studio</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="gallery.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="#top" aria-label="OneBite component studio"><img src="../../resources/brand/one-bite-logo-orange.svg" alt="OneBite"><span>COMPONENT STUDIO</span></a>
+    <p class="nav-label">DESIGN LIBRARY</p>
+    <nav id="sidebar-nav" aria-label="Component sections"></nav>
+    <div class="sidebar-bottom"><span class="version-dot"></span><span>v0.1 · Design review</span><p>POS + Admin<br>One shared visual language.</p></div>
+  </aside>
+  <div class="workspace">
+    <header class="toolbar"><div class="breadcrumb">OneBite <span>/</span> <strong>Components</strong></div><div class="toolbar-actions"><button id="language" class="small-button" aria-label="Switch language">English</button><button id="phone-mode" class="small-button" aria-pressed="false">Phone view</button><span class="review-chip">Draft 01</span></div></header>
+    <main id="top">
+      <section class="hero"><div><p class="eyebrow">ONEBITE DESIGN SYSTEM</p><h1>Little details.<br><span>A better daily flow.</span></h1><p class="hero-copy">Shared components for the people behind every bite.<br>Khmer first. Made for touch. Built around your brand.</p><div class="hero-tags"><span>Google Sans · ខ្មែរ + English</span><span>Mobile first</span><span>POS + Admin</span></div></div><div class="hero-art"><img src="../../resources/brand/one-bite-icon-orange.svg" alt="OneBite smiling dumpling mascot"><span class="art-mark">Made for OneBite</span></div></section>
+      <div class="catalog-toolbar"><div class="search-box"><span id="search-icon"></span><input id="search" type="search" placeholder="Find a component…" aria-label="Find a component"><kbd>/</kbd></div><span id="component-count"></span></div>
+      <div id="gallery"></div>
+      <footer class="page-footer"><span>OneBite · Component studio</span><span>Sample amounts and rules · UI review before implementation</span></footer>
+    </main>
+  </div>
+  <dialog id="demo-dialog"><div id="dialog-content"></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
