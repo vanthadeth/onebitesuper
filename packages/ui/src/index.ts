@@ -4,3 +4,5 @@ export * from "./controls";
 export * from './app-title-bar';
 export * from "./empty-state";
 export * from "./page-heading";
+
+export * from "./app-settings";

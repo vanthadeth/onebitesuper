@@ -1,3 +1,4 @@
+import { useAppSettings } from "./app-settings";
 import { EmptyState } from "./empty-state";
 import {
   createContext,
@@ -24,12 +25,14 @@ const Locale = createContext<{
   setLang: (lang: Language) => void;
 }>({ lang: "km", setLang: () => {} });
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<Language>(() =>
-    localStorage.getItem("onebite-language") === "en" ? "en" : "km",
-  );
+  const {settings}=useAppSettings();
+  const [lang, setLanguage] = useState<Language>(() => {
+    const choice=localStorage.getItem("onebite-language");return choice==='en'||choice==='km'?choice:settings.defaultLanguage;
+  });
+  function setLang(value:Language){localStorage.setItem("onebite-language",value);setLanguage(value);}
+  useEffect(()=>{if(!localStorage.getItem("onebite-language"))setLanguage(settings.defaultLanguage);},[settings.defaultLanguage]);
   useEffect(() => {
     document.documentElement.lang = lang;
-    localStorage.setItem("onebite-language", lang);
   }, [lang]);
   return (
     <Locale.Provider value={{ lang, setLang }}>{children}</Locale.Provider>

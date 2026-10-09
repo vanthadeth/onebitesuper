@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/domain.ts",
-    "./access": "./src/access.ts"
+    "./access": "./src/access.ts",
+    "./app-settings": "./src/app-settings.ts"
   }
 }

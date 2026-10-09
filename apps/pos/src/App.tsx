@@ -33,13 +33,13 @@ import {
   type Sauce,
   type Config,
   type Invoice,
-  money,
   seedConfig,
   siteNames,
   sauceNames,
   newCart,
   id,
   unitGross,
+  money as khrMoney,
   cartAmounts,
   lineAmounts,
   available,
@@ -48,6 +48,8 @@ import {
   Header,
   DemoBanner,
   useLanguage,
+  usePrice,
+  useAppSettings,
   useLocalState,
   FoodArt,
   Modal,
@@ -83,11 +85,13 @@ const orderName = (cart: Cart) =>
   cart.label || `#${cart.id.slice(0, 4).toUpperCase()}`;
 
 export function App() {
-  const { t, lang } = useLanguage();
+  const { t, lang } = useLanguage();const money=usePrice();
   const [state, setState, storageError] = useLocalState<Store>(
     "onebite-pos-preview-v1",
     initial,
   );
+  const {settings:appSettings}=useAppSettings();
+  useEffect(()=>{if(state.config.rate!==appSettings.exchangeRate)setState(old=>({...old,config:{...old.config,rate:appSettings.exchangeRate}}));},[appSettings.exchangeRate,state.config.rate]);
   const site = state.sites[state.site];
   const [screen, setScreen] = useState<Screen>("sell");
   const [category, setCategory] = useState("all");
@@ -416,7 +420,7 @@ export function App() {
               <div>
                 <strong>{money(totals.total)}</strong>
                 <small>
-                  ≈ ${(totals.total / state.config.rate).toFixed(2)}
+                  {appSettings.defaultCurrency==='USD'?`≈ ${khrMoney(totals.total)}`:`≈ $${(totals.total / state.config.rate).toFixed(2)}`}
                 </small>
               </div>
             </div>
@@ -694,7 +698,7 @@ export function App() {
                 />
                 <div className="detail-row">
                   <span>{t("អត្រាប្ដូរប្រាក់", "Exchange rate")}</span>
-                  <strong>$1 = {money(state.config.rate)}</strong>
+                  <strong>$1 = {khrMoney(state.config.rate)}</strong>
                 </div>
                 <div className="detail-row">
                   <span>{t("ការបង្គត់", "Invoice rounding")}</span>
@@ -992,7 +996,7 @@ function ItemEditor({
   onClose: () => void;
   onSave: (line: Line) => void;
 }) {
-  const { t, lang } = useLanguage();
+  const { t, lang } = useLanguage();const money=usePrice();
   const [qty, setQty] = useState(existing?.qty ?? 1);
   const [sauce, setSauce] = useState<Sauce | null>(
     existing?.sauce ??
@@ -1175,9 +1179,10 @@ function Payment({
   onClose: () => void;
   onPay: (cash: number, qr: number, reference?: string) => void;
 }) {
-  const { t } = useLanguage();
+  const { t } = useLanguage();const money=usePrice();
   const totals = cartAmounts(cart, config);
-  const [method, setMethod] = useState<"cash" | "qr" | "split">("cash");
+  const {settings:paymentDefaults}=useAppSettings();
+  const [method, setMethod] = useState<"cash" | "qr" | "split">(paymentDefaults.defaultPaymentMethod);
   const [cash, setCash] = useState(totals.total);
   const [reference, setReference] = useState<string>();
   const qr = totals.total - cash;
@@ -1372,7 +1377,7 @@ function InvoiceDetail({
   onClose: () => void;
   onReference: (value: string) => void;
 }) {
-  const { t } = useLanguage();
+  const { t } = useLanguage();const money=usePrice();
   return (
     <Modal
       title={`${t("វិក្កយបត្រ", "Invoice")} ${orderName(invoice)}`}
@@ -1440,7 +1445,7 @@ function ShiftView({
   onWithdraw: () => void;
   online: boolean;
 }) {
-  const { t } = useLanguage();
+  const { t } = useLanguage();const money=usePrice();
   const paid = site.invoices.filter((invoice) => invoice.status === "paid");
   const cash = paid.reduce((sum, invoice) => sum + invoice.cash, 0);
   const qr = paid.reduce((sum, invoice) => sum + invoice.qr, 0);
@@ -1540,7 +1545,7 @@ function CashCalculator({
   rate: number;
   onClose: () => void;
 }) {
-  const { t } = useLanguage();
+  const { t } = useLanguage();const money=usePrice();
   const [khr, setKhr] = useState("");
   const [usd, setUsd] = useState("");
   const dollars = Math.round((Number(usd) || 0) * 100);
@@ -1576,7 +1581,7 @@ function CashCalculator({
       <div className="payment-total">
         <span>{t("សរុបសមមូល", "Total equivalent")}</span>
         <strong>{money(total)}</strong>
-        <small>$1 = {money(rate)}</small>
+        <small>$1 = {khrMoney(rate)}</small>
       </div>
     </Modal>
   );

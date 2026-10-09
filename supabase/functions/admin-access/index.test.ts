@@ -7,7 +7,7 @@ await import('./index.ts');
 const request=(action:string,payload:Record<string,unknown>={},headers:Record<string,string>={})=>new Request('https://example.test/admin-access',{method:'POST',headers:{apikey:'sb_publishable_test','Content-Type':'application/json',...headers},body:JSON.stringify({action,payload})});
 test('protected actions reject missing and malformed sessions before reaching the database',async()=>{
  const previous=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;throw new Error('Unexpected RPC');};
- try{for(const action of ['user.update','role.create','permissions.update','site.create','site.update'])for(const headers of [{},{Authorization:'Bearer malformed'}]){const response=await handler(request(action,{},headers));assert.equal(response.status,401);assert.deepEqual(await response.json(),{error:'unauthorized'});}assert.equal(calls,0);}finally{globalThis.fetch=previous;}
+ try{for(const action of ['user.update','role.create','permissions.update','site.create','site.update','settings.update'])for(const headers of [{},{Authorization:'Bearer malformed'}]){const response=await handler(request(action,{},headers));assert.equal(response.status,401);assert.deepEqual(await response.json(),{error:'unauthorized'});}assert.equal(calls,0);}finally{globalThis.fetch=previous;}
 });
 test('login strips caller hashes, stores only a server-generated session hash and returns no server key',async()=>{
  const previous=globalThis.fetch;let rpc:Record<string,unknown>|undefined;

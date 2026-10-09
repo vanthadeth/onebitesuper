@@ -1,3 +1,4 @@
+import { appSettingsOrDefault, validAppSettings, type AppSettings } from "./app-settings.ts";
 export const roles = ["Cashier", "Supervisor", "Owner"] as const;
 export type Role = string;
 export type CustomRole = { id: string; name: string; description: string };
@@ -27,6 +28,7 @@ export const permissionDefinitions = [
   { id: "staff.assign", group: "Admin", km: "ចាត់បុគ្គលិកទៅសាខា", en: "Assign existing staff to sites" },
   { id: "users.manage", group: "Admin", km: "គ្រប់គ្រងគណនីបុគ្គលិក", en: "Manage user accounts" },
   { id: "roles.manage", group: "Admin", km: "គ្រប់គ្រងតួនាទី និងសិទ្ធិ", en: "Manage role permissions" },
+  { id: "settings.manage", group: "Admin", km: "គ្រប់គ្រងការកំណត់កម្មវិធី", en: "Manage app settings" },
   { id: "sites.manage", group: "Admin", km: "គ្រប់គ្រងសាខា", en: "Manage sites" },
   { id: "catalog.manage", group: "Admin", km: "គ្រប់គ្រងមុខម្ហូប និងតម្លៃ", en: "Manage items and prices" },
   { id: "rules.manage", group: "Admin", km: "កំណត់ច្បាប់បញ្ចុះតម្លៃ", en: "Configure promotions and exchange rate" },
@@ -62,7 +64,7 @@ export function saveSite(state: AccessState, actorId: string, site: SiteDraft, c
  return {...state,sites:creating?[...state.sites,next]:state.sites.map(s=>s.id===next.id?next:s),events:event(state,actor,creating?"site.created":"site.updated",next.name,`${next.location} · ${next.active?"active":"inactive"}`)};
 }
 export type AccessEvent = { id: string; time: string; actorId: string; actorName: string; action: string; targetName: string; detail: string };
-export type AccessState = { version: 1; users: Account[]; sites: AccessSite[]; grants: Grants; events: AccessEvent[]; customRoles?: CustomRole[] };
+export type AccessState = { version: 1; users: Account[]; sites: AccessSite[]; grants: Grants; events: AccessEvent[]; customRoles?: CustomRole[]; appSettings?: AppSettings };
 const posPermissions: Permission[] = ["orders.create", "orders.discount", "orders.complimentary", "orders.cancel_unpaid", "orders.qr_reference", "shifts.manage"];
 export const ceilings: Grants = {
   Cashier: ["pos.access", "attendance.access", "admin.access", ...posPermissions],
@@ -84,7 +86,7 @@ export function hasPermission(grants: Permission[], _role: Role, permission: Per
 }
 export function defaultGrants(): Grants { return structuredClone(ceilings); }
 export class AccessError extends Error {
-  code: "forbidden" | "invalid_name" | "invalid_username" | "duplicate_username" | "invalid_site" | "site_required" | "last_owner" | "not_found" | "invalid_role" | "immutable_grant" | "permission_ceiling" | "duplicate_role" | "invalid_description" | "invalid_location" | "invalid_coordinates" | "invalid_dates" | "invalid_hours" | "invalid_remarks" | "invalid_photo" | "duplicate_site";
+  code: "forbidden" | "invalid_name" | "invalid_username" | "duplicate_username" | "invalid_site" | "site_required" | "last_owner" | "not_found" | "invalid_role" | "immutable_grant" | "permission_ceiling" | "duplicate_role" | "invalid_description" | "invalid_location" | "invalid_coordinates" | "invalid_dates" | "invalid_hours" | "invalid_remarks" | "invalid_photo" | "invalid_settings" | "duplicate_site";
   constructor(code: AccessError["code"]) { super(code); this.code=code; }
 }
 export function getActor(state: AccessState, id: string): Account {
@@ -182,4 +184,10 @@ export function initialAccessState(): AccessState {
     {id:"chan",name:"Chantha",username:"chantha",role:"Cashier",sites:[1],active:true},
     {id:"pisey",name:"Pisey",username:"pisey",role:"Cashier",sites:[2],active:true},
   ]};
+}
+
+export function saveAppSettings(state:AccessState,actorId:string,settings:AppSettings):AccessState {
+ const actor=getActor(state,actorId);if(!can(state,actor,"settings.manage"))throw new AccessError("forbidden");
+ if(!validAppSettings(settings))throw new AccessError("invalid_settings");
+ return {...state,appSettings:appSettingsOrDefault(settings),events:event(state,actor,"settings.updated","App settings","Geofence and preferences updated")};
 }

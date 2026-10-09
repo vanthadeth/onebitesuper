@@ -90,3 +90,7 @@ test("site creation defaults active, validates operating details, and preserves 
  const denied=saveGrants(updated,"owner","Cashier",updated.grants.Cashier.filter(p=>p!=="admin.access"));
  assert.throws(()=>saveSite(denied,"sokha",draft,true),error("forbidden"));
 });
+
+test('app settings validate defaults, enforce permissions, and record accepted changes',async()=>{
+ const {saveAppSettings}=await import('./access.ts');const {defaultAppSettings,validAppSettings}=await import('./app-settings.ts');const s=initialAccessState();const updated={...defaultAppSettings,exchangeRate:4100,gpsAccuracyM:20};const n=saveAppSettings(s,'owner',updated);assert.equal(n.appSettings!.exchangeRate,4100);assert.equal(n.events.at(-1)!.action,'settings.updated');assert.equal(s.appSettings,undefined);assert.throws(()=>saveAppSettings(s,'supervisor',updated),error('forbidden'));assert.throws(()=>saveAppSettings(s,'owner',{...updated,geofenceRadiusM:0}),error('invalid_settings'));assert.equal(validAppSettings({...updated,defaultLanguage:null}),false);assert.equal(validAppSettings({...updated,exchangeRate:4100.5}),false);assert.equal(validAppSettings({...updated,secret:'never stored'}),false);const delegated=saveGrants(s,'owner','Supervisor',[...s.grants.Supervisor,'settings.manage']);assert.equal(saveAppSettings(delegated,'supervisor',updated).appSettings!.gpsAccuracyM,20);
+});

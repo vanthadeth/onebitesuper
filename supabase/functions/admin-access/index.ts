@@ -1,6 +1,6 @@
 // Internal username/PIN authentication. No Supabase Auth identity is assumed.
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS", "Cache-Control": "no-store" };
-const actions = new Set(["bootstrap.status","bootstrap","login","logout","me","pin.change","user.create","user.update","sites.assign","site.create","site.update","site.photo.upload","permissions.update","role.create","pin.reset"]);
+const actions = new Set(["bootstrap.status","bootstrap","login","logout","me","pin.change","user.create","user.update","sites.assign","site.create","site.update","site.photo.upload","settings.update","permissions.update","role.create","pin.reset"]);
 const sha256 = async (value: string) => [...new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value)))].map(v=>v.toString(16).padStart(2,"0")).join("");
 const respond = (data: unknown, status = 200) => Response.json(data,{status,headers:cors});
 declare const Deno: { env: { get(key: string): string | undefined }; serve(handler: (request: Request)=>Promise<Response>): void };

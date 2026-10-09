@@ -3,6 +3,7 @@ import { accessApi, ApiError, type Snapshot, type AccessReply } from './access-a
 type Request = typeof accessApi;
 function unchangedTarget(action:string,payload:Record<string,unknown>,before:Snapshot,after:Snapshot) {
  if(action==='user.create'||action==='role.create'||action==='site.create')return true; // Server still checks usernames and permissions.
+ if(action==='settings.update')return JSON.stringify(before.appSettings)===JSON.stringify(after.appSettings);
  if(action==='permissions.update'){
   const role=payload.role as keyof Snapshot['grants'];
   return JSON.stringify([...(before.grants[role]||[])].sort())===JSON.stringify([...(after.grants[role]||[])].sort());

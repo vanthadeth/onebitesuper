@@ -5,13 +5,13 @@ import "./admin-access.css";
 import "@onebite/ui/controls.css";
 import "./framework.css";
 import "@onebite/ui/polish.css";
-import { LanguageProvider, registerPwa } from "@onebite/ui";
+import { LanguageProvider, AppSettingsProvider, registerPwa } from "@onebite/ui";
 import { AccessApp } from "./AccessApp";
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <LanguageProvider>
+    <AppSettingsProvider><LanguageProvider>
       <AccessApp />
-    </LanguageProvider>
+    </LanguageProvider></AppSettingsProvider>
   </React.StrictMode>,
 );
 if (import.meta.env.PROD) registerPwa();

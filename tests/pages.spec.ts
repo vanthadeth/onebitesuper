@@ -25,12 +25,12 @@ test('hosted Admin connects to Supabase and rejects unauthorized account request
  test.skip(!process.env.PAGES_TEST_BASE_URL,'Live API checks run from the hosted GitHub verification job.');
  const endpoint=publicConfig.url+'/functions/v1/admin-access';
  const connected=page.waitForResponse(response=>response.url()===endpoint&&response.request().method()==='POST'&&response.request().postDataJSON().action==='bootstrap.status');
- await page.goto(base+'admin/');const response=await connected;expect(response.status()).toBe(200);const data=await response.json();expect(typeof data.ownerCreated).toBe('boolean');
+ await page.goto(base+'admin/');const response=await connected;expect(response.status()).toBe(200);const data=await response.json();expect(typeof data.ownerCreated).toBe('boolean');expect(typeof data.appSettings.geofenceRadiusM).toBe('number');expect(typeof data.appSettings.exchangeRate).toBe('number');
  await expect(page.getByRole('heading',{name:data.ownerCreated?'សូមស្វាគមន៍':'បង្កើតគណនីម្ចាស់',exact:true})).toBeVisible();
  const headers={apikey:publicConfig.publishableKey};
  const noSession=await request.post(endpoint,{headers,data:{action:'me',payload:{}}});expect(noSession.status()).toBe(401);expect(await noSession.json()).toEqual({error:'unauthorized'});
  const roleRequest=await request.post(endpoint,{headers:{...headers,Authorization:'Bearer '+'0'.repeat(64)},data:{action:'role.create',payload:{}}});expect(roleRequest.status()).toBe(401);expect(await roleRequest.json()).toEqual({error:'unauthorized'});
- for(const action of ['site.create','site.update']){const denied=await request.post(endpoint,{headers,data:{action,payload:{}}});expect(denied.status()).toBe(401);expect(await denied.json()).toEqual({error:'unauthorized'});}
+ for(const action of ['site.create','site.update','site.photo.upload','settings.update']){const denied=await request.post(endpoint,{headers,data:{action,payload:{}}});expect(denied.status()).toBe(401);expect(await denied.json()).toEqual({error:'unauthorized'});}
  const badKey=await request.post(endpoint,{headers:{apikey:'invalid'},data:{action:'bootstrap.status',payload:{}}});expect(badKey.status()).toBe(401);
  const direct=await request.post(publicConfig.url+'/rest/v1/rpc/onebite_access_api',{headers,data:{p_action:'bootstrap.status'}});expect([401,403]).toContain(direct.status());
 });
