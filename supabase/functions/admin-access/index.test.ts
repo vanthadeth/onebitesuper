@@ -36,3 +36,7 @@ test('denied photo permissions and invalid images never upload; Storage failures
  globalThis.fetch=async(url)=>String(url).includes('/rpc/')?Response.json({actor:{id:'11111111-1111-4111-8111-111111111111'}}):Response.json({private:'details'},{status:500});const response=await handler(uploadRequest('/9j/2Q=='));assert.equal(response.status,502);assert.deepEqual(await response.json(),{error:'photo_upload_failed'});
  }finally{globalThis.fetch=previous;}
 });
+test('activity reads use a separate protected paged RPC without forwarding action overrides',async()=>{
+ const previous=globalThis.fetch;globalThis.fetch=async(url,init)=>{assert.equal(String(url),'https://example.supabase.co/rest/v1/rpc/onebite_activity_page');const rpc=JSON.parse(init!.body as string);assert.equal(rpc.p_action,undefined);assert.deepEqual(rpc.p_payload,{start:'2026-10-01',end:'2026-10-09'});assert.match(rpc.p_session_hash,/^[a-f0-9]{64}$/);return Response.json({events:[],nextCursor:null});};
+ try{assert.equal((await handler(request('activity.list'))).status,401);const response=await handler(request('activity.list',{start:'2026-10-01',end:'2026-10-09'},{Authorization:'Bearer '+'a'.repeat(64)}));assert.equal(response.status,200);assert.deepEqual(await response.json(),{events:[],nextCursor:null});}finally{globalThis.fetch=previous;}
+});

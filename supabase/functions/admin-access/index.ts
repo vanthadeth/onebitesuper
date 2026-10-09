@@ -1,6 +1,6 @@
 // Internal username/PIN authentication. No Supabase Auth identity is assumed.
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS", "Cache-Control": "no-store" };
-const actions = new Set(["bootstrap.status","bootstrap","login","logout","me","pin.change","user.create","user.update","sites.assign","site.create","site.update","site.photo.upload","settings.update","permissions.update","role.create","pin.reset"]);
+const actions = new Set(["bootstrap.status","bootstrap","login","logout","me","pin.change","user.create","user.update","sites.assign","site.create","site.update","site.photo.upload","settings.update","activity.list","permissions.update","role.create","pin.reset"]);
 const sha256 = async (value: string) => [...new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value)))].map(v=>v.toString(16).padStart(2,"0")).join("");
 const respond = (data: unknown, status = 200) => Response.json(data,{status,headers:cors});
 declare const Deno: { env: { get(key: string): string | undefined }; serve(handler: (request: Request)=>Promise<Response>): void };
@@ -50,7 +50,8 @@ Deno.serve(async req=>{
    if(!stored.ok)return respond({error:'photo_upload_failed'},502);
    return respond({photoPath});
   }
-  const response=await fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/rpc/onebite_access_api`,{method:"POST",headers,body:JSON.stringify({p_action:action,p_payload:payload,p_session_hash:token?await sha256(token):null})});
+  const rpc=action==='activity.list'?'onebite_activity_page':'onebite_access_api';
+  const response=await fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/rpc/${rpc}`,{method:"POST",headers,body:JSON.stringify({...(action==='activity.list'?{}:{p_action:action}),p_payload:payload,p_session_hash:token?await sha256(token):null})});
   if(!response.ok){
    let code='unknown';try{const failure=await response.json();if(typeof failure.code==='string'&&/^[A-Z0-9_]{1,32}$/.test(failure.code))code=failure.code;}catch{}
    console.error(JSON.stringify({event:'admin_rpc_failed',action:requestAction,status:response.status,code}));
