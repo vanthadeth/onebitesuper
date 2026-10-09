@@ -1,8 +1,9 @@
+import publicConfig from "../../../config/supabase.public.json";
 import type { Account, AccessState } from "@onebite/core/access";
 export type Snapshot = AccessState & { revision: number };
 export type AccessReply = { actor?: Account; state?: Snapshot; session?: string; mustChangePin?: boolean; ownerCreated?: boolean; ok?: boolean };
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || publicConfig.url;
+const key = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) || publicConfig.publishableKey;
 export const configured = Boolean(url && key);
 const storageKey = "onebite-admin-session";
 export function readSession() { try { return sessionStorage.getItem(storageKey) || ""; } catch { return ""; } }

@@ -6,9 +6,9 @@ Updated 9 October 2026. Project: `iizosglpofempyjvepyr`.
 
 Users, Roles, Permissions and account-change history are implemented in the Admin app. The local preview persists sample profiles and permission changes on this device, with a visible preview banner and role switcher. PIN reset and provisioning are unavailable in preview.
 
-Supabase requests recovered on 9 October 2026. The eight-table schema and `admin-access` Edge Function were deployed, and the Admin environment contains only the project URL and public publishable key. No Owner or staff accounts have been created. Database checks confirmed RLS on every app table, denied browser access to credentials/RPCs, rejected unauthenticated sessions and prohibited Owner refund permissions. A broader transaction verification request was cancelled and is not counted as passed. App-to-API verification is pending because the cloud environment blocks the project host with HTTP 403.
+Supabase requests recovered on 9 October 2026. The eight-table schema and `admin-access` Edge Function were deployed, and the Admin environment contains only the project URL and public publishable key. No Owner or staff accounts have been created. Database checks confirmed RLS on every app table, denied browser access to credentials/RPCs, rejected unauthenticated sessions and prohibited Owner refund permissions. A broader transaction verification request was cancelled and is not counted as passed. The cloud environment blocks direct requests to the project host; app-to-API checks run from GitHub’s hosted verification job.
 
-At the user’s request, Supabase work is paused until the app is built and committed to GitHub. The bootstrap code is stored privately in the ignored `.secrets/` directory; it is never bundled or committed.
+The app is committed to GitHub and hosted on Pages. Supabase connection work has resumed at the user’s request. The bootstrap code is stored privately in the ignored `.secrets/` directory; it is never bundled or committed.
 
 ## Access rules
 
