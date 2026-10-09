@@ -91,3 +91,7 @@ User edit contains profile, role and active status fields. It preserves current 
 ### Compact role list
 
 Roles appear as collapsed disclosure rows with an icon, role name and short description. Expanding a row shows the modules currently allowed for that role and a **Review permissions** action. Module visibility follows effective permissions and updates immediately after saving policy changes. The disclosure buttons support touch, Enter/Space, visible focus and reduced motion, in Khmer/English and light/dark themes.
+
+### Minimal permission editor
+
+Each module has a title and an Allowed/Denied Radix switch. Its action list appears only while the module is allowed; denying the module retains the stored action settings for restoration. Each action uses an icon, short label and switch. Role ceilings and Owner protections still lock unavailable controls. Save permissions stays in the dialog's fixed footer while the sections scroll.

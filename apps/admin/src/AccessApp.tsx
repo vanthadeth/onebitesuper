@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
-import { Users, ShieldCheck, KeyRound, Search, Plus, Pencil, ChevronRight, Check, X, Store, LogOut, RefreshCw, LockKeyhole, History, Copy, UserPlus, ArrowUpRight, AlertCircle, UserRound, WifiOff, Crown, ChevronDown, ShoppingBag, Clock, Boxes } from "lucide-react";
-import { useLanguage, AppDialog as Modal, SelectField, CheckField, AppTitleBar, type SyncStatus } from "@onebite/ui";
+import { Users, ShieldCheck, KeyRound, Search, Plus, Pencil, ChevronRight, Check, X, Store, LogOut, RefreshCw, LockKeyhole, History, Copy, UserPlus, ArrowUpRight, AlertCircle, UserRound, WifiOff, Crown, ChevronDown, ShoppingBag, Clock, Boxes, BadgePercent, Gift, CircleX, QrCode, ArrowRightLeft, Banknote, MapPin, Utensils, SlidersHorizontal } from "lucide-react";
+import { useLanguage, AppDialog as Modal, SelectField, CheckField, SwitchField, AppTitleBar, type SyncStatus } from "@onebite/ui";
 import { roles, moduleDefinitions, hasPermission, permissionDefinitions, ceilings, initialAccessState, can, saveAccount, assignSites, saveGrants, visibleAccounts, AccessError, type Account, type Role, type Permission, type AccessState } from "@onebite/core/access";
 import { accessApi, configured, readSession, setSession, ApiError, type Snapshot } from "./access-api";
 import { saveRequest } from "./save-request";
@@ -105,9 +105,41 @@ function RoleRow({role,state,onReview}:{role:Role;state:AccessState;onReview:()=
   </div>
  </section>;
 }
+const permissionRowDetails:Partial<Record<Permission,{en:string;km:string;icon:typeof Users}>>={
+ "orders.create":{en:"Receive orders",km:"ទទួលការបញ្ជាទិញ",icon:ShoppingBag},
+ "orders.discount":{en:"Discounts",km:"បញ្ចុះតម្លៃ",icon:BadgePercent},
+ "orders.complimentary":{en:"Complimentary items",km:"មុខម្ហូបឥតគិតថ្លៃ",icon:Gift},
+ "orders.cancel_unpaid":{en:"Cancel unpaid invoices",km:"បោះបង់វិក្កយបត្រមិនទាន់បង់",icon:CircleX},
+ "orders.qr_reference":{en:"QR references",km:"រូបយោង QR",icon:QrCode},
+ "shifts.manage":{en:"Shifts & cash handover",km:"វេន និងផ្ទេរប្រាក់",icon:ArrowRightLeft},
+ "cash.withdraw":{en:"Cash withdrawals",km:"ដកប្រាក់",icon:Banknote},
+ "staff.assign":{en:"Assign staff to sites",km:"ចាត់បុគ្គលិកទៅសាខា",icon:Users},
+ "users.manage":{en:"User accounts",km:"គណនីបុគ្គលិក",icon:UserRound},
+ "roles.manage":{en:"Roles & permissions",km:"តួនាទី និងសិទ្ធិ",icon:ShieldCheck},
+ "sites.manage":{en:"Sites",km:"សាខា",icon:MapPin},
+ "catalog.manage":{en:"Items & prices",km:"មុខម្ហូប និងតម្លៃ",icon:Utensils},
+ "rules.manage":{en:"Promotions & exchange rate",km:"កម្មវិធីបញ្ចុះតម្លៃ និងអត្រាប្ដូរប្រាក់",icon:SlidersHorizontal},
+ "orders.override":{en:"Override discount limits",km:"រំលងកម្រិតបញ្ចុះតម្លៃ",icon:LockKeyhole},
+ "orders.refund":{en:"Refund paid invoices",km:"សងប្រាក់វិក្កយបត្របង់រួច",icon:LockKeyhole},
+};
 function RoleEditor({role,state,editable,busy,error,recovery,onClose,onSave}:{role:Role;state:AccessState;editable:boolean;busy:boolean;error:string;recovery?:ReactNode;onClose:()=>void;onSave:(permissions:Permission[])=>Promise<void>}){
  const {t}=useLanguage();const [grants,setGrants]=useState([...state.grants[role]]);
- return <Modal title={`${role} · ${t("សិទ្ធិ","Permissions")}`} onClose={()=>{if(!busy)onClose();}}><div className="access-rule-note"><ShieldCheck size={19}/>{role==="Owner"?t("សិទ្ធិម្ចាស់ត្រូវបានការពារ។","Owner permissions are protected."):t("បដិសេធម៉ូឌុលនឹងបិទសកម្មភាពទាំងអស់។ ការកំណត់សកម្មភាពរក្សាទុកដដែល។","Denying a module blocks all its actions. Action settings are preserved.")}</div><div className="access-grants">{moduleDefinitions.map(m=>{const access=grants.includes(m.id);const actions=[...permissionDefinitions.filter(p=>p.group===m.group&&p.id!==m.id),...(m.group==="POS"?permissionDefinitions.filter(p=>p.group==="Never"):[])];return <fieldset className="access-grant-module" key={m.id}><legend>{t(m.km,m.en)}</legend><label className="access-module-toggle"><CheckField aria-label={`Access ${m.en} module`} checked={access} disabled={!editable||!ceilings[role].includes(m.id)||busy} onChange={e=>setGrants(old=>e.target.checked?[...old,m.id]:old.filter(id=>id!==m.id))}/><span>{t("ចូលប្រើម៉ូឌុល","Module access")}<small>{access?t("អនុញ្ញាត","Allowed"):t("បដិសេធ","Denied")}</small></span></label><div className="access-module-actions">{actions.map(p=>{const allowed=ceilings[role].includes(p.id);return <label key={p.id} className={!allowed||!access?"locked":""}><CheckField aria-label={t(p.km,p.en)} checked={grants.includes(p.id)} disabled={!editable||!allowed||!access||busy} onChange={e=>setGrants(old=>e.target.checked?[...old,p.id]:old.filter(id=>id!==p.id))}/><span>{t(p.km,p.en)}<small>{!allowed?t("មិនអនុញ្ញាតសម្រាប់តួនាទីនេះ","Forbidden for this role"):!access?t("ត្រូវបានបិទដោយម៉ូឌុល","Blocked by module access"):t("សកម្មភាព","Action")}</small></span>{!allowed&&<LockKeyhole size={15}/>}</label>;})}{!actions.length&&<p className="access-helper">{t("សកម្មភាពលម្អិតនឹងបន្ថែមពេលបង្កើតម៉ូឌុលនេះ។","Action permissions will be added when this module is built.")}</p>}</div></fieldset>;})}</div>{error&&<div className="access-error" role="alert">{error}{recovery}</div>}{editable&&<button className="access-btn" onClick={()=>void onSave(grants)} disabled={busy}>{t("រក្សាទុកសិទ្ធិ","Save permissions")}</button>}</Modal>;
-
+ const toggle=(permission:Permission,checked:boolean)=>setGrants(old=>checked?[...old,permission]:old.filter(id=>id!==permission));
+ return <Modal title={`${role} · ${t("សិទ្ធិ","Permissions")}`} onClose={()=>{if(!busy)onClose();}} footer={editable?<button className="access-btn" onClick={()=>void onSave(grants)} disabled={busy}><Check size={18}/>{busy?t("កំពុងរក្សាទុក…","Saving…"):t("រក្សាទុកសិទ្ធិ","Save permissions")}</button>:undefined}>
+  {role==="Owner"&&<p className="access-helper access-policy-hint"><LockKeyhole size={16}/>{t("សិទ្ធិម្ចាស់ត្រូវបានការពារ។","Owner permissions are protected.")}</p>}
+  <div className="access-policy-sections">{moduleDefinitions.map(module=>{
+   const access=ceilings[role].includes(module.id)&&grants.includes(module.id);
+   const actions=[...permissionDefinitions.filter(permission=>permission.group===module.group&&permission.id!==module.id),...(module.group==="POS"?permissionDefinitions.filter(permission=>permission.group==="Never"):[])];
+   return <section className="access-policy-section" key={module.id} aria-label={t(module.km,module.en)}>
+    <header className="access-policy-header"><h3>{t(module.km,module.en)}</h3><label className="access-policy-module-toggle"><span className={access?"allowed":"denied"}>{access?t("អនុញ្ញាត","Allowed"):t("បដិសេធ","Denied")}</span><SwitchField aria-label={t(`ចូលប្រើម៉ូឌុល ${module.km}`,`Access ${module.en} module`)} checked={access} disabled={!editable||!ceilings[role].includes(module.id)||busy} onChange={event=>toggle(module.id,event.target.checked)}/></label></header>
+    {access&&actions.length>0&&<ul className="access-policy-actions">{actions.map(permission=>{
+     const allowed=ceilings[role].includes(permission.id),details=permissionRowDetails[permission.id],Icon=details?.icon||KeyRound;
+     return <li key={permission.id} className={allowed?"":"locked"}><label title={!allowed?t("មិនអនុញ្ញាតសម្រាប់តួនាទីនេះ","Unavailable for this role"):undefined}><Icon size={18}/><span>{details?t(details.km,details.en):t(permission.km,permission.en)}</span><SwitchField aria-label={t(permission.km,permission.en)} aria-description={!allowed?t("មិនអនុញ្ញាតសម្រាប់តួនាទីនេះ","Unavailable for this role"):undefined} checked={allowed&&grants.includes(permission.id)} disabled={!editable||!allowed||busy} onChange={event=>toggle(permission.id,event.target.checked)}/></label></li>;
+    })}</ul>}
+   </section>;
+  })}</div>
+  {editable&&<p className="access-helper access-policy-hint">{t("បដិសេធម៉ូឌុលនឹងរក្សាការកំណត់សិទ្ធិដដែល។","Denying a module preserves its permission settings.")}</p>}
+  {error&&<div className="access-error" role="alert">{error}{recovery}</div>}
+ </Modal>;
 }
 function PinReset({user,busy,error,recovery,onClose,onSave}:{user:Account;busy:boolean;error:string;recovery?:ReactNode;onClose:()=>void;onSave:(pin:string)=>Promise<void>}){const {t}=useLanguage();const[pin,setPin]=useState(""),[confirm,setConfirm]=useState("");return <Modal title={t("កំណត់ PIN ឡើងវិញ","Reset PIN")} onClose={()=>{if(!busy)onClose();}}><form className="access-form" onSubmit={e=>{e.preventDefault();if(/^[0-9]{6}$/.test(pin)&&pin===confirm&&!busy)void onSave(pin);}}><p>{user.name} · @{user.username}</p><div className="access-rule-note"><LockKeyhole size={19}/>{t("បិទគ្រប់សម័យចូលប្រើ។ បុគ្គលិកត្រូវប្ដូរ PIN បណ្ដោះអាសន្ន។","All sessions will be revoked. The person must change the temporary PIN.")}</div><label>{t("PIN បណ្ដោះអាសន្នថ្មី","New temporary PIN")}<input type="password" autoComplete="new-password" inputMode="numeric" maxLength={6} value={pin} onChange={e=>setPin(e.target.value.replace(/\D/g,""))}/></label><label>{t("បញ្ជាក់ PIN","Confirm PIN")}<input type="password" autoComplete="new-password" inputMode="numeric" maxLength={6} value={confirm} onChange={e=>setConfirm(e.target.value.replace(/\D/g,""))}/></label>{error&&<div className="access-error" role="alert">{error}{recovery}</div>}<button className="access-btn" disabled={busy||!/^[0-9]{6}$/.test(pin)||pin!==confirm}>{t("កំណត់ PIN និងបិទសម័យចូលប្រើ","Reset PIN and revoke sessions")}</button></form></Modal>;}

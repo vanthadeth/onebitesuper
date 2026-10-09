@@ -2,6 +2,7 @@ import { Children, isValidElement, useId, useState, type ReactNode, type ReactEl
 import * as Select from '@radix-ui/react-select';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import * as Dialog from '@radix-ui/react-dialog';
+import * as Switch from '@radix-ui/react-switch';
 import { Check, ChevronDown, ChevronUp, X } from 'lucide-react';
 
 // Native inputs retain mobile keyboards and password-manager support. Menus,
@@ -17,6 +18,10 @@ export function SelectField({value,onChange,children,className='',placeholder,..
 export function CheckField({checked,onChange,className='',...props}:Omit<ComponentProps<typeof Checkbox.Root>,'checked'|'onCheckedChange'|'onChange'> & {checked:boolean;onChange:(event:{target:{checked:boolean}})=>void}) {
  const id=useId();
  return <Checkbox.Root {...props} id={props.id||id} checked={checked} onCheckedChange={checked=>onChange({target:{checked:checked===true}})} className={`ob-check ${className}`}><Checkbox.Indicator><Check size={13} strokeWidth={3}/></Checkbox.Indicator></Checkbox.Root>;
+}
+export function SwitchField({checked,onChange,className='',...props}:Omit<ComponentProps<typeof Switch.Root>,'checked'|'onCheckedChange'|'onChange'> & {checked:boolean;onChange:(event:{target:{checked:boolean}})=>void}) {
+ const id=useId();
+ return <Switch.Root {...props} id={props.id||id} checked={checked} onCheckedChange={checked=>onChange({target:{checked}})} className={`ob-switch ${className}`}><Switch.Thumb className="ob-switch-thumb"/></Switch.Root>;
 }
 export function AppDialog({title,children,onClose,wide=false,footer}:{title:string;children:ReactNode;onClose:()=>void;wide?:boolean;footer?:ReactNode}) {
  const [opener]=useState(()=>document.activeElement instanceof HTMLElement?document.activeElement:null);
