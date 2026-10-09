@@ -44,7 +44,7 @@ export function normalizeSite(site: SiteDraft): SiteDraft {
  const name=site.name.trim(),location=site.location.trim(),remarks=site.remarks.trim();
  if(!name||name.length>100)throw new AccessError("invalid_name");
  if(!location||location.length>500)throw new AccessError("invalid_location");
- if(typeof site.latitude!=="number"||!Number.isFinite(site.latitude)||Math.abs(site.latitude)>90||typeof site.longitude!=="number"||!Number.isFinite(site.longitude)||Math.abs(site.longitude)>180)throw new AccessError("invalid_coordinates");
+ if(!(site.latitude===null&&site.longitude===null)&&(typeof site.latitude!=="number"||!Number.isFinite(site.latitude)||Math.abs(site.latitude)>90||typeof site.longitude!=="number"||!Number.isFinite(site.longitude)||Math.abs(site.longitude)>180))throw new AccessError("invalid_coordinates");
  const validDate=(value:string)=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value&&value>="1900-01-01"&&value<="9999-12-31";
  if(!validDate(site.runningFrom)||(site.shutdownOn&&(!validDate(site.shutdownOn)||site.shutdownOn<site.runningFrom)))throw new AccessError("invalid_dates");
  const time=/^([01]\d|2[0-3]):[0-5]\d$/;

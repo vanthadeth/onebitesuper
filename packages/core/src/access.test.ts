@@ -75,6 +75,8 @@ test("custom roles persist grants, reject duplicates and unknown roles, and reta
 test("site creation defaults active, validates operating details, and preserves assignments on edits",()=>{
  const s=initialAccessState(),draft={...siteDraft(),name:" Test Site ",location:" Phnom Penh ",latitude:11.5,longitude:104.9,active:false};
  const n=saveSite(s,"owner",draft,true),created=n.sites.at(-1)!;
+ const withoutCoordinates=saveSite(s,"owner",{...draft,name:"Without coordinates",latitude:null,longitude:null},true);assert.equal(withoutCoordinates.sites.at(-1)!.latitude,null);
+ assert.throws(()=>saveSite(s,"owner",{...draft,longitude:null},true),error("invalid_coordinates"));
  assert.equal(created.name,"Test Site");assert.equal(created.active,true);assert.equal(created.location,"Phnom Penh");assert.equal(n.events.at(-1)!.action,"site.created");assert.equal(s.sites.length,3);
  assert.throws(()=>saveSite(n,"owner",{...draft,name:"test site"},true),error("duplicate_site"));
  assert.throws(()=>saveSite(n,"owner",{...draft,latitude:91},true),error("invalid_coordinates"));

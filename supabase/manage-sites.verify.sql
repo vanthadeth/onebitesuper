@@ -13,6 +13,12 @@ begin
  if not exists(select 1 from jsonb_array_elements(r->'state'->'sites') s where (s->>'id')::integer=v_site_id and s->>'location'='Phnom Penh' and s->>'runningFrom'='2026-10-09') then raise exception 'Snapshot omitted metadata';end if;
  r=public.onebite_access_api('site.create',p||jsonb_build_object('revision',(select revision from public.onebite_access_settings)),token);
  if r->>'error' is distinct from 'duplicate_site' then raise exception 'Duplicate site allowed';end if;
+ r=public.onebite_access_api('site.create',p||jsonb_build_object('name',v_name||' without coordinates','latitude',null,'longitude',null,'revision',(select revision from public.onebite_access_settings)),token);
+ if r ? 'error' or not exists(select 1 from public.onebite_sites where onebite_sites.name=v_name||' without coordinates' and latitude is null and longitude is null) then raise exception 'Optional coordinates rejected';end if;
+ r=public.onebite_access_api('site.update',p||jsonb_build_object('id',v_site_id,'latitude',null,'longitude',null,'revision',(select revision from public.onebite_access_settings)),token);
+ if r ? 'error' or not exists(select 1 from public.onebite_sites where id=v_site_id and latitude is null and longitude is null) then raise exception 'Clearing coordinates failed';end if;
+ r=public.onebite_access_api('site.update',p||jsonb_build_object('id',v_site_id,'longitude',null,'revision',(select revision from public.onebite_access_settings)),token);
+ if r->>'error' is distinct from 'invalid_coordinates' then raise exception 'Partial coordinates allowed';end if;
  r=public.onebite_access_api('site.update',p||jsonb_build_object('id',v_site_id,'latitude',91,'revision',(select revision from public.onebite_access_settings)),token);
  if r->>'error' is distinct from 'invalid_coordinates' then raise exception 'Invalid coordinate allowed';end if;
  r=public.onebite_access_api('site.update',p||jsonb_build_object('id',v_site_id,'shutdownOn','2026-10-08','revision',(select revision from public.onebite_access_settings)),token);
