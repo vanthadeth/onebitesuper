@@ -15,7 +15,7 @@ begin
   insert into public.onebite_users(name,username,role) values(full_name,uname,'Owner') returning id into uid;
   insert into public.onebite_credentials(user_id,pin_hash) values(uid,extensions.crypt(pin,extensions.gen_salt('bf',12)));
   insert into public.onebite_sessions(token_hash,user_id) values(p_payload->>'new_session_hash',uid);
-  update public.onebite_access_settings set bootstrap_hash=null,bootstrap_used=true,revision=revision+1;
+  update public.onebite_access_settings set bootstrap_hash=null,bootstrap_used=true,revision=revision+1 where id=true;
   insert into public.onebite_access_audit(actor_id,actor_name,action,target_name,detail) values(uid,full_name,'owner.created',full_name,'First Owner provisioned');
   return jsonb_build_object('actor',public.onebite_account_json(uid),'mustChangePin',false,'state',public.onebite_access_snapshot(uid));
  end if;
@@ -125,9 +125,9 @@ begin
   action_name='pin.reset';detail='Temporary PIN set; all sessions revoked';
  else return jsonb_build_object('error','invalid_action');
  end if;
- update public.onebite_access_settings set revision=revision+1;
+ update public.onebite_access_settings set revision=revision+1 where id=true;
  insert into public.onebite_access_audit(actor_id,actor_name,action,target_name,detail) values(a.id,a.name,action_name,target_name,coalesce(detail,''));
  return jsonb_build_object('ok',true,'state',public.onebite_access_snapshot(a.id));
 end;
 $$;
-update public.onebite_access_settings set revision=revision+1;
+update public.onebite_access_settings set revision=revision+1 where id=true;

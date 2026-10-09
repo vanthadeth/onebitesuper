@@ -20,7 +20,7 @@ insert into public.onebite_role_permissions(role,permission)
  select r,p from unnest(array['Owner','Supervisor','Cashier'])r
  cross join lateral unnest(public.onebite_permission_ceiling(r))p
  where p like '%.access' on conflict do nothing;
-update public.onebite_access_settings set revision=revision+1;
+update public.onebite_access_settings set revision=revision+1 where id=true;
 create or replace function public.onebite_access_snapshot(p_actor uuid) returns jsonb language sql stable set search_path='' as $$
  select jsonb_build_object('version',1,'revision',(select revision from public.onebite_access_settings),'users',coalesce((select jsonb_agg(public.onebite_account_json(u.id) order by u.created_at) from public.onebite_users u where a.role='Owner' or u.id=a.id or (a.role='Supervisor' and public.onebite_has_permission(a.role,'staff.assign') and u.role='Cashier' and exists(select 1 from public.onebite_user_sites x join public.onebite_user_sites y on y.site_id=x.site_id where x.user_id=a.id and y.user_id=u.id))),'[]'::jsonb),'sites',coalesce((select jsonb_agg(jsonb_build_object('id',s.id,'name',s.name,'active',s.active) order by s.id) from public.onebite_sites s),'[]'::jsonb),'grants',(select jsonb_object_agg(r,coalesce((select jsonb_agg(p.permission order by p.permission) from public.onebite_role_permissions p where p.role=r),'[]'::jsonb)) from unnest(array['Owner','Supervisor','Cashier'])r),'events',case when a.role='Owner' then coalesce((select jsonb_agg(jsonb_build_object('id',e.id,'time',e.time,'actorId',e.actor_id,'actorName',e.actor_name,'action',e.action,'targetName',e.target_name,'detail',e.detail) order by e.time) from (select * from public.onebite_access_audit order by time desc limit 200)e),'[]'::jsonb) else '[]'::jsonb end) from public.onebite_users a where a.id=p_actor and a.active;
 $$;
@@ -40,7 +40,7 @@ begin
   insert into public.onebite_users(name,username,role) values(full_name,uname,'Owner') returning id into uid;
   insert into public.onebite_credentials(user_id,pin_hash) values(uid,extensions.crypt(pin,extensions.gen_salt('bf',12)));
   insert into public.onebite_sessions(token_hash,user_id) values(p_payload->>'new_session_hash',uid);
-  update public.onebite_access_settings set bootstrap_hash=null,bootstrap_used=true,revision=revision+1;
+  update public.onebite_access_settings set bootstrap_hash=null,bootstrap_used=true,revision=revision+1 where id=true;
   insert into public.onebite_access_audit(actor_id,actor_name,action,target_name,detail) values(uid,full_name,'owner.created',full_name,'First Owner provisioned');
   return jsonb_build_object('actor',public.onebite_account_json(uid),'mustChangePin',false,'state',public.onebite_access_snapshot(uid));
  end if;
@@ -147,7 +147,7 @@ begin
   action_name='pin.reset';detail='Temporary PIN set; all sessions revoked';
  else return jsonb_build_object('error','invalid_action');
  end if;
- update public.onebite_access_settings set revision=revision+1;
+ update public.onebite_access_settings set revision=revision+1 where id=true;
  insert into public.onebite_access_audit(actor_id,actor_name,action,target_name,detail) values(a.id,a.name,action_name,target_name,coalesce(detail,''));
  return jsonb_build_object('ok',true,'state',public.onebite_access_snapshot(a.id));
 end;

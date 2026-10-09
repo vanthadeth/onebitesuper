@@ -8,3 +8,5 @@ test-results/
 *.log
 artifacts/
 .secrets/
+
+supabase/.temp/
