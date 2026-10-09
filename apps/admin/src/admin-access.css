@@ -42,3 +42,8 @@
 .access-site-section-body[hidden]{display:none}
 .access-site-section-trigger:focus-visible{outline-offset:4px}
 @media(prefers-reduced-motion:reduce){.access-site-section-chevron{transition:none}}
+
+.access-hours-mode{display:flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.access-hours-mode .d-btn{flex:1;min-width:0;min-height:48px;height:auto;padding:10px 8px;white-space:normal;font-size:13px;line-height:1.5;border-radius:10px}
+.access-shared-hours .d-input{width:100%;min-width:0}
+.access-hours-mode .d-btn[aria-pressed=true]{color:var(--color-primary-content,#fff)}
