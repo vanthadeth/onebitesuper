@@ -59,3 +59,7 @@ Verification for this change: shared and gateway suites, TypeScript and both pro
 ## New staff form
 
 Creating a user requires an explicit Cashier or Supervisor selection; Owner is excluded from creation and rejected by the API. New accounts are always active and unassigned. Site assignment and status controls remain in the edit form. Temporary six-digit PINs are generated with browser cryptographic randomness, with regenerate/copy actions, and are not persisted by the local preview. The backend stores a bcrypt hash and requires a PIN change on first sign-in. Clipboard errors allow manual copying. `supabase/create-user-defaults.sql` updates the deployed RPC and canonical schema; its verification script rolls back every test fixture.
+
+## Users directory
+
+The Users page has an icon-only Create new user action, a search/status-filter row (active only, inactive only or all), and a separate role selector. The visible accounts are grouped by role and sorted by name with locale-aware comparison and username tie-breaking. Empty role groups are omitted. Selecting a row opens a read-only details sheet with name, username, role, status and assigned sites. Edit and PIN reset actions appear according to the existing permission rules; editing starts from the details sheet. All sixteen Admin phone/desktop checks passed, including combined filters, grouping/sorting, keyboard activation and scoped details/edit access.
