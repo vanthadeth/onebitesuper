@@ -39,3 +39,17 @@ test("accepted changes leave the previous snapshot untouched and identify the ac
  const s=initialAccessState();const n=saveAccount(s,"owner",{...s.users[2],name:"Updated"});
  assert.equal(s.users[2].name,"Sokha");assert.equal(s.events.length,0);assert.equal(n.events[0].actorId,"owner");assert.equal(n.events[0].action,"user.updated");
 });
+test("module denial blocks actions, retains grants and restores access when enabled",()=>{
+ const s=initialAccessState(),staff=s.users[1];
+ const n=saveGrants(s,"owner","Supervisor",s.grants.Supervisor.filter(p=>p!=="admin.access"&&p!=="pos.access"));
+ assert.ok(n.grants.Supervisor.includes("staff.assign"));
+ assert.ok(n.grants.Supervisor.includes("orders.create"));
+ assert.equal(can(n,staff,"staff.assign"),false);assert.equal(can(n,staff,"orders.create",0),false);
+ assert.deepEqual(visibleAccounts(n,staff).map(u=>u.id),[staff.id]);
+ assert.throws(()=>assignSites(n,staff.id,"sokha",[1]),error("forbidden"));
+ const restored=saveGrants(n,"owner","Supervisor",[...n.grants.Supervisor,"admin.access","pos.access"]);
+ assert.equal(can(restored,staff,"staff.assign",0),true);assert.equal(can(restored,staff,"orders.create",0),true);
+ const actionDenied=saveGrants(s,"owner","Supervisor",s.grants.Supervisor.filter(p=>p!=="staff.assign"));
+ assert.equal(can(actionDenied,staff,"admin.access"),true);assert.equal(can(actionDenied,staff,"staff.assign"),false);
+ assert.equal(can(s,s.users[2],"inventory.access"),false);
+});

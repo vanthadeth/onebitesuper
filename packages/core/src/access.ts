@@ -8,14 +8,21 @@ export type Account = {
   sites: number[];
   active: boolean;
 };
+export const moduleDefinitions = [
+  { id: "pos.access", group: "POS", km: "ប្រព័ន្ធលក់", en: "POS" },
+  { id: "attendance.access", group: "Attendance", km: "វត្តមាន", en: "Attendance" },
+  { id: "inventory.access", group: "Inventory", km: "ស្តុក", en: "Inventory" },
+  { id: "admin.access", group: "Admin", km: "រដ្ឋបាល", en: "Admin" },
+] as const;
 export const permissionDefinitions = [
+  ...moduleDefinitions,
   { id: "orders.create", group: "POS", km: "ទទួលការបញ្ជាទិញ", en: "Receive orders" },
   { id: "orders.discount", group: "POS", km: "បញ្ចុះតម្លៃក្នុងកម្រិត", en: "Apply allowed discounts" },
   { id: "orders.complimentary", group: "POS", km: "ផ្ដល់មុខម្ហូបឥតគិតថ្លៃ", en: "Use complimentary allowance" },
   { id: "orders.cancel_unpaid", group: "POS", km: "បោះបង់វិក្កយបត្រមិនទាន់បង់", en: "Cancel unpaid invoices" },
   { id: "orders.qr_reference", group: "POS", km: "បន្ថែមរូបយោង QR", en: "Attach QR references" },
-  { id: "shifts.manage", group: "Cash", km: "បើកវេន និងផ្ទេរប្រាក់", en: "Open shifts and hand over cash" },
-  { id: "cash.withdraw", group: "Cash", km: "ដក ឬប្រមូលប្រាក់", en: "Withdraw or collect cash" },
+  { id: "shifts.manage", group: "POS", km: "បើកវេន និងផ្ទេរប្រាក់", en: "Open shifts and hand over cash" },
+  { id: "cash.withdraw", group: "POS", km: "ដក ឬប្រមូលប្រាក់", en: "Withdraw or collect cash" },
   { id: "staff.assign", group: "Admin", km: "ចាត់បុគ្គលិកទៅសាខា", en: "Assign existing staff to sites" },
   { id: "users.manage", group: "Admin", km: "គ្រប់គ្រងគណនីបុគ្គលិក", en: "Manage user accounts" },
   { id: "roles.manage", group: "Admin", km: "គ្រប់គ្រងតួនាទី និងសិទ្ធិ", en: "Manage role permissions" },
@@ -32,10 +39,16 @@ export type AccessEvent = { id: string; time: string; actorId: string; actorName
 export type AccessState = { version: 1; users: Account[]; sites: AccessSite[]; grants: Grants; events: AccessEvent[] };
 const posPermissions: Permission[] = ["orders.create", "orders.discount", "orders.complimentary", "orders.cancel_unpaid", "orders.qr_reference", "shifts.manage"];
 export const ceilings: Grants = {
-  Cashier: [...posPermissions],
-  Supervisor: [...posPermissions, "cash.withdraw", "staff.assign"],
+  Cashier: ["pos.access", "attendance.access", "admin.access", ...posPermissions],
+  Supervisor: ["pos.access", "attendance.access", "inventory.access", "admin.access", ...posPermissions, "cash.withdraw", "staff.assign"],
   Owner: permissionDefinitions.filter(p=>p.group !== "Never").map(p=>p.id),
 };
+export function hasPermission(grants: Permission[], role: Role, permission: Permission): boolean {
+  const definition = permissionDefinitions.find(p=>p.id===permission);
+  if(!definition || definition.group==="Never" || !ceilings[role].includes(permission) || !grants.includes(permission)) return false;
+  const module = moduleDefinitions.find(m=>m.group===definition.group);
+  return Boolean(module && grants.includes(module.id) && ceilings[role].includes(module.id));
+}
 export function defaultGrants(): Grants { return structuredClone(ceilings); }
 export class AccessError extends Error {
   code: "forbidden" | "invalid_name" | "invalid_username" | "duplicate_username" | "invalid_site" | "site_required" | "last_owner" | "not_found" | "invalid_role" | "immutable_grant" | "permission_ceiling";
@@ -50,6 +63,7 @@ export function can(state: AccessState, actor: Account, permission: Permission, 
   // Actor permissions come from current persisted account, not a caller-supplied role.
   const current = state.users.find(u=>u.id===actor.id&&u.active);
   if(!current || !ceilings[current.role].includes(permission) || !state.grants[current.role].includes(permission)) return false;
+  if(!hasPermission(state.grants[current.role], current.role, permission)) return false;
   if(site===undefined) return true;
   return state.sites.some(s=>s.id===site&&s.active) && (current.role==="Owner"||current.sites.includes(site));
 }

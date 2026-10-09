@@ -6,9 +6,9 @@ Updated 9 October 2026. Project: `iizosglpofempyjvepyr`.
 
 Users, Roles, Permissions and account-change history are implemented in the Admin app. The local preview persists sample profiles and permission changes on this device, with a visible preview banner and role switcher. PIN reset and provisioning are unavailable in preview.
 
-Supabase requests recovered on 9 October 2026. The eight-table schema and `admin-access` Edge Function were deployed, and the Admin environment contains only the project URL and public publishable key. No Owner or staff accounts have been created. Database checks confirmed RLS on every app table, denied browser access to credentials/RPCs, rejected unauthenticated sessions and prohibited Owner refund permissions. A broader transaction verification request was cancelled and is not counted as passed. The cloud environment blocks direct requests to the project host; hosted GitHub checks verified real browser-to-API requests, first-Owner setup readiness and unauthorized request rejection on phone and desktop.
+Supabase requests recovered on 9 October 2026. The eight-table schema and `admin-access` Edge Function were deployed, and the Admin environment contains only the project URL and public publishable key. The first active Owner account (`owner`) has been created and its real sign-in verified. No staff accounts have been provisioned. Database checks confirmed RLS on every app table, denied browser access to credentials/RPCs, rejected unauthenticated sessions and prohibited Owner refund permissions. A broader transaction verification request was cancelled and is not counted as passed. The cloud environment blocks direct requests to the project host; hosted GitHub checks verified real browser-to-API requests, first-Owner setup readiness and unauthorized request rejection on phone and desktop.
 
-The app is committed to GitHub and hosted on Pages. Supabase connection work has resumed at the user’s request. The bootstrap code is stored privately in the ignored `.secrets/` directory; it is never bundled or committed.
+The app is committed to GitHub and hosted on Pages. Supabase connection work has resumed at the user’s request. The first-Owner setup code has been consumed; public signup remains unavailable.
 
 ## Access rules
 
@@ -32,7 +32,7 @@ Owner access is protected. At least one active Owner must remain. Active Cashier
 
 1. Completed: the hosted Admin app reaches the deployed Edge Function using the public project configuration.
 2. Finish live login, forced PIN change, reset/revocation, assignment scoping, stale revision and concurrent last-Owner checks. The repeatable SQL verification script requires an empty account database and rolls back sample records.
-3. Let the Owner choose their own username and PIN using the private first-Owner setup code. There is no default PIN or public signup.
+3. Completed: the Owner’s requested account was created with a bcrypt-hashed PIN; real login was verified.
 4. Review deployment settings before enabling real business operations. Vercel deployments need the same public Vite environment variables as the local Admin build; never use server keys in browser configuration.
 
 Security advisors now show only [RLS enabled without policies](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy) informational notices, expected for service-only tables. Public execution permissions on the existing RLS event-trigger function were revoked to resolve its warnings.
@@ -44,4 +44,14 @@ Admin account changes currently require online access. The later POS offline mil
 - Production builds and frontend TypeScript checks passed.
 - Eight Admin browser checks passed across phone and desktop: account creation/editing/persistence, duplicate usernames, audit history, last-Owner protection, role ceilings, scoped assignments, Cashier restrictions and Khmer viewport fit.
 - Shared access-rule tests and mocked Edge gateway tests passed. Gateway checks reject malformed sessions and public keys, strip client-supplied session hashes and keep server credentials out of responses.
-- Existing POS browser flows passed during regression checks. Live sign-in, concurrency and complete app-to-API checks remain pending.
+- Existing POS browser flows passed during regression checks. Real Owner sign-in and hosted API checks passed. Concurrency and full account lifecycle checks remain pending.
+
+## Module and action permissions
+
+Permissions are grouped into POS (including shifts and cash), Attendance, Inventory and Admin. Every action requires both its saved action grant and module access. Denying a module preserves action settings but blocks effective access; re-enabling restores those settings. Owner grants are protected. Current defaults preserve POS and personal Admin access; Attendance access is prepared for all roles and Inventory access for Supervisors/Owners. Attendance and Inventory actions will be defined as those modules are implemented. These settings do not imply that those apps or POS server enforcement are already operational.
+
+`supabase/module-permissions.sql` is the deployed incremental migration. The canonical schema includes matching rules. `supabase/module-permissions.verify.sql` tests module denial, action denial, scoped snapshot filtering, restoration and service-only execution using temporary fixtures, then rolls everything back. Live verification passed.
+
+The Admin UI uses Tailwind CSS with shadcn-style surfaces and shared Radix Select, Checkbox and Dialog primitives. Custom selects support keyboard navigation and type-ahead; dialogs trap focus and become bottom sheets on phones. Native text/PIN inputs retain mobile keyboards, autofill and password-manager support. The POS shares the new modal and receipt-discount controls. Dependencies are pinned with the npm lockfile.
+
+Verification for this change: shared and gateway suites, TypeScript and both production builds passed; 20 account/POS browser checks passed and the two added keyboard/focus checks passed after correcting their test expectations for Radix hidden form elements. The live transactional module/action verification passed without retaining test fixtures. Security advisors reported only the existing service-only RLS informational notices. CI now runs the browser regression suite.

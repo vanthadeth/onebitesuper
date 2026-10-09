@@ -73,53 +73,7 @@ export function useLocalState<T>(key: string, initial: () => T) {
   }
   return [value, save, storageError] as const;
 }
-export function Modal({
-  title,
-  children,
-  onClose,
-  wide = false,
-}: {
-  title: string;
-  children: ReactNode;
-  onClose: () => void;
-  wide?: boolean;
-}) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const closeRef = useRef(onClose);
-  closeRef.current = onClose;
-  useEffect(() => {
-    const dialog = ref.current;
-    dialog?.showModal();
-    const cancel = (event: Event) => {
-      event.preventDefault();
-      closeRef.current();
-    };
-    dialog?.addEventListener("cancel", cancel);
-    return () => {
-      dialog?.removeEventListener("cancel", cancel);
-      dialog?.close();
-    };
-  }, []);
-  return (
-    <dialog
-      className={`modal ${wide ? "wide" : ""}`}
-      ref={ref}
-      onClick={(event) => {
-        if (event.target === ref.current) onClose();
-      }}
-    >
-      <div className="modal-inner">
-        <header className="modal-heading">
-          <h2>{title}</h2>
-          <button className="icon-button" aria-label="Close" onClick={onClose}>
-            <X size={20} />
-          </button>
-        </header>
-        {children}
-      </div>
-    </dialog>
-  );
-}
+export { AppDialog as Modal } from "./controls";
 export function Quantity({
   value,
   onChange,

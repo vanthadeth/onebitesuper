@@ -1,3 +1,4 @@
+import { SelectField } from "@onebite/ui";
 import { useEffect, useState } from "react";
 import {
   ShoppingBag,
@@ -333,7 +334,7 @@ export function App() {
                 <Gift size={15} />
                 {t("បញ្ចុះតម្លៃវិក្កយបត្រ", "Receipt discount")}
               </span>
-              <select
+              <SelectField
                 aria-label="Receipt discount"
                 value={site.cart.receiptPercent}
                 onChange={(event) =>
@@ -351,7 +352,7 @@ export function App() {
                       {value}%
                     </option>
                   ))}
-              </select>
+              </SelectField>
             </div>
             <div className="summary-row">
               <span>{t("តម្លៃសរុបដើម", "Subtotal")}</span>
