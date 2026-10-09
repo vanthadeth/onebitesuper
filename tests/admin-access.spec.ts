@@ -9,8 +9,8 @@ test('Owner creates and edits accounts, prevents duplicates, preserves changes a
  await open(page);await expect(page.locator('.access-user-row')).toHaveCount(6);
  await page.getByRole('button',{name:'Create new user',exact:true}).click();const dialog=page.getByRole('dialog');
  await dialog.getByLabel('Full name').fill('Test Staff');await dialog.getByLabel('Username',{exact:true}).fill('sokha');
- await expect(dialog.getByRole('alert')).toContainText('already used');await expect(dialog.getByRole('button',{name:'Save changes'})).toBeDisabled();
- await dialog.getByLabel('Username',{exact:true}).fill('test.staff');await choose(page,'Role','Cashier');await dialog.getByRole('button',{name:'Save changes'}).click();
+ await expect(dialog.getByRole('alert')).toContainText('already used');await expect(dialog.getByRole('button',{name:'Create User',exact:true})).toBeDisabled();
+ await dialog.getByLabel('Username',{exact:true}).fill('test.staff');await choose(page,'Role','Cashier');await dialog.getByRole('button',{name:'Create User',exact:true}).click();
  await expect(page.locator('.access-user-row')).toHaveCount(7);await page.reload();await page.getByRole('button',{name:'Open local preview'}).click();
  await editUser(page,'Test Staff');await dialog.getByLabel('Account active',{exact:true}).uncheck();await dialog.getByRole('button',{name:'Save changes'}).click();
  await choose(page,'Filter status','inactive');await expect(page.locator('.access-user-row')).toHaveCount(1);await expect(page.locator('.access-user-row')).toContainText('Test Staff');
@@ -70,13 +70,19 @@ test('New user requires a staff role and offers generated, regenerated and copya
  await context.grantPermissions(['clipboard-read','clipboard-write'],{origin:'http://127.0.0.1:5174'});
  await open(page);await page.getByRole('button',{name:'Create new user',exact:true}).click();const dialog=page.getByRole('dialog');
  const pin=dialog.getByLabel('Temporary 6-digit PIN',{exact:true});const first=await pin.inputValue();expect(first).toMatch(/^[0-9]{6}$/);
+ const width=page.viewportSize()!.width;await page.setViewportSize({width,height:520});
+ const create=dialog.getByRole('button',{name:'Create User',exact:true});const before=await create.boundingBox();expect(before).not.toBeNull();expect(before!.y+before!.height).toBeLessThanOrEqual(520);
+ await dialog.locator('.modal-inner').evaluate(element=>{element.scrollTop=element.scrollHeight;});const after=await create.boundingBox();expect(after!.y).toBeCloseTo(before!.y,0);
+ const boxes=await Promise.all([pin,dialog.getByRole('button',{name:'Regenerate PIN',exact:true}),dialog.getByRole('button',{name:'Copy PIN',exact:true})].map(locator=>locator.boundingBox()));
+ expect(boxes[0]!.y+boxes[0]!.height/2).toBeCloseTo(boxes[1]!.y+boxes[1]!.height/2,0);expect(boxes[1]!.y+boxes[1]!.height/2).toBeCloseTo(boxes[2]!.y+boxes[2]!.height/2,0);
+
  await expect(dialog.getByLabel('Account active',{exact:true})).toHaveCount(0);await expect(dialog.getByText('Assigned sites',{exact:true})).toHaveCount(0);await expect(dialog.getByLabel('Confirm PIN')).toHaveCount(0);
  await dialog.getByLabel('Full name').fill('Generated PIN Staff');await dialog.getByLabel('Username',{exact:true}).fill('generated.pin.staff');
- await expect(dialog.getByRole('button',{name:'Save changes'})).toBeDisabled();await expect(dialog.getByLabel('Role',{exact:true})).toContainText('Select a role');
+ await expect(dialog.getByRole('button',{name:'Create User',exact:true})).toBeDisabled();await expect(dialog.getByLabel('Role',{exact:true})).toContainText('Select a role');
  await dialog.getByRole('button',{name:'Regenerate PIN'}).click();const next=await pin.inputValue();expect(next).toMatch(/^[0-9]{6}$/);expect(next).not.toBe(first);
  await dialog.getByRole('button',{name:'Copy PIN',exact:true}).click();await expect(dialog.getByRole('status')).toHaveText('PIN copied');expect(await page.evaluate(()=>navigator.clipboard.readText())).toBe(next);
  await dialog.getByLabel('Role',{exact:true}).click();await expect(page.getByRole('option',{name:'Owner',exact:true})).toHaveCount(0);await page.getByRole('option',{name:'Cashier',exact:true}).click();
- await dialog.getByRole('button',{name:'Save changes'}).click();const row=page.locator('.access-user-row').filter({hasText:'Generated PIN Staff'});await expect(row).toContainText('Active');await row.click();await expect(page.getByRole('dialog')).toContainText('No sites');
+ await dialog.getByRole('button',{name:'Create User',exact:true}).click();const row=page.locator('.access-user-row').filter({hasText:'Generated PIN Staff'});await expect(row).toContainText('Active');await row.click();await expect(page.getByRole('dialog')).toContainText('No sites');
 });
 
 test('Users are grouped and alphabetized; filters combine and user details open before editing',async({page})=>{

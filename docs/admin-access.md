@@ -63,3 +63,5 @@ Creating a user requires an explicit Cashier or Supervisor selection; Owner is e
 ## Users directory
 
 The Users page has an icon-only Create new user action, a search/status-filter row (active only, inactive only or all), and a separate role selector. The visible accounts are grouped by role and sorted by name with locale-aware comparison and username tie-breaking. Empty role groups are omitted. Selecting a row opens a read-only details sheet with name, username, role, status and assigned sites. Edit and PIN reset actions appear according to the existing permission rules; editing starts from the details sheet. All sixteen Admin phone/desktop checks passed, including combined filters, grouping/sorting, keyboard activation and scoped details/edit access.
+
+The creation sheet now keeps PIN, regenerate and copy controls in one row. Its icon + Create User action is in a non-scrolling dialog footer, outside the scrolling form body, with mobile safe-area padding. Editing retains its Save changes action. Browser checks cover the footer remaining visible and stationary on a short screen while the form scrolls, plus PIN actions and submission.
