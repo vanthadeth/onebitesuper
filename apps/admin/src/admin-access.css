@@ -47,3 +47,11 @@
 .access-hours-mode .d-btn{flex:1;min-width:0;min-height:48px;height:auto;padding:10px 8px;white-space:normal;font-size:13px;line-height:1.5;border-radius:10px}
 .access-shared-hours .d-input{width:100%;min-width:0}
 .access-hours-mode .d-btn[aria-pressed=true]{color:var(--color-primary-content,#fff)}
+
+.access-site-photo>img{width:100%;height:100%;object-fit:cover}
+.access-site-photo-preview{aspect-ratio:16/9;overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--soft)}
+.access-site-photo-preview>img{width:100%;height:100%;object-fit:cover}
+.access-site-photo-preview>div{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text-orange);font-size:13px}
+.access-site-photo-actions{display:flex;flex-wrap:wrap;gap:8px}.access-site-photo-actions>.access-btn{flex:1}
+.access-photo-spinner{animation:photo-spin 1s linear infinite}@keyframes photo-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.access-photo-spinner{animation:none}}

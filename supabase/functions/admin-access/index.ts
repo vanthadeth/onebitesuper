@@ -1,6 +1,6 @@
 // Internal username/PIN authentication. No Supabase Auth identity is assumed.
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS", "Cache-Control": "no-store" };
-const actions = new Set(["bootstrap.status","bootstrap","login","logout","me","pin.change","user.create","user.update","sites.assign","site.create","site.update","permissions.update","role.create","pin.reset"]);
+const actions = new Set(["bootstrap.status","bootstrap","login","logout","me","pin.change","user.create","user.update","sites.assign","site.create","site.update","site.photo.upload","permissions.update","role.create","pin.reset"]);
 const sha256 = async (value: string) => [...new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value)))].map(v=>v.toString(16).padStart(2,"0")).join("");
 const respond = (data: unknown, status = 200) => Response.json(data,{status,headers:cors});
 declare const Deno: { env: { get(key: string): string | undefined }; serve(handler: (request: Request)=>Promise<Response>): void };
@@ -9,10 +9,11 @@ Deno.serve(async req=>{
  if(req.method!=="POST")return respond({error:"method_not_allowed"},405);
  let requestAction='unknown';
  try{
-  const raw=await req.text();if(raw.length>16000)return respond({error:"payload_too_large"},413);
+  const raw=await req.text();if(raw.length>1000000)return respond({error:"payload_too_large"},413);
   const {action,payload={}}=JSON.parse(raw);
   if(typeof action!=="string"||!actions.has(action)||!payload||typeof payload!=="object"||Array.isArray(payload))return respond({error:"invalid_action"},400);
   requestAction=action;
+  if(action!=="site.photo.upload"&&raw.length>16000)return respond({error:"payload_too_large"},413);
   const suppliedKey=req.headers.get("apikey");
   const publicKeys=Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
   const allowedPublic=[Deno.env.get("SUPABASE_ANON_KEY"),...(publicKeys?Object.values(JSON.parse(publicKeys)):[])];
@@ -36,6 +37,19 @@ Deno.serve(async req=>{
   if(!serverKey)return respond({error:"server_configuration"},503);
   const headers:Record<string,string>={apikey:serverKey,"Content-Type":"application/json"};
   if(serverKey.startsWith("eyJ"))headers.Authorization=`Bearer ${serverKey}`;
+  if(action==='site.photo.upload'){
+   const authorization=await fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/rpc/onebite_access_api`,{method:'POST',headers,body:JSON.stringify({p_action:'site.photo.authorize',p_payload:{},p_session_hash:await sha256(token)})});
+   if(!authorization.ok)return respond({error:'photo_upload_failed'},502);
+   const authorized=await authorization.json();if(authorized.error)return respond({error:authorized.error},authorized.error==='unauthorized'?401:403);
+   if(!/^[a-f0-9-]{36}$/.test(authorized.actor?.id??''))return respond({error:'photo_upload_failed'},502);
+   if(typeof payload.image!=='string'||payload.image.length>950000||!payload.image.length||!/^[A-Za-z0-9+/]+={0,2}$/.test(payload.image))return respond({error:'invalid_photo'},400);
+   let bytes:Uint8Array;try{bytes=Uint8Array.from(atob(payload.image),c=>c.charCodeAt(0));}catch{return respond({error:'invalid_photo'},400);}
+   if(bytes.length>750000||bytes.length<4||bytes[0]!==255||bytes[1]!==216||bytes[bytes.length-2]!==255||bytes[bytes.length-1]!==217)return respond({error:'invalid_photo'},400);
+   const photoPath=`${authorized.actor.id}/${crypto.randomUUID()}.jpg`;
+   const stored=await fetch(`${Deno.env.get("SUPABASE_URL")}/storage/v1/object/site-photos/${photoPath}`,{method:'POST',headers:{...headers,'Content-Type':'image/jpeg','Cache-Control':'max-age=3600','x-upsert':'false'},body:bytes});
+   if(!stored.ok)return respond({error:'photo_upload_failed'},502);
+   return respond({photoPath});
+  }
   const response=await fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/rpc/onebite_access_api`,{method:"POST",headers,body:JSON.stringify({p_action:action,p_payload:payload,p_session_hash:token?await sha256(token):null})});
   if(!response.ok){
    let code='unknown';try{const failure=await response.json();if(typeof failure.code==='string'&&/^[A-Z0-9_]{1,32}$/.test(failure.code))code=failure.code;}catch{}

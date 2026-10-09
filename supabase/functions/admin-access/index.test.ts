@@ -23,3 +23,16 @@ test('RPC failure diagnostics contain only action, status and error code',async(
  globalThis.fetch=async()=>Response.json({code:'23505',message:'private username',details:'secret token'},{status:400});
  try{const response=await handler(request('user.update',{pin:'654321'},{Authorization:'Bearer '+ 'a'.repeat(64)}));assert.deepEqual(await response.json(),{error:'request_failed'});assert.deepEqual(JSON.parse(messages[0]),{event:'admin_rpc_failed',action:'user.update',status:400,code:'23505'});assert.equal(messages.join('').includes('654321'),false);assert.equal(messages.join('').includes('secret'),false);}finally{globalThis.fetch=previous;console.error=previousLog;}
 });
+const uploadRequest=(image:string,token='a'.repeat(64))=>request('site.photo.upload',{image},{Authorization:'Bearer '+token});
+test('site photos require authorization, validate image bytes and use server-only Storage credentials',async()=>{
+ const previous=globalThis.fetch;const actorId='11111111-1111-4111-8111-111111111111';let calls=0;
+ globalThis.fetch=async(url,init)=>{calls++;const headers=new Headers(init!.headers);assert.equal(headers.get('apikey'),'sb_secret_server_only');if(String(url).includes('/rpc/')){const rpc=JSON.parse(init!.body as string);assert.equal(rpc.p_action,'site.photo.authorize');assert.match(rpc.p_session_hash,/^[a-f0-9]{64}$/);return Response.json({actor:{id:actorId}});}assert.match(String(url),new RegExp('/storage/v1/object/site-photos/'+actorId+'/[a-f0-9-]{36}\\.jpg$'));assert.equal(headers.get('Content-Type'),'image/jpeg');assert.equal(headers.get('x-upsert'),'false');assert.deepEqual([...init!.body as Uint8Array],[255,216,255,217]);return Response.json({Key:'stored'});};
+ try{const response=await handler(uploadRequest('/9j/2Q=='));assert.equal(response.status,200);const data=await response.json();assert.match(data.photoPath,new RegExp('^'+actorId+'/[a-f0-9-]{36}\\.jpg$'));assert.equal(calls,2);assert.equal(JSON.stringify(data).includes('sb_secret'),false);}finally{globalThis.fetch=previous;}
+});
+test('denied photo permissions and invalid images never upload; Storage failures are retryable',async()=>{
+ const previous=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;return Response.json({error:'forbidden'});};
+ try{assert.equal((await handler(uploadRequest('/9j/2Q=='))).status,403);assert.equal(calls,1);calls=0;assert.equal((await handler(uploadRequest('/9j/2Q==','bad'))).status,401);assert.equal(calls,0);
+ globalThis.fetch=async(url)=>{if(String(url).includes('/rpc/'))return Response.json({actor:{id:'11111111-1111-4111-8111-111111111111'}});throw new Error('Invalid image reached Storage');};for(const image of ['cGxhaW4gdGV4dA==','<svg/>','!', 'A'.repeat(950001)])assert.equal((await handler(uploadRequest(image))).status,400);
+ globalThis.fetch=async(url)=>String(url).includes('/rpc/')?Response.json({actor:{id:'11111111-1111-4111-8111-111111111111'}}):Response.json({private:'details'},{status:500});const response=await handler(uploadRequest('/9j/2Q=='));assert.equal(response.status,502);assert.deepEqual(await response.json(),{error:'photo_upload_failed'});
+ }finally{globalThis.fetch=previous;}
+});

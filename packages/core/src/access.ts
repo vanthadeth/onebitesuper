@@ -36,10 +36,10 @@ export const permissionDefinitions = [
 export type Permission = (typeof permissionDefinitions)[number]["id"];
 export type Grants = Record<Role, Permission[]>;
 export type WorkingHours = { day: number; opens: string; closes: string };
-export type AccessSite = { id: number; name: string; active: boolean; location?: string; latitude?: number | null; longitude?: number | null; workingHours?: WorkingHours[]; remarks?: string; runningFrom?: string; shutdownOn?: string | null };
+export type AccessSite = { id: number; name: string; active: boolean; location?: string; photoPath?: string | null; latitude?: number | null; longitude?: number | null; workingHours?: WorkingHours[]; remarks?: string; runningFrom?: string; shutdownOn?: string | null };
 export type SiteDraft = AccessSite & { location: string; latitude: number | null; longitude: number | null; workingHours: WorkingHours[]; remarks: string; runningFrom: string; shutdownOn: string | null };
 export function todayInCambodia(): string { return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Phnom_Penh",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date()); }
-export function siteDraft(site?: AccessSite): SiteDraft { return {id:site?.id ?? -1,name:site?.name ?? "",active:site?.active ?? true,location:site?.location ?? "",latitude:site?.latitude ?? null,longitude:site?.longitude ?? null,workingHours:structuredClone(site?.workingHours ?? []),remarks:site?.remarks ?? "",runningFrom:site?.runningFrom ?? todayInCambodia(),shutdownOn:site?.shutdownOn ?? null}; }
+export function siteDraft(site?: AccessSite): SiteDraft { return {id:site?.id ?? -1,name:site?.name ?? "",active:site?.active ?? true,location:site?.location ?? "",photoPath:site?.photoPath ?? null,latitude:site?.latitude ?? null,longitude:site?.longitude ?? null,workingHours:structuredClone(site?.workingHours ?? []),remarks:site?.remarks ?? "",runningFrom:site?.runningFrom ?? todayInCambodia(),shutdownOn:site?.shutdownOn ?? null}; }
 export function normalizeSite(site: SiteDraft): SiteDraft {
  const name=site.name.trim(),location=site.location.trim(),remarks=site.remarks.trim();
  if(!name||name.length>100)throw new AccessError("invalid_name");
@@ -49,6 +49,7 @@ export function normalizeSite(site: SiteDraft): SiteDraft {
  if(!validDate(site.runningFrom)||(site.shutdownOn&&(!validDate(site.shutdownOn)||site.shutdownOn<site.runningFrom)))throw new AccessError("invalid_dates");
  const time=/^([01]\d|2[0-3]):[0-5]\d$/;
  if(site.workingHours.length>7||new Set(site.workingHours.map(h=>h.day)).size!==site.workingHours.length||site.workingHours.some(h=>!Number.isInteger(h.day)||h.day<0||h.day>6||!time.test(h.opens)||!time.test(h.closes)||h.opens===h.closes))throw new AccessError("invalid_hours");
+ if(site.photoPath&&!(/^[a-f0-9-]{36}\/[a-f0-9-]{36}\.jpg$/.test(site.photoPath)||(/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(site.photoPath)&&site.photoPath.length<=1000000)))throw new AccessError("invalid_photo");
  if(remarks.length>2000)throw new AccessError("invalid_remarks");
  return {...site,name,location,remarks,workingHours:[...site.workingHours].sort((a,b)=>a.day-b.day)};
 }
@@ -83,7 +84,7 @@ export function hasPermission(grants: Permission[], _role: Role, permission: Per
 }
 export function defaultGrants(): Grants { return structuredClone(ceilings); }
 export class AccessError extends Error {
-  code: "forbidden" | "invalid_name" | "invalid_username" | "duplicate_username" | "invalid_site" | "site_required" | "last_owner" | "not_found" | "invalid_role" | "immutable_grant" | "permission_ceiling" | "duplicate_role" | "invalid_description" | "invalid_location" | "invalid_coordinates" | "invalid_dates" | "invalid_hours" | "invalid_remarks" | "duplicate_site";
+  code: "forbidden" | "invalid_name" | "invalid_username" | "duplicate_username" | "invalid_site" | "site_required" | "last_owner" | "not_found" | "invalid_role" | "immutable_grant" | "permission_ceiling" | "duplicate_role" | "invalid_description" | "invalid_location" | "invalid_coordinates" | "invalid_dates" | "invalid_hours" | "invalid_remarks" | "invalid_photo" | "duplicate_site";
   constructor(code: AccessError["code"]) { super(code); this.code=code; }
 }
 export function getActor(state: AccessState, id: string): Account {
