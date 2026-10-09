@@ -83,3 +83,7 @@ The deployed Edge gateway now logs rejected actions and RPC status/error codes. 
 ### Shared save failure fix
 
 All Admin writes reached an unscoped settings revision update. Supabase's API connection rejected it with `UPDATE requires a WHERE clause`, while management SQL sessions lacked that safety preload and passed earlier checks. The deployed migration `require_settings_update_where` adds `WHERE id=true` to revision and bootstrap settings updates without disabling the API safety setting. Canonical and standalone deployment SQL include the same correction. Live transactional tests passed for staff creation, edits and assignments; fixtures rolled back and service-only execution privileges were preserved. Loading `safeupdate` directly into the management verification session is prohibited by the hosted library allowlist, so verification also checks the deployed function contains the constrained statements.
+
+### Separate site assignment
+
+User edit contains profile, role and active status fields. It preserves current assignments. User details offers a separate **Assign sites** action for Owners and authorized Supervisors managing Cashiers in their sites. The assignment sheet uses the existing `sites.assign` operation, preserves out-of-scope assignments, and requires an active site for active staff. Owner accounts use all sites and do not have an assignment action. Assignment save and stale-conflict recovery are independent of profile editing.
