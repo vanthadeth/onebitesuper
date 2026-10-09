@@ -15,3 +15,6 @@
 @media(max-width:420px){.ob-empty-state.ob-empty-state{padding:28px 18px;border-radius:20px}.ob-empty-actions{width:100%;flex-direction:column}.ob-empty-primary{width:100%}.ob-empty-state.ob-empty-state h3{font-size:16px}}
 
 .ob-page-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px}.ob-page-heading-copy{flex:1;min-width:0}.ob-page-heading h1{margin:0;color:var(--ink,#282825);font-size:30px;font-weight:600;line-height:1.25;letter-spacing:-.7px;overflow-wrap:anywhere}.ob-page-heading p{margin:1px 0 0;max-width:650px;color:var(--muted,#71717a);font-size:13px;line-height:1.5}.ob-page-heading-action{flex-shrink:0;display:flex;align-items:center;gap:8px}.ob-page-heading-action>.access-create-user{width:48px;height:48px;min-width:48px;padding:0}@media(max-width:680px){.ob-page-heading{gap:12px;margin-bottom:20px}.ob-page-heading h1{font-size:28px}}
+
+.access-new-label{display:none}
+@media(min-width:681px){.ob-page-heading-action>.access-create-user{width:auto;min-width:48px;padding:10px 16px}.access-new-label{display:inline}}
