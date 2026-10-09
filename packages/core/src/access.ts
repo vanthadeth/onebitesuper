@@ -70,14 +70,14 @@ export function can(state: AccessState, actor: Account, permission: Permission, 
 function event(state: AccessState, actor: Account, action: string, target: string, detail: string): AccessEvent[] {
   return [...state.events, {id: crypto.randomUUID(),time:new Date().toISOString(),actorId:actor.id,actorName:actor.name,action,targetName:target,detail}].slice(-200);
 }
-function normalize(account: Account, sites: AccessSite[]): Account {
+function normalize(account: Account, sites: AccessSite[], allowUnassigned = false): Account {
   if(!roles.includes(account.role))throw new AccessError("invalid_role");
   const name=account.name.trim(),username=account.username.trim().toLowerCase();
   if(!name || name.length>100)throw new AccessError("invalid_name");
   if(!/^[a-z0-9][a-z0-9_.-]{2,31}$/.test(username))throw new AccessError("invalid_username");
   const assigned=[...new Set(account.sites)].sort((a,b)=>a-b);
   if(assigned.some(id=>!sites.some(s=>s.id===id)))throw new AccessError("invalid_site");
-  if(account.active&&account.role!=="Owner"&&!assigned.some(id=>sites.some(s=>s.id===id&&s.active)))throw new AccessError("site_required");
+  if(account.active&&account.role!=="Owner"&&!(allowUnassigned&&assigned.length===0)&&!assigned.some(id=>sites.some(s=>s.id===id&&s.active)))throw new AccessError("site_required");
   return {...account,name,username,sites:assigned};
 }
 export function saveAccount(state: AccessState, actorId: string, account: Account, creating = false): AccessState {
@@ -85,7 +85,8 @@ export function saveAccount(state: AccessState, actorId: string, account: Accoun
   if(!can(state,actor,"users.manage"))throw new AccessError("forbidden");
   const existing=state.users.find(u=>u.id===account.id);
   if(creating ? Boolean(existing) : !existing)throw new AccessError("not_found");
-  const next=normalize(account,state.sites);
+  if(creating&&account.role==="Owner")throw new AccessError("invalid_role");
+  const next=normalize(creating?{...account,active:true,sites:[]}:account,state.sites,creating||existing?.sites.length===0);
   if(state.users.some(u=>u.id!==next.id&&u.username.toLowerCase()===next.username))throw new AccessError("duplicate_username");
   const users=creating?[...state.users,next]:state.users.map(u=>u.id===next.id?next:u);
   if(!users.some(u=>u.active&&u.role==="Owner"))throw new AccessError("last_owner");

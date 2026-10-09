@@ -8,7 +8,7 @@ test('Owner creates and edits accounts, prevents duplicates, preserves changes a
  await page.getByRole('button',{name:'Add user',exact:true}).click();const dialog=page.getByRole('dialog');
  await dialog.getByLabel('Full name').fill('Test Staff');await dialog.getByLabel('Username',{exact:true}).fill('sokha');
  await expect(dialog.getByRole('alert')).toContainText('already used');await expect(dialog.getByRole('button',{name:'Save changes'})).toBeDisabled();
- await dialog.getByLabel('Username',{exact:true}).fill('test.staff');await dialog.getByLabel('Riverside',{exact:true}).check();await dialog.getByRole('button',{name:'Save changes'}).click();
+ await dialog.getByLabel('Username',{exact:true}).fill('test.staff');await choose(page,'Role','Cashier');await dialog.getByRole('button',{name:'Save changes'}).click();
  await expect(page.locator('.access-user-row')).toHaveCount(7);await page.reload();await page.getByRole('button',{name:'Open local preview'}).click();
  await page.getByRole('button',{name:'Edit Test Staff',exact:true}).click();await dialog.getByLabel('Account active',{exact:true}).uncheck();await dialog.getByRole('button',{name:'Save changes'}).click();
  await choose(page,'Filter status','inactive');await expect(page.locator('.access-user-row')).toHaveCount(1);await expect(page.locator('.access-user-row')).toContainText('Test Staff');
@@ -54,7 +54,7 @@ test('Module denial blocks saved actions and Admin access; re-enabling preserves
 test('Custom menus support keyboard selection, Escape and modal focus restoration',async({page},info)=>{
  await open(page);await page.getByRole('button',{name:'Add user',exact:true}).click();const dialog=page.getByRole('dialog');
  const role=dialog.getByLabel('Role',{exact:true});await role.focus();await page.keyboard.press('Enter');
- await expect(page.getByRole('listbox')).toBeVisible();await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');
+ await expect(page.getByRole('listbox')).toBeVisible();await expect(page.getByRole('option',{name:'Cashier',exact:true})).toBeFocused();await page.keyboard.press('End');await expect(page.getByRole('option',{name:'Supervisor',exact:true})).toBeFocused();await page.keyboard.press('Enter');
  await expect(role).toContainText('Supervisor');
  await role.click();await page.keyboard.press('Escape');await expect(page.getByRole('listbox')).toHaveCount(0);await expect(dialog).toBeVisible();
  await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);
@@ -62,4 +62,17 @@ test('Custom menus support keyboard selection, Escape and modal focus restoratio
  await page.screenshot({path:`artifacts/admin-redesign-${info.project.name}.png`,fullPage:true});
  await tab(page,'Permissions');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:`artifacts/admin-permissions-${info.project.name}.png`,fullPage:true});
+});
+
+test('New user requires a staff role and offers generated, regenerated and copyable PINs',async({page,context})=>{
+ await context.grantPermissions(['clipboard-read','clipboard-write'],{origin:'http://127.0.0.1:5174'});
+ await open(page);await page.getByRole('button',{name:'Add user',exact:true}).click();const dialog=page.getByRole('dialog');
+ const pin=dialog.getByLabel('Temporary 6-digit PIN',{exact:true});const first=await pin.inputValue();expect(first).toMatch(/^[0-9]{6}$/);
+ await expect(dialog.getByLabel('Account active',{exact:true})).toHaveCount(0);await expect(dialog.getByText('Assigned sites',{exact:true})).toHaveCount(0);await expect(dialog.getByLabel('Confirm PIN')).toHaveCount(0);
+ await dialog.getByLabel('Full name').fill('Generated PIN Staff');await dialog.getByLabel('Username',{exact:true}).fill('generated.pin.staff');
+ await expect(dialog.getByRole('button',{name:'Save changes'})).toBeDisabled();await expect(dialog.getByLabel('Role',{exact:true})).toContainText('Select a role');
+ await dialog.getByRole('button',{name:'Regenerate PIN'}).click();const next=await pin.inputValue();expect(next).toMatch(/^[0-9]{6}$/);expect(next).not.toBe(first);
+ await dialog.getByRole('button',{name:'Copy PIN',exact:true}).click();await expect(dialog.getByRole('status')).toHaveText('PIN copied');expect(await page.evaluate(()=>navigator.clipboard.readText())).toBe(next);
+ await dialog.getByLabel('Role',{exact:true}).click();await expect(page.getByRole('option',{name:'Owner',exact:true})).toHaveCount(0);await page.getByRole('option',{name:'Cashier',exact:true}).click();
+ await dialog.getByRole('button',{name:'Save changes'}).click();const row=page.locator('.access-user-row').filter({hasText:'Generated PIN Staff'});await expect(row).toContainText('Active');await expect(row).toContainText('No sites');
 });

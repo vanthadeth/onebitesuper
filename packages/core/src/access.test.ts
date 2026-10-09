@@ -12,7 +12,7 @@ test("last active Owner and assigned active-site requirement are protected",()=>
  const s=initialAccessState();assert.throws(()=>saveAccount(s,"owner",{...s.users[0],active:false}),error("last_owner"));
  assert.throws(()=>saveAccount(s,"owner",{...s.users[0],role:"Cashier",sites:[0]}),error("last_owner"));
  assert.throws(()=>saveAccount(s,"owner",{...s.users[2],sites:[]}),error("site_required"));
- const n=saveAccount(s,"owner",{...s.users[0],id:"owner2",username:"owner.two"},true);assert.equal(saveAccount(n,"owner",{...n.users[0],active:false}).users[0].active,false);
+ const n=saveAccount(s,"owner",{...s.users[2],role:"Owner",sites:[]});assert.equal(saveAccount(n,"owner",{...n.users[0],active:false}).users[0].active,false);
 });
 test("Supervisor can change managed assignments while preserving outside-site assignments",()=>{
  const s=initialAccessState(),target=s.users.find(u=>u.id==="srey")!;
@@ -52,4 +52,13 @@ test("module denial blocks actions, retains grants and restores access when enab
  const actionDenied=saveGrants(s,"owner","Supervisor",s.grants.Supervisor.filter(p=>p!=="staff.assign"));
  assert.equal(can(actionDenied,staff,"admin.access"),true);assert.equal(can(actionDenied,staff,"staff.assign"),false);
  assert.equal(can(s,s.users[2],"inventory.access"),false);
+});
+
+test("new staff defaults active and unassigned, rejects Owner creation and keeps site operations scoped",()=>{
+ const s=initialAccessState();const staff={...s.users[2],id:"new-staff",username:"new.staff",active:false,sites:[1]};
+ const n=saveAccount(s,"owner",staff,true);const created=n.users.at(-1)!;
+ assert.equal(created.active,true);assert.deepEqual(created.sites,[]);assert.equal(can(n,created,"orders.create",0),false);
+ const renamed=saveAccount(n,"owner",{...created,name:"Updated Staff"});assert.equal(renamed.users.at(-1)!.name,"Updated Staff");
+ const assigned=assignSites(renamed,"owner",created.id,[0]);assert.equal(can(assigned,created,"orders.create",0),true);
+ assert.throws(()=>saveAccount(s,"owner",{...staff,role:"Owner"},true),error("invalid_role"));
 });

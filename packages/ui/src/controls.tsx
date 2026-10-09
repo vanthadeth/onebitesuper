@@ -7,10 +7,10 @@ import { Check, ChevronDown, ChevronUp, X } from 'lucide-react';
 // Native inputs retain mobile keyboards and password-manager support. Menus,
 // check controls and dialogs use Radix primitives rather than browser widgets.
 type Option = {value:string|number; children:ReactNode; disabled?:boolean};
-export function SelectField({value,onChange,children,className='',...props}:{value:string|number;onChange:(event:{target:{value:string}})=>void;children:ReactNode;className?:string;disabled?:boolean;'aria-label'?:string;id?:string}) {
+export function SelectField({value,onChange,children,className='',placeholder,...props}:{value:string|number;onChange:(event:{target:{value:string}})=>void;children:ReactNode;className?:string;placeholder?:string;disabled?:boolean;'aria-label'?:string;id?:string}) {
  const options=Children.toArray(children).filter(isValidElement).map(child=>(child as ReactElement<Option>).props);
  return <Select.Root value={String(value)} onValueChange={value=>onChange({target:{value}})} disabled={props.disabled}>
-  <Select.Trigger {...props} className={`ob-select ${className}`}><Select.Value/><Select.Icon><ChevronDown size={16}/></Select.Icon></Select.Trigger>
+  <Select.Trigger {...props} className={`ob-select ${className}`}><Select.Value placeholder={placeholder}/><Select.Icon><ChevronDown size={16}/></Select.Icon></Select.Trigger>
   <Select.Portal><Select.Content className="ob-select-menu" position="popper" sideOffset={6} collisionPadding={12}><Select.ScrollUpButton className="ob-select-scroll"><ChevronUp size={16}/></Select.ScrollUpButton><Select.Viewport>{options.map(option=><Select.Item key={option.value} value={String(option.value)} data-value={String(option.value)} disabled={option.disabled} className="ob-select-option"><Select.ItemText>{option.children}</Select.ItemText><Select.ItemIndicator><Check size={16}/></Select.ItemIndicator></Select.Item>)}</Select.Viewport><Select.ScrollDownButton className="ob-select-scroll"><ChevronDown size={16}/></Select.ScrollDownButton></Select.Content></Select.Portal>
  </Select.Root>;
 }

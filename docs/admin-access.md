@@ -18,7 +18,7 @@ The app is committed to GitHub and hosted on Pages. Supabase connection work has
 | Supervisor | Own profile and Cashiers at managed sites; can change existing staff assignments within those sites, preserving outside assignments |
 | Owner | Manage accounts, status, site assignments and role permissions; reset PINs |
 
-Owner access is protected. At least one active Owner must remain. Active Cashiers and Supervisors require an active site. Usernames are normalized and unique across all accounts, including inactive ones. Owner may reduce Cashier/Supervisor grants, never exceed their role ceilings. Refunds, cancellation of paid invoices and discount-limit overrides are forbidden for every role.
+Owner access is protected. At least one active Owner must remain. New Cashiers and Supervisors start active with no assigned sites. Site operations remain restricted to assigned active sites; once assigned, removing every active site is blocked while the account remains active. Usernames are normalized and unique across all accounts, including inactive ones. Owner may reduce Cashier/Supervisor grants, never exceed their role ceilings. Refunds, cancellation of paid invoices and discount-limit overrides are forbidden for every role.
 
 ## Prepared backend
 
@@ -55,3 +55,7 @@ Permissions are grouped into POS (including shifts and cash), Attendance, Invent
 The Admin UI uses Tailwind CSS with shadcn-style surfaces and shared Radix Select, Checkbox and Dialog primitives. Custom selects support keyboard navigation and type-ahead; dialogs trap focus and become bottom sheets on phones. Native text/PIN inputs retain mobile keyboards, autofill and password-manager support. The POS shares the new modal and receipt-discount controls. Dependencies are pinned with the npm lockfile.
 
 Verification for this change: shared and gateway suites, TypeScript and both production builds passed; 20 account/POS browser checks passed and the two added keyboard/focus checks passed after correcting their test expectations for Radix hidden form elements. The live transactional module/action verification passed without retaining test fixtures. Security advisors reported only the existing service-only RLS informational notices. CI now runs the browser regression suite.
+
+## New staff form
+
+Creating a user requires an explicit Cashier or Supervisor selection; Owner is excluded from creation and rejected by the API. New accounts are always active and unassigned. Site assignment and status controls remain in the edit form. Temporary six-digit PINs are generated with browser cryptographic randomness, with regenerate/copy actions, and are not persisted by the local preview. The backend stores a bcrypt hash and requires a PIN change on first sign-in. Clipboard errors allow manual copying. `supabase/create-user-defaults.sql` updates the deployed RPC and canonical schema; its verification script rolls back every test fixture.
