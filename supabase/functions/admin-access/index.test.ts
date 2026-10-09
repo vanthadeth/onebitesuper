@@ -18,3 +18,8 @@ test('invalid publishable keys and malformed setup codes cannot provision an Own
  assert.equal((await handler(request('bootstrap.status',{}, {apikey:'unknown'}))).status,401);
  assert.equal((await handler(request('bootstrap',{setup_code:'guess'}))).status,400);
 });
+test('RPC failure diagnostics contain only action, status and error code',async()=>{
+ const previous=globalThis.fetch,previousLog=console.error;const messages:string[]=[];console.error=(message:string)=>messages.push(message);
+ globalThis.fetch=async()=>Response.json({code:'23505',message:'private username',details:'secret token'},{status:400});
+ try{const response=await handler(request('user.update',{pin:'654321'},{Authorization:'Bearer '+ 'a'.repeat(64)}));assert.deepEqual(await response.json(),{error:'request_failed'});assert.deepEqual(JSON.parse(messages[0]),{event:'admin_rpc_failed',action:'user.update',status:400,code:'23505'});assert.equal(messages.join('').includes('654321'),false);assert.equal(messages.join('').includes('secret'),false);}finally{globalThis.fetch=previous;console.error=previousLog;}
+});

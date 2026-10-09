@@ -37,3 +37,4 @@ body{background:#f6f7f9;line-height:1.7;color:var(--ink)}
 [data-theme=dark] .access-btn:disabled{background:#34343c;border-color:#34343c;color:#9999a6}
 [data-theme=dark] .access-toast{background:#e9e9ef;color:#202124}
 [data-theme=dark] .access-auth::before{color:var(--text-orange)}
+.access-form .access-error:has(.access-btn),.modal-inner>.access-error:has(.access-btn){display:flex;flex-direction:column;align-items:stretch}

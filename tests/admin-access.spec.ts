@@ -127,3 +127,17 @@ test('Live sync tracks in-flight changes, failures and successful refresh',async
  fail=true;await dialog.getByRole('button',{name:'Create User',exact:true}).click();await expect(sync.locator('.ob-sync-count')).toHaveText('1');await expect(sync).toHaveAttribute('data-state','syncing');release();await expect(sync).toHaveAttribute('data-state','failed');await expect(sync.locator('.ob-sync-count')).toHaveCount(0);await expect(dialog.getByRole('alert')).toBeVisible();await expect(dialog.getByLabel('Username',{exact:true})).toHaveValue('sync.tester');
  await page.keyboard.press('Escape');fail=false;hold=false;await sync.click();await expect(sync).toHaveAttribute('data-state','complete');
 });
+
+for(const conflict of [false,true])test(`Stale user save ${conflict?'preserves draft and reloads a changed record':'refreshes unrelated changes and retries once'}`,async({page})=>{
+ const {initialAccessState}=await import('../packages/core/src/access');const original={...initialAccessState(),revision:1};const latest=structuredClone(original);latest.revision=2;if(conflict)latest.users.find(user=>user.id==='owner')!.name='New server name';else latest.users.find(user=>user.id==='sokha')!.name='Changed elsewhere';
+ let reads=0;const writes:Array<Record<string,unknown>>=[];
+ await page.addInitScript(()=>sessionStorage.setItem('onebite-admin-session','a'.repeat(64)));
+ await page.route('**/functions/v1/admin-access',async route=>{
+  const {action,payload}=route.request().postDataJSON();if(action==='me'){const state=++reads===1?original:latest;await route.fulfill({json:{state,actor:state.users.find(user=>user.id==='owner')}});return;}
+  writes.push(payload);if(writes.length===1){await route.fulfill({status:409,json:{error:'stale_revision'}});return;}
+  const updated=structuredClone(latest);Object.assign(updated.users.find(user=>user.id==='owner')!,payload);updated.revision=3;await route.fulfill({json:{state:updated,ok:true}});
+ });
+ await page.goto('http://127.0.0.1:5174');await editUser(page,'Dara');const dialog=page.getByRole('dialog');await dialog.getByLabel('Full name').fill('My draft');await dialog.getByRole('button',{name:'Save changes',exact:true}).click();
+ if(conflict){await expect(dialog.getByRole('alert')).toContainText('Data changed');await expect(dialog.getByLabel('Full name')).toHaveValue('My draft');expect(writes).toHaveLength(1);await dialog.getByRole('button',{name:'Reload latest · Discard this draft',exact:true}).click();await expect(dialog.getByLabel('Full name')).toHaveValue('New server name');await dialog.getByLabel('Full name').fill('Reviewed draft');await dialog.getByRole('button',{name:'Save changes',exact:true}).click();}
+ await expect(dialog).toHaveCount(0);expect(writes).toHaveLength(2);expect(writes.map(write=>write.revision)).toEqual([1,2]);await expect(page.locator('.access-user-row').filter({hasText:conflict?'Reviewed draft':'My draft'})).toBeVisible();await expect(page.locator('.ob-sync')).toHaveAttribute('data-state','complete');
+});

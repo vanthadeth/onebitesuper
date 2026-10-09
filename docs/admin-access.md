@@ -71,3 +71,11 @@ The creation sheet now keeps PIN, regenerate and copy controls in one row. Its i
 The shared title bar shows the icon-only brand mark, single-line “OneBite - Admin” title, borderless sync control and profile badge. The Radix profile menu opens the signed-in user's details and provides Khmer/English, persisted light/dark appearance, and sign out.
 
 Admin writes save online immediately. The number centered inside the sync icon counts the live save currently in flight (one at a time), then returns to zero when the request settles. The icon rotates while saving or refreshing, turns green with a central check after success, and red with a central alert after failure. A failed edit stays in its form for retry; there is no background offline queue. Pressing sync refreshes the server snapshot. Local preview remains local and does not claim successful server synchronization.
+
+### Save conflict recovery
+
+A stale global revision no longer blocks edits to unchanged records: Admin refreshes the snapshot and retries once with the current revision. User creation still runs the server's duplicate-name and permission checks. User/site edits and permission changes retry only if their target matches the original snapshot. Changes to the same record keep the draft open and offer **Reload latest · Discard this draft** inside the dialog for explicit review. Credential resets are never automatically retried. Network errors remain errors and are not replayed automatically.
+
+Live database checks verified Owner saves and staff creation/editing/assignment with every change rolled back. These checks did not reproduce the user's unspecified save error; the confirmed stale-revision recovery defect is covered by browser regression checks.
+
+The deployed Edge gateway now logs rejected actions and RPC status/error codes. Logs exclude submitted profiles, PINs, session tokens, database error details and server keys. HTTP 400 save failures still need their specific error message or a new logged request to establish the cause.
