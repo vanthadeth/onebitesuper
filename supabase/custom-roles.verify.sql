@@ -32,7 +32,7 @@ begin
  if r ? 'error' or public.onebite_has_permission('Owner','orders.discount') then raise exception 'Owner configuration failed';end if;
  if not exists(select 1 from public.onebite_sessions where token_hash=token) then raise exception 'Owner session lost';end if;
  select coalesce(jsonb_agg(permission),'[]'::jsonb) into grants from public.onebite_role_permissions where role='Cashier';
- r:=public.onebite_access_api('permissions.update',jsonb_build_object('role','Cashier','permissions',grants||jsonb_build_array('users.manage'),'revision',(select revision from public.onebite_access_settings)),token);
+ r:=public.onebite_access_api('permissions.update',jsonb_build_object('role','Cashier','permissions',grants||jsonb_build_array('admin.access','users.manage'),'revision',(select revision from public.onebite_access_settings)),token);
  if r ? 'error' or not public.onebite_has_permission('Cashier','users.manage') then raise exception 'Role ceiling still restricts Owner';end if;
  if has_table_privilege('anon','public.onebite_roles','select') or has_function_privilege('anon','public.onebite_access_api(text,jsonb,text)','execute') then raise exception 'Public role access exposed';end if;
 end $$;
