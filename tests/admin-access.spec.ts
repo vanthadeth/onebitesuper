@@ -5,7 +5,13 @@ async function choose(page:Page,label:string,value:string){await page.getByLabel
 async function viewUser(page:Page,name:string){await page.locator('.access-user-row').filter({hasText:name}).click();await expect(page.getByRole('dialog').getByRole('heading',{name:'User details',exact:true})).toBeVisible();}
 async function editUser(page:Page,name:string){await viewUser(page,name);await page.getByRole('dialog').getByRole('button',{name:'Edit',exact:true}).click();}
 async function reviewRole(page:Page,role:string){const row=page.locator('.access-role-row').filter({has:page.getByRole('heading',{name:role,exact:true})});const review=row.getByRole('button',{name:'Review permissions',exact:true});if(!await review.isVisible())await row.getByRole('button',{name:role,exact:true}).click();await row.getByRole('button',{name:'Review permissions',exact:true}).click();}
-async function tab(page:Page,name:string){await expect(page.locator('.access-main')).toBeVisible();if(page.viewportSize()!.width<=680){await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));await expect(page.locator('.access-bottom-nav')).not.toHaveClass(/is-scroll-hidden/);await expect(page.locator('.access-bottom-nav')).not.toHaveAttribute('inert','');}let target=page.getByRole('button',{name,exact:true}).filter({visible:true});if(!await target.count()){await page.evaluate(()=>window.scrollTo(0,0));await page.locator('.access-bottom-nav').getByRole('button',{name:'Hub',exact:true}).click();target=page.locator('.access-hub-grid').getByRole('button',{name,exact:true});}await target.click();}
+async function tab(page:Page,name:string){
+ await expect(page.locator('.access-main')).toBeVisible();
+ if(page.viewportSize()!.width>680){await page.locator('.access-sidebar nav').getByRole('button',{name,exact:true}).click();return;}
+ await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));const nav=page.locator('.access-bottom-nav');await expect(nav).not.toHaveClass(/is-scroll-hidden/);await expect(nav).not.toHaveAttribute('inert','');
+ if(['App settings','Activity'].includes(name)){await nav.getByRole('button',{name:'Hub',exact:true}).click();await page.locator('.access-hub-grid').getByRole('button',{name,exact:true}).click();}
+ else await nav.getByRole('button',{name,exact:true}).click();
+}
 test('Owner creates and edits accounts, prevents duplicates, preserves changes and audits them',async({page})=>{
  await open(page);await expect(page.locator('.access-user-row')).toHaveCount(6);
  await page.getByRole('button',{name:'Create new user',exact:true}).click();const dialog=page.getByRole('dialog');
