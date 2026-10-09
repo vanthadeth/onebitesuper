@@ -28,4 +28,4 @@ Local Pages preview: `http://127.0.0.1:5185/onebitesuper/`. The local server ret
 
 If GitHub refuses automatic Pages enablement, open repository Settings → Pages and select **GitHub Actions** as the build source, then rerun the Pages workflow. Private repositories may require a GitHub plan that supports Pages. Do not change repository visibility to resolve hosting restrictions without the Owner's instruction.
 
-Status: Pages is live; local and hosted phone/desktop preview checks passed. A new deployment will verify the added Supabase connection.
+Status: Pages is live. Four hosted phone/desktop checks passed, covering preview/offline behavior and real Admin-to-Supabase connectivity with unauthorized requests rejected. The first Owner still needs to choose their username and PIN.

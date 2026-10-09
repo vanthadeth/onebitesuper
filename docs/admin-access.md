@@ -6,7 +6,7 @@ Updated 9 October 2026. Project: `iizosglpofempyjvepyr`.
 
 Users, Roles, Permissions and account-change history are implemented in the Admin app. The local preview persists sample profiles and permission changes on this device, with a visible preview banner and role switcher. PIN reset and provisioning are unavailable in preview.
 
-Supabase requests recovered on 9 October 2026. The eight-table schema and `admin-access` Edge Function were deployed, and the Admin environment contains only the project URL and public publishable key. No Owner or staff accounts have been created. Database checks confirmed RLS on every app table, denied browser access to credentials/RPCs, rejected unauthenticated sessions and prohibited Owner refund permissions. A broader transaction verification request was cancelled and is not counted as passed. The cloud environment blocks direct requests to the project host; app-to-API checks run from GitHub’s hosted verification job.
+Supabase requests recovered on 9 October 2026. The eight-table schema and `admin-access` Edge Function were deployed, and the Admin environment contains only the project URL and public publishable key. No Owner or staff accounts have been created. Database checks confirmed RLS on every app table, denied browser access to credentials/RPCs, rejected unauthenticated sessions and prohibited Owner refund permissions. A broader transaction verification request was cancelled and is not counted as passed. The cloud environment blocks direct requests to the project host; hosted GitHub checks verified real browser-to-API requests, first-Owner setup readiness and unauthorized request rejection on phone and desktop.
 
 The app is committed to GitHub and hosted on Pages. Supabase connection work has resumed at the user’s request. The bootstrap code is stored privately in the ignored `.secrets/` directory; it is never bundled or committed.
 
@@ -30,7 +30,7 @@ Owner access is protected. At least one active Owner must remain. Active Cashier
 
 ## Connection work remaining after GitHub commit
 
-1. Allow `iizosglpofempyjvepyr.supabase.co` in the cloud environment’s network hosts, then verify the deployed Edge Function accepts app requests.
+1. Completed: the hosted Admin app reaches the deployed Edge Function using the public project configuration.
 2. Finish live login, forced PIN change, reset/revocation, assignment scoping, stale revision and concurrent last-Owner checks. The repeatable SQL verification script requires an empty account database and rolls back sample records.
 3. Let the Owner choose their own username and PIN using the private first-Owner setup code. There is no default PIN or public signup.
 4. Review deployment settings before enabling real business operations. Vercel deployments need the same public Vite environment variables as the local Admin build; never use server keys in browser configuration.

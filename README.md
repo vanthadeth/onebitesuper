@@ -29,7 +29,7 @@ Interactive sample POS includes menu modifiers, per-quantity discounts, hard ite
 
 Admin now focuses on Users, Roles and Permissions: account editing, status and site assignments, permission limits, last-Owner protection and an activity history. Khmer is the default language, with English available, original OneBite logos and Google Sans. Choose **Open local preview** to explore sample accounts and switch preview roles.
 
-The Supabase schema and internal username/PIN Edge Function are deployed. Database permission checks passed, but live sign-in and app-to-API checks remain pending because the cloud environment denies the project host. No real accounts have been created. Supabase work is paused until the GitHub build/commit step is complete. The earlier menu/site configuration UI remains in source for subsequent steps and is not the current Admin entry point.
+The Supabase schema and internal username/PIN Edge Function are deployed. Database permission and hosted app-to-API checks passed. The Admin app connects to Supabase and is ready for first-Owner setup. No real accounts have been created; complete live sign-in and account-mutation checks remain pending until the Owner provisions their account. The earlier menu/site configuration UI remains in source for subsequent steps and is not the current Admin entry point.
 
 Browser-local preview records are scoped to each app origin; Admin changes do not update POS. POS identity, two-party cash verification, device exclusivity and cross-device synchronization remain preview behavior. Do not use these previews for real business records.
 
