@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {initialAccessState,saveAccount,assignSites,saveGrants,can,visibleAccounts,AccessError} from "./access.ts";
+import {initialAccessState,saveAccount,assignSites,saveGrants,can,visibleAccounts,AccessError,createRole,roleIds} from "./access.ts";
 const error=(code:string)=>(e:unknown)=>e instanceof AccessError&&e.code===code;
 test("usernames are normalized and unique across inactive and active accounts",()=>{
  const s=initialAccessState();const a={...s.users[2],id:"new",name:"  New User  ",username:" New.User ",sites:[1]};
@@ -22,8 +22,8 @@ test("Supervisor can change managed assignments while preserving outside-site as
  assert.throws(()=>assignSites(s,"supervisor","owner",[0]),error("forbidden"));
  assert.throws(()=>saveAccount(s,"supervisor",{...target,role:"Owner"}),error("forbidden"));
 });
-test("permissions cannot exceed role ceilings or alter the protected Owner grant set",()=>{
- const s=initialAccessState();assert.throws(()=>saveGrants(s,"owner","Cashier",["users.manage"]),error("permission_ceiling"));
+test("Owners configure available permissions while protecting recovery and business rules",()=>{
+ const s=initialAccessState();const expanded=saveGrants(s,"owner","Cashier",["admin.access","users.manage"]);assert.equal(can(expanded,expanded.users[2],"users.manage"),true);assert.throws(()=>saveGrants(s,"owner","Cashier",["inventory.access"]),error("permission_ceiling"));
  assert.throws(()=>saveGrants(s,"owner","Owner",[]),error("immutable_grant"));
  const n=saveGrants(s,"owner","Supervisor",[]);assert.throws(()=>assignSites(n,"supervisor","srey",[0,1,2]),error("forbidden"));
  for(const u of s.users){assert.equal(can(s,u,"orders.override"),false);assert.equal(can(s,u,"orders.refund"),false);}
@@ -61,4 +61,13 @@ test("new staff defaults active and unassigned, rejects Owner creation and keeps
  const renamed=saveAccount(n,"owner",{...created,name:"Updated Staff"});assert.equal(renamed.users.at(-1)!.name,"Updated Staff");
  const assigned=assignSites(renamed,"owner",created.id,[0]);assert.equal(can(assigned,created,"orders.create",0),true);
  assert.throws(()=>saveAccount(s,"owner",{...staff,role:"Owner"},true),error("invalid_role"));
+});
+
+test("custom roles persist grants, reject duplicates and unknown roles, and retain site scope",()=>{
+ const s=initialAccessState(),role={id:"role_"+crypto.randomUUID(),name:"Shift Lead",description:"Help the team"};
+ const n=createRole(s,"owner",role,["admin.access","users.manage","pos.access","orders.create"]);assert.ok(roleIds(n).includes(role.id));assert.equal(s.customRoles,undefined);
+ assert.throws(()=>createRole(n,"owner",{...role,id:"role_"+crypto.randomUUID(),name:" shift lead "},[]),error("duplicate_role"));assert.throws(()=>createRole(s,"sokha",role,[]),error("forbidden"));assert.throws(()=>createRole(s,"owner",role,["orders.refund"]),error("permission_ceiling"));
+ const assigned=saveAccount(n,"owner",{...n.users[2],role:role.id});assert.equal(can(assigned,assigned.users[2],"users.manage"),true);assert.equal(can(assigned,assigned.users[2],"orders.create",1),false);assert.equal(can(assigned,assigned.users[2],"orders.create",0),true);
+ assert.throws(()=>saveAccount(assigned,"sokha",{...assigned.users[0],name:"Hijacked"}),error("forbidden"));assert.throws(()=>saveAccount(n,"owner",{...n.users[2],role:"missing"}),error("invalid_role"));
+ const ownerChanged=saveGrants(n,"owner","Owner",n.grants.Owner.filter(p=>p!=="orders.discount"));assert.equal(can(ownerChanged,ownerChanged.users[0],"orders.discount"),false);assert.equal(can(ownerChanged,ownerChanged.users[0],"roles.manage"),true);
 });

@@ -1,0 +1,40 @@
+-- Exercises the actual RPC and rolls back every fixture and policy change.
+begin;
+do $$
+declare owner_id uuid; staff_id uuid; r jsonb; rid text:='role_'||gen_random_uuid(); token text:=repeat('f',64); staff_token text:=repeat('e',64); grants jsonb;
+begin
+ select id into owner_id from public.onebite_users where role='Owner' and active limit 1;
+ if owner_id is null then raise exception 'An active Owner is required';end if;
+ insert into public.onebite_sessions(token_hash,user_id) values(token,owner_id);
+ r:=public.onebite_access_api('role.create',jsonb_build_object('id',rid,'name','Verification Custom Lead','description','Transaction-only role','permissions',jsonb_build_array('admin.access','users.manage','pos.access','orders.create'),'revision',(select revision from public.onebite_access_settings)),token);
+ if r ? 'error' or not (r->'state'->'grants' ? rid) then raise exception 'Role creation failed: %',r->>'error';end if;
+ r:=public.onebite_access_api('role.create',jsonb_build_object('id','role_'||gen_random_uuid(),'name',' verification custom lead ','permissions','[]'::jsonb,'revision',(select revision from public.onebite_access_settings)),token);
+ if r->>'error' is distinct from 'duplicate_role' then raise exception 'Duplicate role allowed';end if;
+ r:=public.onebite_access_api('permissions.update',jsonb_build_object('role',rid,'permissions',jsonb_build_array('orders.refund'),'revision',(select revision from public.onebite_access_settings)),token);
+ if r->>'error' is distinct from 'permission_ceiling' then raise exception 'Forbidden grant allowed';end if;
+ r:=public.onebite_access_api('permissions.update',jsonb_build_object('role',rid,'permissions',jsonb_build_array('inventory.access'),'revision',(select revision from public.onebite_access_settings)),token);
+ if r->>'error' is distinct from 'permission_ceiling' then raise exception 'Unreleased grant allowed';end if;
+ r:=public.onebite_access_api('user.create',jsonb_build_object('name','Verification Custom Staff','username','verify.custom.staff','role',rid,'pin','847291','revision',(select revision from public.onebite_access_settings)),token);
+ if r ? 'error' then raise exception 'Custom user failed: %',r->>'error';end if;
+ select id into staff_id from public.onebite_users where username='verify.custom.staff';
+ insert into public.onebite_sessions(token_hash,user_id) values(staff_token,staff_id);
+ update public.onebite_credentials set must_change=false where user_id=staff_id;
+ r:=public.onebite_access_api('me','{}',staff_token);
+ if jsonb_array_length(r->'state'->'users')<2 then raise exception 'Permission-based user visibility failed';end if;
+ r:=public.onebite_access_api('role.create',jsonb_build_object('id','role_'||gen_random_uuid(),'name','Forbidden Lead','revision',(select revision from public.onebite_access_settings)),staff_token);
+ if r->>'error' is distinct from 'forbidden' then raise exception 'Unauthorized role creation allowed';end if;
+ r:=public.onebite_access_api('user.update',jsonb_build_object('id',owner_id,'revision',(select revision from public.onebite_access_settings)),staff_token);
+ if r->>'error' is distinct from 'forbidden' then raise exception 'Owner modification allowed';end if;
+ r:=public.onebite_access_api('permissions.update',jsonb_build_object('role','Owner','permissions','[]'::jsonb,'revision',(select revision from public.onebite_access_settings)),token);
+ if r->>'error' is distinct from 'immutable_grant' then raise exception 'Owner recovery removed';end if;
+ select coalesce(jsonb_agg(permission),'[]'::jsonb) into grants from public.onebite_role_permissions where role='Owner' and permission<>'orders.discount';
+ r:=public.onebite_access_api('permissions.update',jsonb_build_object('role','Owner','permissions',grants,'revision',(select revision from public.onebite_access_settings)),token);
+ if r ? 'error' or public.onebite_has_permission('Owner','orders.discount') then raise exception 'Owner configuration failed';end if;
+ if not exists(select 1 from public.onebite_sessions where token_hash=token) then raise exception 'Owner session lost';end if;
+ select coalesce(jsonb_agg(permission),'[]'::jsonb) into grants from public.onebite_role_permissions where role='Cashier';
+ r:=public.onebite_access_api('permissions.update',jsonb_build_object('role','Cashier','permissions',grants||jsonb_build_array('users.manage'),'revision',(select revision from public.onebite_access_settings)),token);
+ if r ? 'error' or not public.onebite_has_permission('Cashier','users.manage') then raise exception 'Role ceiling still restricts Owner';end if;
+ if has_table_privilege('anon','public.onebite_roles','select') or has_function_privilege('anon','public.onebite_access_api(text,jsonb,text)','execute') then raise exception 'Public role access exposed';end if;
+end $$;
+rollback;
+select 'custom role verification passed' as result;

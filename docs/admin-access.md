@@ -18,7 +18,7 @@ The app is committed to GitHub and hosted on Pages. Supabase connection work has
 | Supervisor | Own profile and Cashiers at managed sites; can change existing staff assignments within those sites, preserving outside assignments |
 | Owner | Manage accounts, status, site assignments and role permissions; reset PINs |
 
-Owner access is protected. At least one active Owner must remain. New Cashiers and Supervisors start active with no assigned sites. Site operations remain restricted to assigned active sites; once assigned, removing every active site is blocked while the account remains active. Usernames are normalized and unique across all accounts, including inactive ones. Owner may reduce Cashier/Supervisor grants, never exceed their role ceilings. Refunds, cancellation of paid invoices and discount-limit overrides are forbidden for every role.
+Owner access is protected. At least one active Owner must remain. New staff accounts start active with no assigned sites. Site operations remain restricted to assigned active sites; once assigned, removing every active site is blocked while the account remains active. Usernames are normalized and unique across all accounts, including inactive ones. Owners may configure every available permission for built-in and custom roles. Owner Admin access, account management and role management remain required to preserve recovery. Refunds, cancellation of paid invoices and discount-limit overrides are forbidden for every role.
 
 ## Prepared backend
 
@@ -48,7 +48,7 @@ Admin account changes currently require online access. The later POS offline mil
 
 ## Module and action permissions
 
-Permissions are grouped into POS (including shifts and cash), Attendance, Inventory and Admin. Every action requires both its saved action grant and module access. Denying a module preserves action settings but blocks effective access; re-enabling restores those settings. Owner grants are protected. Current defaults preserve POS and personal Admin access; Attendance access is prepared for all roles and Inventory access for Supervisors/Owners. Attendance and Inventory actions will be defined as those modules are implemented. These settings do not imply that those apps or POS server enforcement are already operational.
+Permissions are grouped into POS (including shifts and cash), Attendance, Inventory and Admin. Every action requires both its saved action grant and module access. Denying a module preserves action settings but blocks effective access; re-enabling restores those settings. Owner account and role administration are protected; other available Owner grants are configurable. Current defaults preserve POS and personal Admin access; Attendance access is prepared for all roles and Inventory access for Supervisors/Owners. Attendance and Inventory actions will be defined as those modules are implemented. These settings do not imply that those apps or POS server enforcement are already operational.
 
 `supabase/module-permissions.sql` is the deployed incremental migration. The canonical schema includes matching rules. `supabase/module-permissions.verify.sql` tests module denial, action denial, scoped snapshot filtering, restoration and service-only execution using temporary fixtures, then rolls everything back. Live verification passed.
 
@@ -94,4 +94,13 @@ Roles appear as collapsed disclosure rows with an icon, role name and short desc
 
 ### Minimal permission editor
 
-Each module has a title and an Allowed/Denied Radix switch. Its action list appears only while the module is allowed; denying the module retains the stored action settings for restoration. Each action uses an icon, short label and switch. Role ceilings and Owner protections still lock unavailable controls. Save permissions stays in the dialog's fixed footer while the sections scroll.
+Each module has a title and an Allowed/Denied Radix switch. Its action list appears only while the module is allowed; denying the module retains the stored action settings for restoration. Each action uses an icon, short label and switch. Unreleased and business-forbidden permissions are disabled and greyed out. Owner account and role administration remain required. Save permissions stays in the dialog's fixed footer while the sections scroll.
+
+
+### Custom roles and consistent page headers
+
+Admin pages share a title/subtitle header with a right-side action slot. Users defaults to Active only, including after clearing filters. Roles uses the title **Roles** and an icon-only **Create new role** action for authorized role managers. New roles require a unique name (60 characters maximum), support an optional short description (160 characters), start with denied permissions, and are persisted with their grants. They are immediately available in user creation/editing, directory filters and the permission matrix.
+
+Role-specific ceilings no longer prevent Owners from granting available permissions. Permission grants control user and role management; site operations for non-Owners remain limited to assigned active sites. Non-Owners cannot alter Owner accounts or the Owner role. Attendance, Inventory, Sites, Items & prices, and Promotions & exchange rate are currently unavailable; their controls are greyed out and cannot be newly enabled. Legacy prepared grants are retained but have no effective access while unavailable. Refunds and discount overrides stay forbidden. Owner Admin access, user management and role management stay required.
+
+`supabase/migrations/20261009103925_custom_roles_and_permission_availability.sql` adds a private RLS-protected role catalog and foreign keys, updates permission checks and snapshots, and adds the audited `role.create` action. Browser access to tables and internal RPCs remains revoked. Changes use the existing global revision lock and invalidate affected sessions; the actor's session is retained when updating their own role. `supabase/custom-roles.verify.sql` verifies these rules against the live RPC in a transaction and rolls back all fixtures.
