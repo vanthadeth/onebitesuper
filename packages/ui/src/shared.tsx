@@ -1,3 +1,4 @@
+import { EmptyState } from "./empty-state";
 import {
   createContext,
   useContext,
@@ -152,22 +153,8 @@ export function Toggle({
     </button>
   );
 }
-export function Empty({
-  title,
-  body,
-  icon = <ShoppingBag size={30} />,
-}: {
-  title: string;
-  body: string;
-  icon?: ReactNode;
-}) {
-  return (
-    <div className="empty">
-      <div className="empty-icon">{icon}</div>
-      <h3>{title}</h3>
-      <p>{body}</p>
-    </div>
-  );
+export function Empty(props: Parameters<typeof EmptyState>[0]) {
+  return <EmptyState {...props} className={`empty ${props.className ?? ""}`} />;
 }
 export function Header({
   app,

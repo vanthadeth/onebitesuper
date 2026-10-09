@@ -1,5 +1,5 @@
 import { SelectField } from "@onebite/ui";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ShoppingBag,
   Search,
@@ -235,6 +235,28 @@ export function App() {
     { id: "shift", label: t("វេន", "Shift"), icon: Clock3 },
     { id: "more", label: t("ផ្សេងទៀត", "More"), icon: SlidersHorizontal },
   ] as const;
+  const focusMenuOnClose = useRef(false);
+  function focusMenu() {
+    const firstProduct = document.querySelector<HTMLButtonElement>(".product-card");
+    firstProduct?.focus();
+    firstProduct?.scrollIntoView({ block: "nearest" });
+  }
+  function closeToMenu(event: Event) {
+    if (!focusMenuOnClose.current) return;
+    event.preventDefault();
+    focusMenuOnClose.current = false;
+    focusMenu();
+  }
+  function browseMenu() {
+    focusMenuOnClose.current = heldOpen || cartOpen;
+    setHeldOpen(false);
+    setCartOpen(false);
+    setScreen("sell");
+    setSearch("");
+    setCategory("all");
+    if (!focusMenuOnClose.current) requestAnimationFrame(focusMenu);
+  }
+  const browseAction = { label: t("ជ្រើសមុខទំនិញ", "Browse menu"), onClick: browseMenu, icon: <ShoppingBag size={18}/> };
   const cartContent = (
     <>
       <div className="cart-heading">
@@ -403,6 +425,7 @@ export function App() {
       ) : (
         <Empty
           title={t("ត្រៀមសម្រាប់ការកុម្ម៉ង់ថ្មី", "Ready for a fresh order")}
+          action={browseAction}
           body={t(
             "ជ្រើសមុខទំនិញពីបញ្ជីដើម្បីចាប់ផ្ដើម",
             "Choose something from the menu to get started.",
@@ -461,6 +484,7 @@ export function App() {
                 <label className="search-box">
                   <Search size={18} />
                   <input
+                    aria-label={t("ស្វែងរកមុខទំនិញ", "Search the menu")}
                     placeholder={t("ស្វែងរកមុខទំនិញ…", "Search the menu…")}
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
@@ -523,10 +547,11 @@ export function App() {
               </div>
               {!filtered.length && (
                 <Empty
-                  title={t("មិនមានមុខទំនិញ", "No matching bites")}
+                  title={search.trim() || category !== "all" ? t("មិនមានមុខទំនិញ", "No matching bites") : t("មិនទាន់មានមុខទំនិញសម្រាប់លក់", "The menu is getting ready")}
+                  action={search.trim() || category !== "all" ? { label: t("សម្អាតតម្រង", "Clear filters"), onClick: () => { setSearch(""); setCategory("all"); }, icon: <Search size={18}/> } : undefined}
                   body={t(
-                    "សាកល្បងពាក្យស្វែងរកផ្សេង",
-                    "Try another search or category.",
+                    search.trim() || category !== "all" ? "សាកល្បងពាក្យស្វែងរកផ្សេង" : "មុខទំនិញសម្រាប់លក់នឹងបង្ហាញនៅទីនេះ ពេលបានរៀបចំម៉ឺនុយ។",
+                    search.trim() || category !== "all" ? "Try another search or category." : "Sellable items will appear here once the menu is set up.",
                   )}
                 />
               )}
@@ -607,6 +632,7 @@ export function App() {
               ) : (
                 <Empty
                   title={t("មិនទាន់មានវិក្កយបត្រ", "A fresh start")}
+                  action={{ ...browseAction, label: t("ចាប់ផ្ដើមការកុម្ម៉ង់", "Take an order") }}
                   body={t(
                     "ការកុម្ម៉ង់ដែលបានបញ្ចប់នឹងបង្ហាញនៅទីនេះ",
                     "Completed sample orders will appear here.",
@@ -740,6 +766,7 @@ export function App() {
         <Modal
           title={t("កន្ត្រករបស់អ្នក", "Your cart")}
           onClose={() => setCartOpen(false)}
+          onCloseAutoFocus={closeToMenu}
         >
           <div className="mobile-cart-content">{cartContent}</div>
         </Modal>
@@ -759,6 +786,7 @@ export function App() {
         <Modal
           title={t("កន្ត្រករក្សាទុក", "Held carts")}
           onClose={() => setHeldOpen(false)}
+          onCloseAutoFocus={closeToMenu}
         >
           {site.held.length ? (
             site.held.map((cart) => (
@@ -806,6 +834,7 @@ export function App() {
           ) : (
             <Empty
               title={t("មិនមានកន្ត្រករក្សាទុក", "Nothing on hold")}
+              action={browseAction}
               body={t(
                 "រក្សាទុកកន្ត្រកដើម្បីបន្តនៅពេលក្រោយ",
                 "Hold a cart to come back to it later.",

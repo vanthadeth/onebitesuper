@@ -171,3 +171,9 @@ test("Khmer is default and both views fit the viewport", async ({ page }) => {
     ),
   ).toBe(true);
 });
+
+test('empty POS views guide ordering and filtered menus recover',async({page})=>{
+ await page.goto('http://127.0.0.1:5173');await page.getByRole('button',{name:'Invoices',exact:true}).click();await page.locator('.ob-empty-state').getByRole('button',{name:'Take an order',exact:true}).click();await expect(page.locator('.product-card')).toHaveCount(6);
+ await page.getByPlaceholder('Search the menu…').fill('no-such-bite');await page.locator('.ob-empty-state').getByRole('button',{name:'Clear filters',exact:true}).click();await expect(page.locator('.product-card')).toHaveCount(6);
+ await page.getByRole('button',{name:/Held carts/}).click();await page.getByRole('dialog').getByRole('button',{name:'Browse menu',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);await expect(page.locator('.product-card').first()).toBeFocused();
+});
