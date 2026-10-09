@@ -1,11 +1,3 @@
--- Canonical schema snapshot for the Admin access milestone.
--- Prepared for the Supabase MCP migration API; see docs/admin-access.md.
-create extension if not exists pgcrypto with schema extensions;
-create table public.onebite_access_settings (
- id boolean primary key default true check(id), revision bigint not null default 0,
- bootstrap_hash text, bootstrap_used boolean not null default false
-);
-insert into public.onebite_access_settings(id) values(true);
 create or replace function public.onebite_valid_working_hours(p_hours jsonb) returns boolean language plpgsql immutable security invoker set search_path='' as $$
 declare h jsonb; seen integer[]:=array[]::integer[]; d integer;
 begin
@@ -21,111 +13,19 @@ begin
 end $$;
 revoke execute on function public.onebite_valid_working_hours(jsonb) from public,anon,authenticated;
 grant execute on function public.onebite_valid_working_hours(jsonb) to service_role;
-create table public.onebite_sites (id integer primary key, name text not null check(length(btrim(name)) between 1 and 100), active boolean not null default true,
-location text not null default '' check(length(location)<=500),
- latitude double precision check(latitude between -90 and 90), longitude double precision check(longitude between -180 and 180),
- working_hours jsonb not null default '[]'::jsonb check(public.onebite_valid_working_hours(working_hours)),
- remarks text not null default '' check(length(remarks)<=2000),
- running_from date not null default ((now() at time zone 'Asia/Phnom_Penh')::date) check(running_from between date '1900-01-01' and date '9999-12-31'),
- shutdown_on date check(shutdown_on between date '1900-01-01' and date '9999-12-31'),
- constraint onebite_sites_operating_dates check(shutdown_on is null or shutdown_on>=running_from));
+alter table public.onebite_sites
+ add column location text not null default '' check(length(location)<=500),
+ add column latitude double precision check(latitude between -90 and 90),
+ add column longitude double precision check(longitude between -180 and 180),
+ add column working_hours jsonb not null default '[]'::jsonb check(public.onebite_valid_working_hours(working_hours)),
+ add column remarks text not null default '' check(length(remarks)<=2000),
+ add column running_from date not null default ((now() at time zone 'Asia/Phnom_Penh')::date) check(running_from between date '1900-01-01' and date '9999-12-31'),
+ add column shutdown_on date check(shutdown_on between date '1900-01-01' and date '9999-12-31'),
+ add constraint onebite_sites_operating_dates check(shutdown_on is null or shutdown_on>=running_from);
+alter table public.onebite_sites add constraint onebite_sites_name_length check(length(btrim(name)) between 1 and 100);
 create unique index onebite_sites_name_unique on public.onebite_sites(lower(btrim(name)));
-insert into public.onebite_sites(id,name) values(0,'Site 01'),(1,'Site 02'),(2,'Site 03');
-create table public.onebite_roles (
- id text primary key,
- name text not null check (length(btrim(name)) between 1 and 60),
- description text not null default '' check (length(description)<=160),
- builtin boolean not null default false,
- created_at timestamptz not null default now(),
- check (id in ('Owner','Supervisor','Cashier') or id ~ '^role_[a-f0-9-]{36}$')
-);
-create unique index onebite_roles_name_unique on public.onebite_roles(lower(btrim(name)));
-insert into public.onebite_roles(id,name,builtin) values ('Owner','Owner',true),('Supervisor','Supervisor',true),('Cashier','Cashier',true);
-alter table public.onebite_roles enable row level security;
-revoke all on public.onebite_roles from public,anon,authenticated;
-grant all on public.onebite_roles to service_role;
-
-create table public.onebite_users (
- id uuid primary key default gen_random_uuid(), name text not null check(length(trim(name)) between 1 and 100),
- username text not null unique check(username ~ '^[a-z0-9][a-z0-9_.-]{2,31}$'),
- role text not null references public.onebite_roles(id), active boolean not null default true,
- created_at timestamptz not null default now(), updated_at timestamptz not null default now()
-);
-create table public.onebite_user_sites (user_id uuid not null references public.onebite_users(id), site_id integer not null references public.onebite_sites(id), primary key(user_id,site_id));
-create index onebite_user_sites_site_idx on public.onebite_user_sites(site_id,user_id);
-create table public.onebite_credentials (
- user_id uuid primary key references public.onebite_users(id), pin_hash text not null,
- must_change boolean not null default false, failures integer not null default 0,
- locked_until timestamptz, last_attempt timestamptz
-);
-create table public.onebite_sessions (
- token_hash text primary key, user_id uuid not null references public.onebite_users(id),
- expires_at timestamptz not null default now()+interval '24 hours', created_at timestamptz not null default now()
-);
-create index onebite_sessions_user_idx on public.onebite_sessions(user_id);
-create index onebite_sessions_expiry_idx on public.onebite_sessions(expires_at);
-create table public.onebite_role_permissions (role text not null references public.onebite_roles(id), permission text not null, primary key(role,permission));
-insert into public.onebite_role_permissions(role,permission) values
- ('Cashier','pos.access'),
- ('Cashier','attendance.access'),
- ('Cashier','admin.access'),
- ('Cashier','orders.create'),
- ('Cashier','orders.discount'),
- ('Cashier','orders.complimentary'),
- ('Cashier','orders.cancel_unpaid'),
- ('Cashier','orders.qr_reference'),
- ('Cashier','shifts.manage'),
- ('Supervisor','pos.access'),
- ('Supervisor','attendance.access'),
- ('Supervisor','inventory.access'),
- ('Supervisor','admin.access'),
- ('Supervisor','orders.create'),
- ('Supervisor','orders.discount'),
- ('Supervisor','orders.complimentary'),
- ('Supervisor','orders.cancel_unpaid'),
- ('Supervisor','orders.qr_reference'),
- ('Supervisor','shifts.manage'),
- ('Supervisor','cash.withdraw'),
- ('Supervisor','staff.assign'),
- ('Owner','pos.access'),
- ('Owner','attendance.access'),
- ('Owner','inventory.access'),
- ('Owner','admin.access'),
- ('Owner','orders.create'),
- ('Owner','orders.discount'),
- ('Owner','orders.complimentary'),
- ('Owner','orders.cancel_unpaid'),
- ('Owner','orders.qr_reference'),
- ('Owner','shifts.manage'),
- ('Owner','cash.withdraw'),
- ('Owner','staff.assign'),
- ('Owner','users.manage'),
- ('Owner','roles.manage'),
- ('Owner','sites.manage'),
- ('Owner','catalog.manage'),
- ('Owner','rules.manage');
-create table public.onebite_access_audit (
- id uuid primary key default gen_random_uuid(), time timestamptz not null default now(),
- actor_id uuid references public.onebite_users(id), actor_name text not null,
- action text not null, target_name text not null, detail text not null
-);
-create index onebite_access_audit_time_idx on public.onebite_access_audit(time desc);
-create index onebite_access_audit_actor_idx on public.onebite_access_audit(actor_id,time desc);
 create or replace function public.onebite_permission_ceiling(p_role text) returns text[] language sql stable set search_path='' as $$
  select case when exists(select 1 from public.onebite_roles where id=p_role) then array['pos.access','admin.access','orders.create','orders.discount','orders.complimentary','orders.cancel_unpaid','orders.qr_reference','shifts.manage','cash.withdraw','staff.assign','users.manage','roles.manage','sites.manage'] else array[]::text[] end;
-$$;
-create or replace function public.onebite_has_permission(p_role text,p_permission text) returns boolean language sql stable security invoker set search_path='' as $$
- select p_permission=any(public.onebite_permission_ceiling(p_role))
- and exists(select 1 from public.onebite_role_permissions where role=p_role and permission=p_permission)
- and exists(select 1 from public.onebite_role_permissions where role=p_role and permission=case
-  when p_permission in ('pos.access','orders.create','orders.discount','orders.complimentary','orders.cancel_unpaid','orders.qr_reference','shifts.manage','cash.withdraw') then 'pos.access'
-  when p_permission='attendance.access' then 'attendance.access'
-  when p_permission='inventory.access' then 'inventory.access'
-  when p_permission in ('admin.access','staff.assign','users.manage','roles.manage','sites.manage','catalog.manage','rules.manage') then 'admin.access'
-  else null end);
-$$;
-create or replace function public.onebite_account_json(p_id uuid) returns jsonb language sql stable set search_path='' as $$
- select jsonb_build_object('id',u.id,'name',u.name,'username',u.username,'role',u.role,'active',u.active,'sites',coalesce((select jsonb_agg(s.site_id order by s.site_id) from public.onebite_user_sites s where s.user_id=u.id),'[]'::jsonb)) from public.onebite_users u where u.id=p_id;
 $$;
 create or replace function public.onebite_access_snapshot(p_actor uuid) returns jsonb language sql stable set search_path='' as $$
  select jsonb_build_object(
@@ -315,17 +215,3 @@ begin
  return jsonb_build_object('ok',true,'state',public.onebite_access_snapshot(a.id));
 end;
 $$;
-create index onebite_users_role_idx on public.onebite_users(role);
--- No direct browser access: custom internal sessions are validated through the Edge API.
-alter table public.onebite_access_settings enable row level security;
-alter table public.onebite_sites enable row level security;
-alter table public.onebite_users enable row level security;
-alter table public.onebite_user_sites enable row level security;
-alter table public.onebite_credentials enable row level security;
-alter table public.onebite_sessions enable row level security;
-alter table public.onebite_role_permissions enable row level security;
-alter table public.onebite_access_audit enable row level security;
-revoke all on public.onebite_access_settings,public.onebite_sites,public.onebite_users,public.onebite_user_sites,public.onebite_credentials,public.onebite_sessions,public.onebite_role_permissions,public.onebite_access_audit from anon,authenticated;
-grant all on public.onebite_access_settings,public.onebite_sites,public.onebite_users,public.onebite_user_sites,public.onebite_credentials,public.onebite_sessions,public.onebite_role_permissions,public.onebite_access_audit to service_role;
-revoke execute on function public.onebite_has_permission(text,text),public.onebite_permission_ceiling(text),public.onebite_account_json(uuid),public.onebite_access_snapshot(uuid),public.onebite_access_api(text,jsonb,text) from public,anon,authenticated;
-grant execute on function public.onebite_has_permission(text,text),public.onebite_permission_ceiling(text),public.onebite_account_json(uuid),public.onebite_access_snapshot(uuid),public.onebite_access_api(text,jsonb,text) to service_role;

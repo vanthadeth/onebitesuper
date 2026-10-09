@@ -1,0 +1,43 @@
+-- Exercise site management through the actual RPC; every fixture is rolled back.
+begin;
+do $$
+declare owner_id uuid; staff_id uuid; r jsonb; p jsonb; v_site_id integer; token text:=repeat('d',64); staff_token text:=repeat('c',64); v_revision bigint; v_name text:='Verification Site '||gen_random_uuid();
+begin
+ select id into owner_id from public.onebite_users where role='Owner' and active limit 1;
+ insert into public.onebite_sessions(token_hash,user_id) values(token,owner_id);
+ p=jsonb_build_object('name',v_name,'location','Phnom Penh','latitude',11.5564,'longitude',104.9282,'workingHours',jsonb_build_array(jsonb_build_object('day',0,'opens','16:00','closes','01:00')),'remarks','Transaction only','runningFrom','2026-10-09','shutdownOn',null,'active',false);
+ r=public.onebite_access_api('site.create',p||jsonb_build_object('revision',(select revision from public.onebite_access_settings)),token);
+ if r ? 'error' then raise exception 'Site create failed: %',r->>'error';end if;
+ select id into v_site_id from public.onebite_sites where onebite_sites.name=v_name;
+ if v_site_id is null or not exists(select 1 from public.onebite_sites where id=v_site_id and active and working_hours->0->>'closes'='01:00') then raise exception 'Defaults or schedule failed';end if;
+ if not exists(select 1 from jsonb_array_elements(r->'state'->'sites') s where (s->>'id')::integer=v_site_id and s->>'location'='Phnom Penh' and s->>'runningFrom'='2026-10-09') then raise exception 'Snapshot omitted metadata';end if;
+ r=public.onebite_access_api('site.create',p||jsonb_build_object('revision',(select revision from public.onebite_access_settings)),token);
+ if r->>'error' is distinct from 'duplicate_site' then raise exception 'Duplicate site allowed';end if;
+ r=public.onebite_access_api('site.update',p||jsonb_build_object('id',v_site_id,'latitude',91,'revision',(select revision from public.onebite_access_settings)),token);
+ if r->>'error' is distinct from 'invalid_coordinates' then raise exception 'Invalid coordinate allowed';end if;
+ r=public.onebite_access_api('site.update',p||jsonb_build_object('id',v_site_id,'shutdownOn','2026-10-08','revision',(select revision from public.onebite_access_settings)),token);
+ if r->>'error' is distinct from 'invalid_dates' then raise exception 'Reversed dates allowed';end if;
+ r=public.onebite_access_api('site.update',p||jsonb_build_object('id',v_site_id,'runningFrom','2026-02-30','revision',(select revision from public.onebite_access_settings)),token);
+ if r->>'error' is distinct from 'invalid_dates' then raise exception 'Invalid calendar date allowed';end if;
+ if public.onebite_valid_working_hours('[{"day":0,"opens":"99:00","closes":"22:00"}]') or public.onebite_valid_working_hours('[{"day":0,"opens":"16:00","closes":"22:00"},{"day":0,"opens":"17:00","closes":"23:00"}]') or public.onebite_valid_working_hours('{}') then raise exception 'Invalid schedule allowed';end if;
+ select id into staff_id from public.onebite_users where role='Cashier' and active limit 1;
+ insert into public.onebite_sessions(token_hash,user_id) values(staff_token,staff_id);
+ update public.onebite_credentials set must_change=false where user_id=staff_id;
+ r=public.onebite_access_api('site.create',p||jsonb_build_object('revision',(select revision from public.onebite_access_settings)),staff_token);
+ if r->>'error' is distinct from 'forbidden' then raise exception 'Unauthorized creation allowed';end if;
+ insert into public.onebite_role_permissions(role,permission) values('Cashier','sites.manage'),('Cashier','admin.access') on conflict do nothing;
+ if not public.onebite_has_permission('Cashier','sites.manage') then raise exception 'Owner cannot delegate site management';end if;
+ insert into public.onebite_user_sites(user_id,site_id) values(staff_id,v_site_id);
+ v_revision=(select onebite_access_settings.revision from public.onebite_access_settings);
+ r=public.onebite_access_api('site.update',p||jsonb_build_object('id',v_site_id,'remarks','Updated by delegated manager','revision',v_revision),staff_token);
+ if r ? 'error' or not exists(select 1 from public.onebite_sites where id=v_site_id and not active and remarks='Updated by delegated manager') then raise exception 'Delegated edit failed: %',r->>'error';end if;
+ if not exists(select 1 from public.onebite_user_sites where user_id=staff_id and onebite_user_sites.site_id=v_site_id) then raise exception 'Edit removed assignment';end if;
+ r=public.onebite_access_api('site.update',p||jsonb_build_object('id',v_site_id,'revision',v_revision),token);
+ if r->>'error' is distinct from 'stale_revision' then raise exception 'Stale site update allowed';end if;
+ delete from public.onebite_role_permissions where role='Cashier' and permission='admin.access';
+ r=public.onebite_access_api('site.update',p||jsonb_build_object('id',v_site_id,'revision',(select onebite_access_settings.revision from public.onebite_access_settings)),staff_token);
+ if r->>'error' is distinct from 'forbidden' then raise exception 'Module denial bypassed';end if;
+ if has_table_privilege('anon','public.onebite_sites','select') or has_function_privilege('anon','public.onebite_access_api(text,jsonb,text)','execute') then raise exception 'Browser database access exposed';end if;
+end $$;
+rollback;
+select 'site management verification passed' as result;

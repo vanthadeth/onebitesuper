@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {initialAccessState,saveAccount,assignSites,saveGrants,can,visibleAccounts,AccessError,createRole,roleIds} from "./access.ts";
+import {initialAccessState,saveAccount,assignSites,saveGrants,can,visibleAccounts,AccessError,createRole,roleIds,saveSite,siteDraft} from "./access.ts";
 const error=(code:string)=>(e:unknown)=>e instanceof AccessError&&e.code===code;
 test("usernames are normalized and unique across inactive and active accounts",()=>{
  const s=initialAccessState();const a={...s.users[2],id:"new",name:"  New User  ",username:" New.User ",sites:[1]};
@@ -70,4 +70,21 @@ test("custom roles persist grants, reject duplicates and unknown roles, and reta
  const assigned=saveAccount(n,"owner",{...n.users[2],role:role.id});assert.equal(can(assigned,assigned.users[2],"users.manage"),true);assert.equal(can(assigned,assigned.users[2],"orders.create",1),false);assert.equal(can(assigned,assigned.users[2],"orders.create",0),true);
  assert.throws(()=>saveAccount(assigned,"sokha",{...assigned.users[0],name:"Hijacked"}),error("forbidden"));assert.throws(()=>saveAccount(n,"owner",{...n.users[2],role:"missing"}),error("invalid_role"));
  const ownerChanged=saveGrants(n,"owner","Owner",n.grants.Owner.filter(p=>p!=="orders.discount"));assert.equal(can(ownerChanged,ownerChanged.users[0],"orders.discount"),false);assert.equal(can(ownerChanged,ownerChanged.users[0],"roles.manage"),true);
+});
+
+test("site creation defaults active, validates operating details, and preserves assignments on edits",()=>{
+ const s=initialAccessState(),draft={...siteDraft(),name:" Test Site ",location:" Phnom Penh ",latitude:11.5,longitude:104.9,active:false};
+ const n=saveSite(s,"owner",draft,true),created=n.sites.at(-1)!;
+ assert.equal(created.name,"Test Site");assert.equal(created.active,true);assert.equal(created.location,"Phnom Penh");assert.equal(n.events.at(-1)!.action,"site.created");assert.equal(s.sites.length,3);
+ assert.throws(()=>saveSite(n,"owner",{...draft,name:"test site"},true),error("duplicate_site"));
+ assert.throws(()=>saveSite(n,"owner",{...draft,latitude:91},true),error("invalid_coordinates"));
+ assert.throws(()=>saveSite(n,"owner",{...draft,runningFrom:"2026-02-30"},true),error("invalid_dates"));
+ assert.throws(()=>saveSite(n,"owner",{...draft,runningFrom:"2026-10-09",shutdownOn:"2026-10-08"},true),error("invalid_dates"));
+ assert.throws(()=>saveSite(n,"owner",{...draft,workingHours:[{day:0,opens:"16:00",closes:"16:00"}]},true),error("invalid_hours"));
+ assert.throws(()=>saveSite(n,"sokha",draft,true),error("forbidden"));
+ const grants=saveGrants(n,"owner","Cashier",[...n.grants.Cashier,"sites.manage"]);
+ const updated=saveSite(grants,"sokha",{...siteDraft(grants.sites[0]),location:"Existing location",latitude:0,longitude:0,active:false});
+ assert.deepEqual(updated.users,grants.users);assert.equal(updated.sites[0].active,false);assert.equal(can(updated,updated.users[2],"orders.create",0),false);
+ const denied=saveGrants(updated,"owner","Cashier",updated.grants.Cashier.filter(p=>p!=="admin.access"));
+ assert.throws(()=>saveSite(denied,"sokha",draft,true),error("forbidden"));
 });

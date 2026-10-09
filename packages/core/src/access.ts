@@ -35,7 +35,31 @@ export const permissionDefinitions = [
 ] as const;
 export type Permission = (typeof permissionDefinitions)[number]["id"];
 export type Grants = Record<Role, Permission[]>;
-export type AccessSite = { id: number; name: string; active: boolean };
+export type WorkingHours = { day: number; opens: string; closes: string };
+export type AccessSite = { id: number; name: string; active: boolean; location?: string; latitude?: number | null; longitude?: number | null; workingHours?: WorkingHours[]; remarks?: string; runningFrom?: string; shutdownOn?: string | null };
+export type SiteDraft = AccessSite & { location: string; latitude: number | null; longitude: number | null; workingHours: WorkingHours[]; remarks: string; runningFrom: string; shutdownOn: string | null };
+export function todayInCambodia(): string { return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Phnom_Penh",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date()); }
+export function siteDraft(site?: AccessSite): SiteDraft { return {id:site?.id ?? -1,name:site?.name ?? "",active:site?.active ?? true,location:site?.location ?? "",latitude:site?.latitude ?? null,longitude:site?.longitude ?? null,workingHours:structuredClone(site?.workingHours ?? []),remarks:site?.remarks ?? "",runningFrom:site?.runningFrom ?? todayInCambodia(),shutdownOn:site?.shutdownOn ?? null}; }
+export function normalizeSite(site: SiteDraft): SiteDraft {
+ const name=site.name.trim(),location=site.location.trim(),remarks=site.remarks.trim();
+ if(!name||name.length>100)throw new AccessError("invalid_name");
+ if(!location||location.length>500)throw new AccessError("invalid_location");
+ if(typeof site.latitude!=="number"||!Number.isFinite(site.latitude)||Math.abs(site.latitude)>90||typeof site.longitude!=="number"||!Number.isFinite(site.longitude)||Math.abs(site.longitude)>180)throw new AccessError("invalid_coordinates");
+ const validDate=(value:string)=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value&&value>="1900-01-01"&&value<="9999-12-31";
+ if(!validDate(site.runningFrom)||(site.shutdownOn&&(!validDate(site.shutdownOn)||site.shutdownOn<site.runningFrom)))throw new AccessError("invalid_dates");
+ const time=/^([01]\d|2[0-3]):[0-5]\d$/;
+ if(site.workingHours.length>7||new Set(site.workingHours.map(h=>h.day)).size!==site.workingHours.length||site.workingHours.some(h=>!Number.isInteger(h.day)||h.day<0||h.day>6||!time.test(h.opens)||!time.test(h.closes)||h.opens===h.closes))throw new AccessError("invalid_hours");
+ if(remarks.length>2000)throw new AccessError("invalid_remarks");
+ return {...site,name,location,remarks,workingHours:[...site.workingHours].sort((a,b)=>a.day-b.day)};
+}
+export function saveSite(state: AccessState, actorId: string, site: SiteDraft, creating=false): AccessState {
+ const actor=getActor(state,actorId);
+ if(!can(state,actor,"sites.manage"))throw new AccessError("forbidden");
+ if(!creating&&!state.sites.some(s=>s.id===site.id))throw new AccessError("not_found");
+ const next=normalizeSite({...site,...(creating?{id:Math.max(-1,...state.sites.map(s=>s.id))+1,active:true}:{})});
+ if(state.sites.some(s=>(creating||s.id!==next.id)&&s.name.trim().toLowerCase()===next.name.toLowerCase()))throw new AccessError("duplicate_site");
+ return {...state,sites:creating?[...state.sites,next]:state.sites.map(s=>s.id===next.id?next:s),events:event(state,actor,creating?"site.created":"site.updated",next.name,`${next.location} · ${next.active?"active":"inactive"}`)};
+}
 export type AccessEvent = { id: string; time: string; actorId: string; actorName: string; action: string; targetName: string; detail: string };
 export type AccessState = { version: 1; users: Account[]; sites: AccessSite[]; grants: Grants; events: AccessEvent[]; customRoles?: CustomRole[] };
 const posPermissions: Permission[] = ["orders.create", "orders.discount", "orders.complimentary", "orders.cancel_unpaid", "orders.qr_reference", "shifts.manage"];
@@ -44,7 +68,7 @@ export const ceilings: Grants = {
   Supervisor: ["pos.access", "attendance.access", "inventory.access", "admin.access", ...posPermissions, "cash.withdraw", "staff.assign"],
   Owner: permissionDefinitions.filter(p=>p.group !== "Never").map(p=>p.id),
 };
-export const unavailablePermissions: Permission[] = ["attendance.access", "inventory.access", "sites.manage", "catalog.manage", "rules.manage", "orders.override", "orders.refund"];
+export const unavailablePermissions: Permission[] = ["attendance.access", "inventory.access", "catalog.manage", "rules.manage", "orders.override", "orders.refund"];
 export const ownerRequiredPermissions: Permission[] = ["admin.access", "users.manage", "roles.manage"];
 export function permissionAvailable(permission: Permission): boolean {
   return permissionDefinitions.some(p=>p.id===permission) && !unavailablePermissions.includes(permission);
@@ -59,7 +83,7 @@ export function hasPermission(grants: Permission[], _role: Role, permission: Per
 }
 export function defaultGrants(): Grants { return structuredClone(ceilings); }
 export class AccessError extends Error {
-  code: "forbidden" | "invalid_name" | "invalid_username" | "duplicate_username" | "invalid_site" | "site_required" | "last_owner" | "not_found" | "invalid_role" | "immutable_grant" | "permission_ceiling" | "duplicate_role" | "invalid_description";
+  code: "forbidden" | "invalid_name" | "invalid_username" | "duplicate_username" | "invalid_site" | "site_required" | "last_owner" | "not_found" | "invalid_role" | "immutable_grant" | "permission_ceiling" | "duplicate_role" | "invalid_description" | "invalid_location" | "invalid_coordinates" | "invalid_dates" | "invalid_hours" | "invalid_remarks" | "duplicate_site";
   constructor(code: AccessError["code"]) { super(code); this.code=code; }
 }
 export function getActor(state: AccessState, id: string): Account {

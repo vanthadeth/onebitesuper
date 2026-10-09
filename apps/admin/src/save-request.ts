@@ -2,10 +2,14 @@ import { accessApi, ApiError, type Snapshot, type AccessReply } from './access-a
 
 type Request = typeof accessApi;
 function unchangedTarget(action:string,payload:Record<string,unknown>,before:Snapshot,after:Snapshot) {
- if(action==='user.create'||action==='role.create')return true; // Server still checks usernames and permissions.
+ if(action==='user.create'||action==='role.create'||action==='site.create')return true; // Server still checks usernames and permissions.
  if(action==='permissions.update'){
   const role=payload.role as keyof Snapshot['grants'];
   return JSON.stringify([...(before.grants[role]||[])].sort())===JSON.stringify([...(after.grants[role]||[])].sort());
+ }
+ if(action==='site.update'){
+  const original=before.sites.find(site=>site.id===payload.id),latest=after.sites.find(site=>site.id===payload.id);
+  return Boolean(original&&latest)&&JSON.stringify(original)===JSON.stringify(latest);
  }
  if(action==='pin.reset')return false; // Never automatically repeat a credential change.
  const original=before.users.find(user=>user.id===payload.id),latest=after.users.find(user=>user.id===payload.id);
