@@ -229,7 +229,7 @@ export function Header({
   const { lang, setLang, t } = useLanguage();
   return (
     <header className="app-header">
-      <a className="wordmark" href="/" aria-label={`OneBite ${app}`}>
+      <a className="wordmark" href={import.meta.env.BASE_URL} aria-label={`OneBite ${app}`}>
         <span className="brand-icon">
           <ShoppingBag size={21} />
           <i />

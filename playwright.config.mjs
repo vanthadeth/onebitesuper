@@ -5,6 +5,7 @@ const systemChromium =
   (existsSync("/usr/bin/chromium") ? "/usr/bin/chromium" : undefined);
 export default defineConfig({
   testDir: "./tests",
+  testIgnore: "pages.spec.ts",
   fullyParallel: true,
   retries: 0,
   reporter: "list",

@@ -72,3 +72,7 @@ Use Node.js 24, the `main` production branch and the checked-in build/install/ou
 The initial Supabase schema and account API are deployed; Vercel hosting is pending. Read [Admin access setup and status](docs/admin-access.md) for the prepared Supabase backend and remaining verification.
 
 Read [the product plan](docs/product-plan.md), [menu decisions](docs/menu-plan.md) and [milestone status](docs/milestone-1.md).
+
+## GitHub hosting preview
+
+The GitHub Pages workflow publishes POS and Admin under separate repository paths and runs browser checks before and after deployment. See [GitHub Pages setup](docs/github-pages.md) for preview behavior, scoped offline shells and local checks.

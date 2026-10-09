@@ -1,0 +1,21 @@
+import {test,expect} from '@playwright/test';
+const base=process.env.PAGES_TEST_BASE_URL||'http://127.0.0.1:5185/onebitesuper/';
+test('repository-hosted apps have separate install scopes and offline shells',async({page,context})=>{
+ const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.route('**/functions/v1/admin-access',route=>route.abort());
+ await page.goto(base);await expect(page.getByRole('link',{name:/OneBite POS/})).toBeVisible();await page.getByRole('link',{name:/OneBite POS/}).click();
+ await expect(page.locator('.product-card')).toHaveCount(6);await expect(page.locator('html')).toHaveAttribute('lang','km');
+ const pos=await page.evaluate(async()=>{const link=document.querySelector<HTMLLinkElement>('link[rel="manifest"]')!;return(await fetch(link.href)).json();});
+ expect(pos.scope).toBe('/onebitesuper/pos/');expect(pos.start_url).toBe(pos.scope);expect(pos.icons[0].src).toBe('/onebitesuper/pos/icon-192.png');
+ await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));
+ await page.getByRole('link',{name:'OneBite POS',exact:true}).click();await expect(page).toHaveURL(base+'pos/');
+ await context.setOffline(true);await page.reload();await expect(page.locator('.product-card')).toHaveCount(6);await context.setOffline(false);
+ await page.goto(base+'admin/');await page.getByRole('button',{name:'បើកសាកល្បងក្នុងឧបករណ៍',exact:true}).click();await expect(page.locator('.access-user-row')).toHaveCount(6);
+ const admin=await page.evaluate(async()=>{const link=document.querySelector<HTMLLinkElement>('link[rel="manifest"]')!;return(await fetch(link.href)).json();});
+ expect(admin.scope).toBe('/onebitesuper/admin/');expect(admin.id).not.toBe(pos.id);
+ await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));
+ const scopes=await page.evaluate(async()=>(await navigator.serviceWorker.getRegistrations()).map(r=>new URL(r.scope).pathname));expect(scopes.sort()).toEqual(['/onebitesuper/admin/','/onebitesuper/pos/']);
+ await page.locator('.access-language').click();await page.getByRole('button',{name:'Add user',exact:true}).click();const dialog=page.getByRole('dialog');await dialog.getByLabel('Full name').fill('Pages Tester');await dialog.getByLabel('Username',{exact:true}).fill('pages.tester');await dialog.getByLabel('Riverside',{exact:true}).check();await dialog.getByRole('button',{name:'Save changes'}).click();
+ await context.setOffline(true);await page.reload();await page.getByRole('button',{name:'Open local preview',exact:true}).click();await expect(page.locator('.access-user-row')).toHaveCount(7);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(errors).toEqual([]);
+});
