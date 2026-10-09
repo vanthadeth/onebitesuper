@@ -270,7 +270,7 @@ export function App() {
           </h2>
         </div>
         <button
-          className="icon-button"
+          className="d-btn d-btn-ghost d-btn-square icon-button"
           title={t("រក្សាទុកកន្ត្រក", "Hold cart")}
           aria-label="Hold cart"
           disabled={!site.cart.lines.length}
@@ -342,7 +342,7 @@ export function App() {
           </div>
           <div className="cart-footer">
             <button
-              className="button secondary mobile-hold-button full"
+              className="d-btn d-btn-outline button secondary mobile-hold-button full"
               onClick={() => {
                 hold();
                 setCartOpen(false);
@@ -405,7 +405,7 @@ export function App() {
               </div>
             </div>
             <button
-              className="button primary pay-button"
+              className="d-btn d-btn-primary button primary pay-button"
               onClick={() => setPayOpen(true)}
             >
               {totals.total === 0 ? (
@@ -491,7 +491,7 @@ export function App() {
                   />
                 </label>
                 <button
-                  className="button secondary held-button"
+                  className="d-btn d-btn-outline button secondary held-button"
                   onClick={() => hold(true)}
                 >
                   <Pause size={16} />
@@ -525,7 +525,7 @@ export function App() {
               <div className="product-grid">
                 {filtered.map((product) => (
                   <button
-                    className="product-card"
+                    className="d-card product-card"
                     key={product.id}
                     onClick={() => setEditor({ product })}
                   >
@@ -576,7 +576,7 @@ export function App() {
                 )}
               />
               <button
-                className="list-card held-list-link"
+                className="d-card list-card held-list-link"
                 onClick={() => hold(true)}
               >
                 <div className="list-icon">
@@ -598,7 +598,7 @@ export function App() {
               {site.invoices.length ? (
                 site.invoices.map((invoice) => (
                   <button
-                    className="list-card"
+                    className="d-card list-card"
                     key={invoice.id}
                     onClick={() => setDetail(invoice)}
                   >
@@ -658,7 +658,7 @@ export function App() {
                   "Your preferences and sample configuration.",
                 )}
               />
-              <div className="panel">
+              <div className="d-card panel">
                 <div className="profile-row">
                   <div className="avatar large-avatar">S</div>
                   <div>
@@ -676,7 +676,7 @@ export function App() {
                   )}
                 </p>
               </div>
-              <div className="panel">
+              <div className="d-card panel">
                 <h2>{t("ការកំណត់សាកល្បង", "Preview settings")}</h2>
                 <Toggle
                   label={t(
@@ -700,7 +700,7 @@ export function App() {
                   <strong>100៛</strong>
                 </div>
                 <button
-                  className="button secondary"
+                  className="d-btn d-btn-outline button secondary"
                   onClick={() => setCalculator(true)}
                 >
                   <Calculator size={17} />
@@ -708,7 +708,7 @@ export function App() {
                 </button>
               </div>
               <button
-                className="button secondary"
+                className="d-btn d-btn-outline button secondary"
                 onClick={() => {
                   if (
                     confirm(
@@ -820,7 +820,7 @@ export function App() {
                   <ChevronRight size={18} />
                 </button>
                 <button
-                  className="icon-button"
+                  className="d-btn d-btn-ghost d-btn-square icon-button"
                   aria-label="Cancel held invoice"
                   onClick={() => {
                     setCancel(cart);
@@ -855,7 +855,7 @@ export function App() {
             )}
           </p>
           <Field label={t("មូលហេតុ", "Reason")}>
-            <textarea
+            <textarea className="d-textarea"
               value={reason}
               onChange={(event) => setReason(event.target.value)}
               placeholder={t(
@@ -865,7 +865,7 @@ export function App() {
             />
           </Field>
           <button
-            className="button danger-button full"
+            className="d-btn d-btn-error button danger-button full"
             disabled={!reason.trim()}
             onClick={() => {
               const invoice: Invoice = {
@@ -1149,7 +1149,7 @@ function ItemEditor({
           <strong>{money(amounts.net)}</strong>
         </div>
         <button
-          className="button primary"
+          className="d-btn d-btn-primary button primary"
           disabled={insufficient || (product.sauces.length > 0 && !sauce)}
           onClick={() => onSave({ ...draft, id: existing?.id ?? id() })}
         >
@@ -1286,7 +1286,7 @@ function Payment({
         )}
       </p>
       <button
-        className="button primary full"
+        className="d-btn d-btn-primary button primary full"
         onClick={() =>
           onPay(
             totals.total === 0
@@ -1327,7 +1327,7 @@ function PhotoInput({
   return (
     <div className="photo-input">
       {value && <img src={value} alt="QR payment reference" />}
-      <label className="button secondary">
+      <label className="d-btn d-btn-outline button secondary">
         <ImagePlus size={17} />
         {t("បន្ថែមរូបភាពយោង (ជម្រើស)", "Add reference photo (optional)")}
         <input
@@ -1483,12 +1483,12 @@ function ShiftView({
         />
       </div>
       <div className="action-grid">
-        <button className="button secondary" onClick={onCalculator}>
+        <button className="d-btn d-btn-outline button secondary" onClick={onCalculator}>
           <Calculator size={18} />
           {t("គណនាប្រាក់", "Cash calculator")}
         </button>
         <button
-          className="button secondary"
+          className="d-btn d-btn-outline button secondary"
           disabled={!online}
           onClick={onWithdraw}
         >
@@ -1496,7 +1496,7 @@ function ShiftView({
           {t("សាកល្បងដកប្រាក់", "Preview withdrawal")}
         </button>
       </div>
-      <div className="panel">
+      <div className="d-card panel">
         <h2>{t("ចលនាសាច់ប្រាក់", "Cash movements")}</h2>
         {site.withdrawals.length ? (
           site.withdrawals.map((row) => (
@@ -1639,7 +1639,7 @@ function Withdrawal({
         onChange={setHolder}
       />
       <button
-        className="button primary full"
+        className="d-btn d-btn-primary button primary full"
         disabled={!owner || !holder || amount <= 0 || !reason.trim()}
         onClick={() => onSave(amount, reason.trim())}
       >

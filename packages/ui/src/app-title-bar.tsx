@@ -15,7 +15,7 @@ export function AppTitleBar({icon,title,name,username,syncStatus,pendingCount,di
    </button>
    <span className="ob-sr-only" role="status" aria-live="polite">{status} · {count}</span>
    <Menu.Root><Menu.Trigger asChild><button className="ob-profile-badge" aria-label={t('ម៉ឺនុយគណនី','Profile menu')}><span className="access-avatar small">{Array.from(name)[0]}</span></button></Menu.Trigger>
-    <Menu.Portal><Menu.Content className="ob-profile-menu" align="end" sideOffset={10} collisionPadding={12}>
+    <Menu.Portal><Menu.Content className="d-menu ob-profile-menu" align="end" sideOffset={10} collisionPadding={12}>
      <Menu.Label className="ob-profile-label"><strong>{name}</strong><small>@{username}</small></Menu.Label><Menu.Separator className="ob-menu-separator"/>
      <Menu.Item className="ob-menu-item" onSelect={onProfile}><UserRound size={18}/>{t('ប្រវត្តិរូបរបស់ខ្ញុំ','My profile')}</Menu.Item>
      <Menu.Item className="ob-menu-item" onSelect={onLanguage}><Languages size={18}/>{lang==='km'?'English':'ខ្មែរ'}</Menu.Item>

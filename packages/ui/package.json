@@ -6,7 +6,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./styles.css": "./src/styles.css",
-    "./controls.css": "./src/controls.css"
+    "./controls.css": "./src/controls.css",
+    "./daisy.css": "./src/daisy.css",
+    "./polish.css": "./src/polish.css"
   },
   "dependencies": {
     "@onebite/core": "0.1.0",

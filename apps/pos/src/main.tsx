@@ -1,9 +1,9 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import "@fontsource/noto-sans-khmer/400.css";
-import "@fontsource/noto-sans-khmer/600.css";
+import "@onebite/ui/daisy.css";
 import "@onebite/ui/styles.css";
 import "@onebite/ui/controls.css";
+import "@onebite/ui/polish.css";
 import { LanguageProvider, registerPwa } from "@onebite/ui";
 import { App } from "./App";
 createRoot(document.getElementById("root")!).render(
