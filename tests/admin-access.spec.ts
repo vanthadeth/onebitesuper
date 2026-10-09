@@ -91,7 +91,7 @@ test('New user requires a staff role and offers generated, regenerated and copya
 test('Users are grouped and alphabetized; filters combine and user details open before editing',async({page})=>{
  await open(page);const groups=page.locator('.access-user-group');await expect(groups).toHaveCount(3);
  const cashiers=page.getByRole('region',{name:'Cashier',exact:true});await expect(cashiers.locator('.access-person strong')).toHaveText(['Chantha','Pisey','Sokha','Sreypov']);
- const create=page.getByRole('button',{name:'Create new user',exact:true});await expect(create).toHaveText('');
+ const create=page.getByRole('button',{name:'Create new user',exact:true});await expect(create.locator('.access-new-label')).toHaveText('New User');if(info.project.name==='desktop')await expect(create.locator('.access-new-label')).toBeVisible();else await expect(create.locator('.access-new-label')).toBeHidden();
  const roles=page.getByRole('group',{name:'Filter role',exact:true});await roles.getByRole('button',{name:'Supervisor',exact:true}).click();await expect(page.locator('.access-user-row')).toHaveCount(1);await expect(groups).toHaveCount(1);
  await page.getByRole('textbox',{name:'Search users',exact:true}).fill('sokha');await expect(page.getByRole('heading',{name:'No matching users'})).toBeVisible();
  await roles.getByRole('button',{name:'All roles',exact:true}).click();await expect(page.locator('.access-user-row')).toHaveCount(1);
