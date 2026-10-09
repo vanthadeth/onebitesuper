@@ -68,6 +68,6 @@ The creation sheet now keeps PIN, regenerate and copy controls in one row. Its i
 
 ### App title bar
 
-The shared title bar shows the icon-only brand mark, app name, current section, sync control and profile badge. The Radix profile menu opens the signed-in user's details and provides Khmer/English, persisted light/dark appearance, and sign out.
+The shared title bar shows the icon-only brand mark, single-line “OneBite - Admin” title, borderless sync control and profile badge. The Radix profile menu opens the signed-in user's details and provides Khmer/English, persisted light/dark appearance, and sign out.
 
-Admin writes save online immediately. The sync badge counts the live save currently in flight (one at a time), then returns to zero when the request settles. The icon rotates while saving or refreshing, turns green with a central check after success, and red with a central alert after failure. A failed edit stays in its form for retry; there is no background offline queue. Pressing sync refreshes the server snapshot. Local preview remains local and does not claim successful server synchronization.
+Admin writes save online immediately. The number centered inside the sync icon counts the live save currently in flight (one at a time), then returns to zero when the request settles. The icon rotates while saving or refreshing, turns green with a central check after success, and red with a central alert after failure. A failed edit stays in its form for retry; there is no background offline queue. Pressing sync refreshes the server snapshot. Local preview remains local and does not claim successful server synchronization.

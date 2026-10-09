@@ -100,7 +100,8 @@ test('Users are grouped and alphabetized; filters combine and user details open 
 });
 
 test('Title bar profile actions, theme persistence and menu keyboard dismissal',async({page},info)=>{
- await open(page);await expect(page.locator('.ob-app-identity strong')).toHaveText('OneBite Admin');await expect(page.locator('.ob-app-identity span')).toHaveText('Users');
+ await open(page);await expect(page.locator('.ob-app-identity strong')).toHaveText('OneBite - Admin');await expect(page.locator('.ob-app-identity span')).toHaveCount(0);
+ const sync=page.locator('.ob-sync');await expect(sync).toHaveCSS('border-top-width','0px');const center=await sync.locator('.ob-sync-count').boundingBox(),ring=await sync.locator('.ob-sync-ring').boundingBox();expect(center&&ring&&Math.abs(center.x+center.width/2-ring.x-ring.width/2)<1&&Math.abs(center.y+center.height/2-ring.y-ring.height/2)<1).toBe(true);
  await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.getByRole('menuitem',{name:'My profile',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('@dara');await page.keyboard.press('Escape');
  await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.getByRole('menuitem',{name:'Dark mode',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
  await page.screenshot({path:`artifacts/admin-titlebar-dark-${info.project.name}.png`,fullPage:true});
@@ -123,6 +124,6 @@ test('Live sync tracks in-flight changes, failures and successful refresh',async
  await page.goto('http://127.0.0.1:5174');const sync=page.locator('.ob-sync');await expect(sync).toHaveAttribute('data-state','complete');await expect(sync.locator('.ob-sync-center')).toBeVisible();
  hold=true;await sync.click();await expect(sync).toHaveAttribute('data-state','syncing');await expect(sync).toBeDisabled();await expect(sync.locator('.ob-sync-count')).toHaveText('0');release();await expect(sync).toHaveAttribute('data-state','complete');
  await page.getByRole('button',{name:'Create new user',exact:true}).click();const dialog=page.getByRole('dialog');await dialog.getByLabel('Full name').fill('Sync Tester');await dialog.getByLabel('Username',{exact:true}).fill('sync.tester');await choose(page,'Role','Cashier');
- fail=true;await dialog.getByRole('button',{name:'Create User',exact:true}).click();await expect(sync.locator('.ob-sync-count')).toHaveText('1');await expect(sync).toHaveAttribute('data-state','syncing');release();await expect(sync).toHaveAttribute('data-state','failed');await expect(sync.locator('.ob-sync-count')).toHaveText('0');await expect(dialog.getByRole('alert')).toBeVisible();await expect(dialog.getByLabel('Username',{exact:true})).toHaveValue('sync.tester');
+ fail=true;await dialog.getByRole('button',{name:'Create User',exact:true}).click();await expect(sync.locator('.ob-sync-count')).toHaveText('1');await expect(sync).toHaveAttribute('data-state','syncing');release();await expect(sync).toHaveAttribute('data-state','failed');await expect(sync.locator('.ob-sync-count')).toHaveCount(0);await expect(dialog.getByRole('alert')).toBeVisible();await expect(dialog.getByLabel('Username',{exact:true})).toHaveValue('sync.tester');
  await page.keyboard.press('Escape');fail=false;hold=false;await sync.click();await expect(sync).toHaveAttribute('data-state','complete');
 });

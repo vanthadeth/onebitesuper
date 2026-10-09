@@ -3,15 +3,15 @@ import { RefreshCw, Check, CircleAlert, UserRound, Languages, Moon, Sun, LogOut 
 import { useLanguage } from './shared';
 
 export type SyncStatus = 'idle' | 'syncing' | 'complete' | 'failed';
-export function AppTitleBar({icon,title,subtitle,name,username,syncStatus,pendingCount,disabled,dark,onSync,onProfile,onLanguage,onTheme,onSignOut}:{icon:string;title:string;subtitle:string;name:string;username:string;syncStatus:SyncStatus;pendingCount:number;disabled:boolean;dark:boolean;onSync:()=>void;onProfile:()=>void;onLanguage:()=>void;onTheme:()=>void;onSignOut:()=>void}) {
+export function AppTitleBar({icon,title,name,username,syncStatus,pendingCount,disabled,dark,onSync,onProfile,onLanguage,onTheme,onSignOut}:{icon:string;title:string;name:string;username:string;syncStatus:SyncStatus;pendingCount:number;disabled:boolean;dark:boolean;onSync:()=>void;onProfile:()=>void;onLanguage:()=>void;onTheme:()=>void;onSignOut:()=>void}) {
  const {t,lang}=useLanguage();
  const status=syncStatus==='syncing'?t('កំពុងធ្វើសមកាលកម្ម','Syncing'):syncStatus==='complete'?t('សមកាលកម្មរួចរាល់','Sync complete'):syncStatus==='failed'?t('សមកាលកម្មបរាជ័យ','Sync failed'):t('ធ្វើសមកាលកម្ម','Sync');
  const count=t(`${pendingCount} ការផ្លាស់ប្ដូរត្រូវធ្វើសមកាលកម្ម`,`${pendingCount} changes to sync`);
  return <header className="access-header ob-app-header">
-  <div className="ob-app-identity"><img src={icon} alt="OneBite"/><div><strong>{title}</strong><span>{subtitle}</span></div></div>
+  <div className="ob-app-identity"><img src={icon} alt="OneBite"/><div><strong>{title}</strong></div></div>
   <div className="access-header-actions">
    <button type="button" className="ob-sync" data-state={syncStatus} aria-label={`${status} · ${count}`} title={`${status} · ${count}`} disabled={disabled} onClick={onSync}>
-    <span className="ob-sync-symbol"><RefreshCw size={26} className="ob-sync-ring"/>{syncStatus==='complete'&&<Check className="ob-sync-center" size={12} strokeWidth={3}/ >}{syncStatus==='failed'&&<CircleAlert className="ob-sync-center" size={13}/>}</span><span className="ob-sync-count">{pendingCount}</span>
+    <span className="ob-sync-symbol"><RefreshCw size={28} className="ob-sync-ring"/>{syncStatus==='complete'?<Check className="ob-sync-center" size={12} strokeWidth={3}/>:syncStatus==='failed'?<CircleAlert className="ob-sync-center" size={13}/>:<span className="ob-sync-center ob-sync-count">{pendingCount}</span>}</span>
    </button>
    <span className="ob-sr-only" role="status" aria-live="polite">{status} · {count}</span>
    <Menu.Root><Menu.Trigger asChild><button className="ob-profile-badge" aria-label={t('ម៉ឺនុយគណនី','Profile menu')}><span className="access-avatar small">{Array.from(name)[0]}</span></button></Menu.Trigger>
