@@ -87,3 +87,7 @@ All Admin writes reached an unscoped settings revision update. Supabase's API co
 ### Separate site assignment
 
 User edit contains profile, role and active status fields. It preserves current assignments. User details offers a separate **Assign sites** action for Owners and authorized Supervisors managing Cashiers in their sites. The assignment sheet uses the existing `sites.assign` operation, preserves out-of-scope assignments, and requires an active site for active staff. Owner accounts use all sites and do not have an assignment action. Assignment save and stale-conflict recovery are independent of profile editing.
+
+### Compact role list
+
+Roles appear as collapsed disclosure rows with an icon, role name and short description. Expanding a row shows the modules currently allowed for that role and a **Review permissions** action. Module visibility follows effective permissions and updates immediately after saving policy changes. The disclosure buttons support touch, Enter/Space, visible focus and reduced motion, in Khmer/English and light/dark themes.

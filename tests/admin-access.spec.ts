@@ -4,6 +4,7 @@ async function open(page:Page){await page.route('**/functions/v1/admin-access',r
 async function choose(page:Page,label:string,value:string){await page.getByLabel(label,{exact:true}).click();await page.locator(`[role="option"][data-value="${value}"]`).click();}
 async function viewUser(page:Page,name:string){await page.locator('.access-user-row').filter({hasText:name}).click();await expect(page.getByRole('dialog').getByRole('heading',{name:'User details',exact:true})).toBeVisible();}
 async function editUser(page:Page,name:string){await viewUser(page,name);await page.getByRole('dialog').getByRole('button',{name:'Edit',exact:true}).click();}
+async function reviewRole(page:Page,role:string){const row=page.locator('.access-role-row').filter({has:page.getByRole('heading',{name:role,exact:true})});const toggle=row.getByRole('button',{name:role,exact:true});if(await toggle.getAttribute('aria-expanded')==='false')await toggle.click();await row.getByRole('button',{name:'Review permissions',exact:true}).click();}
 async function tab(page:Page,name:string){await page.getByRole('button',{name,exact:true}).filter({visible:true}).click();}
 test('Owner creates and edits accounts, prevents duplicates, preserves changes and audits them',async({page})=>{
  await open(page);await expect(page.locator('.access-user-row')).toHaveCount(6);
@@ -19,7 +20,7 @@ test('Owner creates and edits accounts, prevents duplicates, preserves changes a
 test('Protects the last Owner and enforces role ceilings',async({page})=>{
  await open(page);await editUser(page,'Dara');const dialog=page.getByRole('dialog');
  await expect(dialog.getByLabel('Role',{exact:true})).toBeDisabled();await expect(dialog.getByLabel('Account active',{exact:true})).toBeDisabled();await dialog.getByRole('button',{name:'Close',exact:true}).click();
- await tab(page,'Roles');await page.locator('.access-role-card').filter({has:page.getByRole('heading',{name:'Cashier',exact:true})}).getByRole('button').click();
+ await tab(page,'Roles');await reviewRole(page,'Cashier');
  await expect(dialog.getByLabel('Manage user accounts')).toBeDisabled();await expect(dialog.getByLabel('Override discount limits')).toBeDisabled();await expect(dialog.getByLabel('Refund or cancel paid invoices')).toBeDisabled();
  await dialog.getByLabel('Apply allowed discounts').uncheck();await dialog.getByRole('button',{name:'Save permissions'}).click();
  await tab(page,'Permissions');await expect(page.locator('.access-matrix-row').filter({hasText:'Apply allowed discounts'}).getByLabel('Cashier: denied')).toBeVisible();
@@ -39,7 +40,7 @@ test('Khmer account views fit a phone and permission matrix',async({page})=>{
 });
 test('Module denial blocks saved actions and Admin access; re-enabling preserves action settings',async({page})=>{
  await open(page);await tab(page,'Roles');
- await page.locator('.access-role-card').filter({has:page.getByRole('heading',{name:'Supervisor',exact:true})}).getByRole('button').click();
+ await reviewRole(page,'Supervisor');
  const dialog=page.getByRole('dialog');await dialog.getByLabel('Access POS module',{exact:true}).uncheck();
  await expect(dialog.getByLabel('Receive orders',{exact:true})).toBeChecked();await expect(dialog.getByLabel('Receive orders',{exact:true})).toBeDisabled();
  await dialog.getByLabel('Access Admin module',{exact:true}).uncheck();await expect(dialog.getByLabel('Assign existing staff to sites')).toBeDisabled();
@@ -48,7 +49,7 @@ test('Module denial blocks saved actions and Admin access; re-enabling preserves
  await expect(pos.locator('.access-matrix-row').filter({hasText:'Receive orders'}).getByLabel('Supervisor: denied')).toBeVisible();
  await choose(page,'Preview identity','supervisor');await expect(page.getByRole('heading',{name:'Admin access denied'})).toBeVisible();
  await page.getByRole('button',{name:'Return to preview Owner'}).click();await tab(page,'Roles');
- await page.locator('.access-role-card').filter({has:page.getByRole('heading',{name:'Supervisor',exact:true})}).getByRole('button').click();
+ await reviewRole(page,'Supervisor');
  await dialog.getByLabel('Access POS module',{exact:true}).check();await expect(dialog.getByLabel('Receive orders',{exact:true})).toBeChecked();await expect(dialog.getByLabel('Receive orders',{exact:true})).toBeEnabled();
  await dialog.getByLabel('Access Admin module',{exact:true}).check();await dialog.getByRole('button',{name:'Save permissions'}).click();
  await choose(page,'Preview identity','supervisor');await expect(page.locator('.access-user-row')).toHaveCount(4);
@@ -146,4 +147,12 @@ test('Owner edits profiles separately from site assignments and preserves existi
  await open(page);await editUser(page,'Sokha');const dialog=page.getByRole('dialog');await expect(dialog.getByText('Assigned sites',{exact:true})).toHaveCount(0);await expect(dialog.locator('.access-site-choice')).toHaveCount(0);await dialog.getByLabel('Full name').fill('Sokha Updated');await dialog.getByRole('button',{name:'Save changes',exact:true}).click();
  await viewUser(page,'Sokha Updated');await expect(dialog).toContainText('Riverside');await dialog.getByRole('button',{name:'Assign sites',exact:true}).click();await expect(dialog.getByRole('heading',{name:'Assign sites',exact:true})).toBeVisible();await expect(dialog.getByLabel('Riverside',{exact:true})).toBeChecked();await dialog.getByLabel('Riverside',{exact:true}).uncheck();await expect(dialog.getByRole('button',{name:'Save assignment',exact:true})).toBeDisabled();await dialog.getByLabel('Neighborhood',{exact:true}).check();await dialog.getByRole('button',{name:'Save assignment',exact:true}).click();
  await page.reload();await page.getByRole('button',{name:'Open local preview'}).click();await viewUser(page,'Sokha Updated');await expect(dialog).toContainText('Neighborhood');await expect(dialog).not.toContainText('Riverside');await dialog.getByRole('button',{name:'Close',exact:true}).click();await viewUser(page,'Dara');await expect(dialog.getByRole('button',{name:'Assign sites',exact:true})).toHaveCount(0);
+});
+
+test('Role rows collapse by default and show only allowed modules when expanded',async({page},info)=>{
+ await open(page);await tab(page,'Roles');const rows=page.locator('.access-role-row');await expect(rows).toHaveCount(3);await expect(page.getByRole('button',{name:'Review permissions',exact:true})).toHaveCount(0);
+ const cashier=rows.filter({has:page.getByRole('heading',{name:'Cashier',exact:true})});const toggle=cashier.getByRole('button',{name:'Cashier',exact:true});await expect(toggle).toHaveAttribute('aria-expanded','false');await toggle.focus();await page.keyboard.press('Space');await expect(toggle).toHaveAttribute('aria-expanded','true');await expect(cashier.locator('.access-role-modules li')).toHaveText(['POS','Attendance','Admin']);await expect(cashier.getByRole('button',{name:'Review permissions',exact:true})).toBeVisible();
+ await cashier.getByRole('button',{name:'Review permissions',exact:true}).click();const dialog=page.getByRole('dialog');await dialog.getByLabel('Access POS module',{exact:true}).uncheck();await dialog.getByRole('button',{name:'Save permissions'}).click();await expect(cashier.locator('.access-role-modules li')).toHaveText(['Attendance','Admin']);
+ await toggle.click();await expect(toggle).toHaveAttribute('aria-expanded','false');await expect(cashier.getByRole('button',{name:'Review permissions',exact:true})).toHaveCount(0);await rows.filter({has:page.getByRole('heading',{name:'Owner',exact:true})}).getByRole('button',{name:'Owner',exact:true}).click();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:`artifacts/admin-roles-${info.project.name}.png`,fullPage:true});
+ await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.getByRole('menuitem',{name:'Dark mode',exact:true}).click();await page.screenshot({path:`artifacts/admin-roles-dark-${info.project.name}.png`,fullPage:true});
 });
