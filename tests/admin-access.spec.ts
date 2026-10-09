@@ -35,7 +35,7 @@ test('Supervisor assignments preserve outside sites; Cashier cannot edit account
 test('Khmer account views fit a phone and permission matrix',async({page})=>{
  await page.addInitScript(()=>localStorage.removeItem('onebite-language'));await page.route('**/functions/v1/admin-access',route=>route.abort());await page.goto('http://127.0.0.1:5174');await page.getByRole('button',{name:'បើកសាកល្បងក្នុងឧបករណ៍',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('lang','km');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
- await page.locator('.access-language').click();await tab(page,'Permissions');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.getByRole('button',{name:'ម៉ឺនុយគណនី'}).click();await page.getByRole('menuitem',{name:'English',exact:true}).click();await tab(page,'Permissions');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 test('Module denial blocks saved actions and Admin access; re-enabling preserves action settings',async({page})=>{
  await open(page);await tab(page,'Roles');
@@ -97,4 +97,32 @@ test('Users are grouped and alphabetized; filters combine and user details open 
  await choose(page,'Filter status','active');await expect(page.getByRole('heading',{name:'No matching users'})).toBeVisible();
  await choose(page,'Filter status','inactive');await expect(page.locator('.access-user-row')).toHaveCount(1);await expect(page.locator('.access-user-row')).toContainText('Inactive');
  await page.getByRole('textbox',{name:'Search users',exact:true}).fill('');await choose(page,'Filter status','all');await expect(page.locator('.access-user-row')).toHaveCount(6);
+});
+
+test('Title bar profile actions, theme persistence and menu keyboard dismissal',async({page},info)=>{
+ await open(page);await expect(page.locator('.ob-app-identity strong')).toHaveText('OneBite Admin');await expect(page.locator('.ob-app-identity span')).toHaveText('Users');
+ await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.getByRole('menuitem',{name:'My profile',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('@dara');await page.keyboard.press('Escape');
+ await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.getByRole('menuitem',{name:'Dark mode',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
+ await page.screenshot({path:`artifacts/admin-titlebar-dark-${info.project.name}.png`,fullPage:true});
+ await page.reload();await page.getByRole('button',{name:'Open local preview'}).click();await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
+ const badge=page.getByRole('button',{name:'Profile menu',exact:true});await badge.click();await page.keyboard.press('Escape');await expect(page.getByRole('menu')).toHaveCount(0);await expect(badge).toBeFocused();
+ await badge.click();await page.getByRole('menuitem',{name:'Light mode',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('data-theme','light');
+ await badge.click();await page.getByRole('menuitem',{name:'ខ្មែរ',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('lang','km');
+ await page.getByRole('button',{name:'ម៉ឺនុយគណនី',exact:true}).click();await page.getByRole('menuitem',{name:'English',exact:true}).click();
+ await badge.click();await page.getByRole('menuitem',{name:'Sign out',exact:true}).click();await expect(page.getByRole('heading',{name:'Welcome back',exact:true})).toBeVisible();
+});
+
+test('Live sync tracks in-flight changes, failures and successful refresh',async({page})=>{
+ const {initialAccessState}=await import('../packages/core/src/access');const snapshot={...initialAccessState(),revision:0};
+ await page.addInitScript(()=>sessionStorage.setItem('onebite-admin-session','a'.repeat(64)));
+ let release:()=>void=()=>{},fail=false,hold=false;
+ await page.route('**/functions/v1/admin-access',async route=>{
+  const {action}=route.request().postDataJSON();if(hold)await new Promise<void>(resolve=>{release=resolve;});
+  await route.fulfill({status:fail?503:200,json:fail?{error:'network_failed'}:{state:snapshot,actor:snapshot.users.find(u=>u.id==='owner'),ok:true}});
+ });
+ await page.goto('http://127.0.0.1:5174');const sync=page.locator('.ob-sync');await expect(sync).toHaveAttribute('data-state','complete');await expect(sync.locator('.ob-sync-center')).toBeVisible();
+ hold=true;await sync.click();await expect(sync).toHaveAttribute('data-state','syncing');await expect(sync).toBeDisabled();await expect(sync.locator('.ob-sync-count')).toHaveText('0');release();await expect(sync).toHaveAttribute('data-state','complete');
+ await page.getByRole('button',{name:'Create new user',exact:true}).click();const dialog=page.getByRole('dialog');await dialog.getByLabel('Full name').fill('Sync Tester');await dialog.getByLabel('Username',{exact:true}).fill('sync.tester');await choose(page,'Role','Cashier');
+ fail=true;await dialog.getByRole('button',{name:'Create User',exact:true}).click();await expect(sync.locator('.ob-sync-count')).toHaveText('1');await expect(sync).toHaveAttribute('data-state','syncing');release();await expect(sync).toHaveAttribute('data-state','failed');await expect(sync.locator('.ob-sync-count')).toHaveText('0');await expect(dialog.getByRole('alert')).toBeVisible();await expect(dialog.getByLabel('Username',{exact:true})).toHaveValue('sync.tester');
+ await page.keyboard.press('Escape');fail=false;hold=false;await sync.click();await expect(sync).toHaveAttribute('data-state','complete');
 });

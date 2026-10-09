@@ -18,3 +18,22 @@ body{background:#f6f7f9;line-height:1.7;color:var(--ink)}
 @media(max-width:680px){.access-users-page .access-page-heading{margin-bottom:20px}.access-directory-tools{gap:8px}.access-directory-tools .access-search{padding:0 10px}.access-directory-tools input{font-size:13px;min-height:48px}.access-directory-tools>.ob-select{min-width:118px;font-size:12px;padding:10px;gap:8px}.access-role-selector{gap:4px;margin-bottom:22px}.access-role-selector button{font-size:12px;padding:8px 12px}.access-users-page .access-user-row{gap:10px;padding:14px;min-height:80px}.access-users-page .access-user-row .access-status{font-size:11px}.access-users-page .access-user-row .access-person{gap:10px}.access-user-detail dl>div{grid-template-columns:1fr 1.3fr}.access-detail-actions{flex-wrap:wrap}}
 
 .access-pin-value input{font-size:22px;letter-spacing:4px;padding:10px 12px}.access-pin-value{gap:8px}.access-pin-value .access-icon{width:48px;min-width:48px;height:48px}
+/* Theme tokens apply to portalled Radix menus and sheets as well as the app. */
+:root{--surface:#fff;--surface-muted:#f6f7f9;--surface-hover:#fffaf6;color-scheme:light}
+:root[data-theme=dark]{--surface:#202126;--surface-muted:#17181c;--surface-hover:#292a30;--ink:#f2f2f5;--muted:#b1b1bd;--line:#3a3b44;--soft:#3b2a20;--text-orange:#ffad70;--success:#7cdda3;--danger:#ff9690;--warning:#ecd095;--warning-bg:#352f20;--success-bg:#203c2b;color-scheme:dark}
+[data-theme=dark] body,[data-theme=dark] .access-auth{background:var(--surface-muted);color:var(--ink)}
+[data-theme=dark] :is(.access-sidebar,.access-header,.access-bottom-nav,.auth-card,.ob-dialog,.ob-dialog-footer,.ob-select,.ob-select-menu,.access-user-list,.access-users-page .access-user-row,.access-role-card,.access-permission-module,.access-permission-matrix,.access-activity,.access-stats>div,.access-search,.access-icon,.access-btn.secondary,.modal-heading .icon-button,.access-form input:not([type=checkbox]),.access-sidebar nav button){background:var(--surface);color:var(--ink);border-color:var(--line)}
+[data-theme=dark] :is(.access-table-head,.access-matrix-head,.access-generated-pin,.access-rule-note,.access-site-tags>span,.access-group-heading>span,.access-avatar,.access-grants label.locked,.access-site-choice:has(button:disabled)){background:var(--surface-hover);color:var(--muted);border-color:var(--line)}
+[data-theme=dark] :is(.access-sidebar nav button.active,.access-bottom-nav button.active,.access-module-row,.access-grants .access-module-toggle,.access-site-choice.selected,.access-role-selector button[aria-pressed=true],.ob-select-option[data-highlighted],.access-role,.access-role.owner,.access-role-icon,.access-avatar.owner){background:var(--soft);color:var(--text-orange);border-color:#694127}
+[data-theme=dark] :is(.access-users-page .access-user-row:hover,.access-sidebar nav button:hover,.access-role-selector button:hover,.access-btn.secondary:hover,.access-icon:hover){background:var(--surface-hover)}
+[data-theme=dark] :is(.access-stats strong,.access-form>label){color:var(--ink)}
+[data-theme=dark] :is(.access-page-heading p,.access-person small,.access-stats span,.access-role-summary span){color:var(--muted)}
+[data-theme=dark] :is(.access-users-page .access-user-row,.access-user-detail dl>div,.access-matrix-row,.access-activity>div,.modal-heading,.access-role-summary){border-color:var(--line)}
+[data-theme=dark] .access-preview-bar{background:var(--warning-bg);border-color:#554a30;color:var(--warning)}
+[data-theme=dark] .access-error{background:#452726;border-color:#71403c;color:var(--danger)}
+[data-theme=dark] :is(.access-role.supervisor,.access-avatar.supervisor,.access-role-icon.supervisor){background:var(--success-bg);border-color:#396149;color:var(--success)}
+[data-theme=dark] .ob-check{background:var(--surface);border-color:var(--muted)}
+[data-theme=dark] .ob-check[data-state=checked]{background:var(--orange);border-color:var(--orange);color:#231b14}
+[data-theme=dark] .access-btn:disabled{background:#34343c;border-color:#34343c;color:#9999a6}
+[data-theme=dark] .access-toast{background:#e9e9ef;color:#202124}
+[data-theme=dark] .access-auth::before{color:var(--text-orange)}
