@@ -18,3 +18,11 @@
 
 .access-new-label{display:none}
 @media(min-width:681px){.ob-page-heading .ob-page-heading-action>.access-create-user{width:auto;min-width:48px;padding:10px 16px;flex:0 0 auto;white-space:nowrap}.access-new-label{display:inline}}
+
+/* Only popup content scrolls; header and actions remain visible. */
+.ob-dialog.ob-dialog{display:flex;flex-direction:column;overflow:hidden}
+.ob-dialog>.modal-heading{flex-shrink:0;margin:0;padding:18px 24px;border-bottom:1px solid var(--line,#e4e4e7);background:var(--surface,#fff)}
+.ob-dialog>.modal-heading h2{min-width:0;overflow-wrap:anywhere}
+.ob-dialog>.modal-inner{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.ob-dialog-footer>.modal-action{margin:0;padding:0;border:0}
+@media(max-width:680px){.ob-dialog>.modal-heading{padding:16px 20px}}

@@ -257,7 +257,23 @@ export function App() {
     if (!focusMenuOnClose.current) requestAnimationFrame(focusMenu);
   }
   const browseAction = { label: t("ជ្រើសមុខទំនិញ", "Browse menu"), onClick: browseMenu, icon: <ShoppingBag size={18}/> };
-  const cartContent = (
+  const cartPayAction = (<button
+              className="d-btn d-btn-primary button primary pay-button"
+              onClick={() => setPayOpen(true)}
+            >
+              {totals.total === 0 ? (
+                <Gift size={18} />
+              ) : (
+                <CreditCard size={18} />
+              )}
+              <span>
+                {totals.total === 0
+                  ? t("បញ្ចប់ការកុម្ម៉ង់ឥតគិតថ្លៃ", "Complete free order")
+                  : t("ពិនិត្យ និងទូទាត់", "Review & pay")}
+              </span>
+              <ArrowRight size={18} />
+            </button>);
+  const cartContent = (showAction=true) => (
     <>
       <div className="cart-heading">
         <div>
@@ -404,22 +420,7 @@ export function App() {
                 </small>
               </div>
             </div>
-            <button
-              className="d-btn d-btn-primary button primary pay-button"
-              onClick={() => setPayOpen(true)}
-            >
-              {totals.total === 0 ? (
-                <Gift size={18} />
-              ) : (
-                <CreditCard size={18} />
-              )}
-              <span>
-                {totals.total === 0
-                  ? t("បញ្ចប់ការកុម្ម៉ង់ឥតគិតថ្លៃ", "Complete free order")
-                  : t("ពិនិត្យ និងទូទាត់", "Review & pay")}
-              </span>
-              <ArrowRight size={18} />
-            </button>
+            {showAction&&cartPayAction}
           </div>
         </>
       ) : (
@@ -730,7 +731,7 @@ export function App() {
           )}
         </main>
         {screen === "sell" && (
-          <aside className="cart-panel">{cartContent}</aside>
+          <aside className="cart-panel">{cartContent()}</aside>
         )}
       </div>
       <nav className="bottom-nav" aria-label="POS navigation">
@@ -765,10 +766,11 @@ export function App() {
       {cartOpen && (
         <Modal
           title={t("កន្ត្រករបស់អ្នក", "Your cart")}
+          footer={site.cart.lines.length?cartPayAction:undefined}
           onClose={() => setCartOpen(false)}
           onCloseAutoFocus={closeToMenu}
         >
-          <div className="mobile-cart-content">{cartContent}</div>
+          <div className="mobile-cart-content">{cartContent(false)}</div>
         </Modal>
       )}
       {editor && (
@@ -847,24 +849,7 @@ export function App() {
         <Modal
           title={t("បោះបង់វិក្កយបត្រ", "Cancel unpaid invoice")}
           onClose={() => setCancel(null)}
-        >
-          <p className="muted">
-            {t(
-              "ចំនួនមុខទំនិញឥតគិតថ្លៃដែលបានកក់ នឹងត្រូវបានស្ដារឡើងវិញ។",
-              "Reserved complimentary allowance will be restored.",
-            )}
-          </p>
-          <Field label={t("មូលហេតុ", "Reason")}>
-            <textarea className="d-textarea"
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              placeholder={t(
-                "សូមបញ្ចូលមូលហេតុ",
-                "Why is this order being cancelled?",
-              )}
-            />
-          </Field>
-          <button
+          footer={<button
             className="d-btn d-btn-error button danger-button full"
             disabled={!reason.trim()}
             onClick={() => {
@@ -887,7 +872,24 @@ export function App() {
             }}
           >
             {t("បញ្ជាក់ការបោះបង់", "Confirm cancellation")}
-          </button>
+          </button>}
+        >
+          <p className="muted">
+            {t(
+              "ចំនួនមុខទំនិញឥតគិតថ្លៃដែលបានកក់ នឹងត្រូវបានស្ដារឡើងវិញ។",
+              "Reserved complimentary allowance will be restored.",
+            )}
+          </p>
+          <Field label={t("មូលហេតុ", "Reason")}>
+            <textarea className="d-textarea"
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder={t(
+                "សូមបញ្ចូលមូលហេតុ",
+                "Why is this order being cancelled?",
+              )}
+            />
+          </Field>
         </Modal>
       )}
       {payOpen && (
@@ -1025,6 +1027,22 @@ function ItemEditor({
           : t("បន្ថែមមុខទំនិញ", "Make it yours")
       }
       onClose={onClose}
+      footer={<div className="modal-action">
+        <div>
+          <small>{t("តម្លៃមុខទំនិញ", "Item total")}</small>
+          <strong>{money(amounts.net)}</strong>
+        </div>
+        <button
+          className="d-btn d-btn-primary button primary"
+          disabled={insufficient || (product.sauces.length > 0 && !sauce)}
+          onClick={() => onSave({ ...draft, id: existing?.id ?? id() })}
+        >
+          <Plus size={18} />
+          {existing
+            ? t("រក្សាទុក", "Save changes")
+            : t("បន្ថែមទៅកន្ត្រក", "Add to cart")}
+        </button>
+      </div>}
     >
       <div className="editor-product">
         <FoodArt food={product.food} />
@@ -1143,22 +1161,6 @@ function ItemEditor({
             ` · ${t("មិនគ្រប់គ្រាន់", "Insufficient allowance")}`}
         </p>
       </details>
-      <div className="modal-action">
-        <div>
-          <small>{t("តម្លៃមុខទំនិញ", "Item total")}</small>
-          <strong>{money(amounts.net)}</strong>
-        </div>
-        <button
-          className="d-btn d-btn-primary button primary"
-          disabled={insufficient || (product.sauces.length > 0 && !sauce)}
-          onClick={() => onSave({ ...draft, id: existing?.id ?? id() })}
-        >
-          <Plus size={18} />
-          {existing
-            ? t("រក្សាទុក", "Save changes")
-            : t("បន្ថែមទៅកន្ត្រក", "Add to cart")}
-        </button>
-      </div>
     </Modal>
   );
 }
@@ -1187,6 +1189,33 @@ function Payment({
           : t("ពិនិត្យការទូទាត់", "Review payment")
       }
       onClose={onClose}
+      footer={<button
+        className="d-btn d-btn-primary button primary full"
+        onClick={() =>
+          onPay(
+            totals.total === 0
+              ? 0
+              : method === "cash"
+                ? totals.total
+                : method === "split"
+                  ? cash
+                  : 0,
+            totals.total === 0
+              ? 0
+              : method === "qr"
+                ? totals.total
+                : method === "split"
+                  ? qr
+                  : 0,
+            reference,
+          )
+        }
+      >
+        <Check size={18} />
+        {totals.total === 0
+          ? t("បញ្ចប់ការកុម្ម៉ង់ឥតគិតថ្លៃ", "Complete free order")
+          : t("បញ្ជាក់ការទូទាត់", "Confirm payment")}
+      </button>}
     >
       <div className="payment-total">
         <span>{t("ចំនួនត្រូវទូទាត់", "Amount due")}</span>
@@ -1285,33 +1314,6 @@ function Payment({
           "Review before confirming. Paid invoices cannot be cancelled or refunded.",
         )}
       </p>
-      <button
-        className="d-btn d-btn-primary button primary full"
-        onClick={() =>
-          onPay(
-            totals.total === 0
-              ? 0
-              : method === "cash"
-                ? totals.total
-                : method === "split"
-                  ? cash
-                  : 0,
-            totals.total === 0
-              ? 0
-              : method === "qr"
-                ? totals.total
-                : method === "split"
-                  ? qr
-                  : 0,
-            reference,
-          )
-        }
-      >
-        <Check size={18} />
-        {totals.total === 0
-          ? t("បញ្ចប់ការកុម្ម៉ង់ឥតគិតថ្លៃ", "Complete free order")
-          : t("បញ្ជាក់ការទូទាត់", "Confirm payment")}
-      </button>
     </Modal>
   );
 }
@@ -1597,6 +1599,13 @@ function Withdrawal({
     <Modal
       title={t("ការដកប្រាក់សាកល្បង", "Sample cash withdrawal")}
       onClose={onClose}
+      footer={<button
+        className="d-btn d-btn-primary button primary full"
+        disabled={!owner || !holder || amount <= 0 || !reason.trim()}
+        onClick={() => onSave(amount, reason.trim())}
+      >
+        {t("កត់ត្រាការដកប្រាក់សាកល្បង", "Record sample withdrawal")}
+      </button>}
     >
       <p className="muted">
         {t(
@@ -1638,13 +1647,6 @@ function Withdrawal({
         checked={holder}
         onChange={setHolder}
       />
-      <button
-        className="d-btn d-btn-primary button primary full"
-        disabled={!owner || !holder || amount <= 0 || !reason.trim()}
-        onClick={() => onSave(amount, reason.trim())}
-      >
-        {t("កត់ត្រាការដកប្រាក់សាកល្បង", "Record sample withdrawal")}
-      </button>
     </Modal>
   );
 }
