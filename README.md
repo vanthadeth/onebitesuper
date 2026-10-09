@@ -60,12 +60,14 @@ Browser checks run against production builds and start preview servers when need
 
 ## Deployment plan
 
-GitHub tracks both apps, shared packages and later database migrations. Create two Vercel projects with the repository root as the build context:
+Use two Vercel projects connected to `vanthadeth/onebitesuper`, both with the repository root as their Root Directory. The checked-in `vercel.json` builds the selected app into `dist/`. Set these project environment variables before deployment:
 
-| App | Build command | Output directory |
-| --- | --- | --- |
-| POS | `npm run build --workspace @onebite/pos` | `apps/pos/dist` |
-| Admin | `npm run build --workspace @onebite/admin` | `apps/admin/dist` |
+| Project | Environment variables |
+| --- | --- |
+| OneBite POS | `ONEBITE_APP=pos` |
+| OneBite Admin | `ONEBITE_APP=admin`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` |
+
+Use Node.js 24, the `main` production branch and the checked-in build/install/output settings. Each project gets its own HTTPS origin and PWA manifest. Supabase variables are browser-public values; secret/service-role keys must never be used here. See [Vercel deployment setup](docs/vercel-deployment.md).
 
 The initial Supabase schema and account API are deployed; Vercel hosting is pending. Read [Admin access setup and status](docs/admin-access.md) for the prepared Supabase backend and remaining verification.
 
