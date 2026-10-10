@@ -18,7 +18,7 @@ Import shared components from `@onebite/ui`. They use DaisyUI and the existing O
 | `PinInput` | Masked six-digit entry with app keypad and physical-keyboard support | Sign-in, Owner setup and mandatory PIN change |
 | `GeneratedPinField` | Read-only generated PIN, regenerate, copy and feedback | Account creation and PIN reset |
 | `UserAvatar` | Image cropping and initials fallback, including failed-image fallback | Profile, account menu and account avatars |
-| `PageHeading` | Pinned title/subtitle and action | All Admin pages |
+| `PageHeading` | Pinned title/subtitle and action; compacts while scrolling | All Admin pages |
 | `AppDialog` | Modal/sheet with fixed heading/footer and focus restoration | All editors |
 | `EmptyState` | Illustration, explanation and optional creation/recovery actions | Directories, logs and Hub |
 | `SelectField`, `SwitchField`, `CheckField` | Accessible Radix controls | Forms and permissions |
@@ -40,7 +40,7 @@ const [query, setQuery] = useState('');
 </DirectoryTools>
 ```
 
-Use the language provider to translate labels. Page headings stay pinned; search and filter controls follow normal page scrolling. Callers filter only the data they are authorized to view. Roles use All/Built-in/Custom segments because roles do not have an active status.
+Use the language provider to translate labels. Page headings sit flush below the measured app bar and compact after scrolling: the title shrinks, the subtitle collapses and actions retain a 44-pixel touch target. They expand again at the top. Search and filter controls follow normal page scrolling. Callers filter only the data they are authorized to view. Roles use All/Built-in/Custom segments because roles do not have an active status.
 
 ## Actions, cards and feedback
 

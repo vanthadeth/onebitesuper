@@ -1,5 +1,5 @@
 import { UserAvatar } from './user-avatar';
-import type { KeyboardEvent } from 'react';
+import { useLayoutEffect, useRef, type KeyboardEvent } from 'react';
 import * as Menu from '@radix-ui/react-dropdown-menu';
 import { LayoutGrid, Moon, Sun, LogOut } from 'lucide-react';
 import { useLanguage } from './shared';
@@ -7,8 +7,14 @@ import { SyncControl, type SyncStatus, type ConnectionStatus, type SyncTask } fr
 export type { SyncStatus } from './sync-status';
 
 export function AppTitleBar({icon,title,name,username,photo,syncStatus,pendingCount,connection='online',syncTask='refresh',lastSyncedAt,disabled,dark,onSync,onProfile,onHub,onLanguage,onTheme,onSignOut}:{icon:string;title:string;name:string;username:string;photo?:string;syncStatus:SyncStatus;pendingCount:number;connection?:ConnectionStatus;syncTask?:SyncTask;lastSyncedAt?:number;disabled:boolean;dark:boolean;onSync:()=>void;onProfile:()=>void;onHub?:()=>void;onLanguage:()=>void;onTheme:()=>void;onSignOut:()=>void}) {
- const {t,lang}=useLanguage();
- return <header className="access-header ob-app-header">
+ const {t,lang}=useLanguage(),header=useRef<HTMLElement>(null);
+ useLayoutEffect(()=>{
+  const element=header.current,parent=element?.parentElement;if(!element||!parent)return;
+  const measure=()=>parent.style.setProperty('--ob-app-header-height',`${element.getBoundingClientRect().height}px`);
+  measure();const observer=new ResizeObserver(measure);observer.observe(element);
+  return()=>{observer.disconnect();parent.style.removeProperty('--ob-app-header-height');};
+ },[]);
+ return <header ref={header} className="access-header ob-app-header">
   <div className="ob-app-identity"><img src={icon} alt="OneBite"/><div><strong>{title}</strong></div></div>
   <div className="access-header-actions">
    <SyncControl status={syncStatus} pendingCount={pendingCount} connection={connection} task={syncTask} lastSyncedAt={lastSyncedAt} disabled={disabled} onSync={onSync}/>

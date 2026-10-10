@@ -44,3 +44,6 @@ body{background:#f6f7f9;line-height:1.7;color:var(--ink)}
 .access-permission-groups,.access-permission-module,.access-permission-matrix{min-width:0;max-width:100%}
 
 .access-user-row .access-avatar{overflow:hidden;flex-shrink:0}.access-user-row .access-avatar img{width:100%;height:100%;object-fit:cover;border-radius:inherit}
+
+/* Page headings start directly below the app title bar. */
+.access-main{padding-top:0}
