@@ -271,7 +271,7 @@ test('Activity history scrolls in pages, groups Cambodia dates and filters the f
  await page.getByLabel('From date',{exact:true}).fill('2026-09-29');await page.getByLabel('To date',{exact:true}).fill('2026-09-30');await page.getByRole('button',{name:'Show logs',exact:true}).click();await expect(page.locator('.access-activity-row')).toHaveCount(27);await expect(page.locator('.access-activity')).toContainText('Log 244');await expect(page.locator('.access-activity')).not.toContainText('Log 0');await expect(page.locator('.access-activity-group')).toHaveCount(2);await expect(page.locator('.access-activity')).toContainText('All logs shown');
  await page.getByLabel('From date',{exact:true}).fill('2020-01-01');await page.getByLabel('To date',{exact:true}).fill('2020-01-02');await page.getByRole('button',{name:'Show logs',exact:true}).click();await expect(page.locator('.access-activity')).toContainText('No logs in this date range');await page.getByRole('button',{name:'Clear dates',exact:true}).click();await expect(page.locator('.access-activity-row')).toHaveCount(30);await page.screenshot({path:`artifacts/admin-activity-${info.project.name}.png`,fullPage:true});
 });
-test('MFA gates business data, tokens stay out of storage and failed logout is explicit',async({page})=>{
+test('MFA gates business data, only opaque sessions are remembered and failed logout clears them',async({page})=>{
  const {initialAccessState}=await import('../packages/core/src/access');const snapshot={...initialAccessState(),revision:0};let verified=false;
  await page.addInitScript(()=>sessionStorage.setItem('onebite-admin-session','old-token'));
  await page.route('**/functions/v1/admin-access',async route=>{
@@ -285,8 +285,8 @@ test('MFA gates business data, tokens stay out of storage and failed logout is e
  await page.goto('http://127.0.0.1:5174');await page.getByLabel('Username',{exact:true}).fill('test.owner');await page.getByLabel('6-digit PIN',{exact:true}).fill('739284');await page.getByRole('button',{name:'Sign in',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Verify your identity'})).toBeVisible();await expect(page.locator('.access-user-row')).toHaveCount(0);expect(verified).toBe(false);
  await page.getByLabel('Verification code',{exact:true}).fill('123456');await page.getByRole('button',{name:'Verify',exact:true}).click();await expect(page.locator('.access-user-row')).not.toHaveCount(0);
- expect(await page.evaluate(()=>({session:sessionStorage.getItem('onebite-admin-session'),local:localStorage.getItem('onebite-admin-session')}))).toEqual({session:null,local:null});
- await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.getByRole('menuitem',{name:'Sign out',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Server revocation could not be confirmed');await expect(page.locator('.access-user-row')).toHaveCount(0);
+ const remembered=await page.evaluate(()=>({session:sessionStorage.getItem('onebite-admin-session'),local:JSON.parse(localStorage.getItem('onebite-admin-session')!)}));expect(remembered.session).toBeNull();expect(remembered.local.token).toBe('a'.repeat(64));expect(Object.keys(remembered.local).sort()).toEqual(['expiresAt','token']);
+ await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.getByRole('menuitem',{name:'Sign out',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Server revocation could not be confirmed');await expect(page.locator('.access-user-row')).toHaveCount(0);expect(await page.evaluate(()=>localStorage.getItem('onebite-admin-session'))).toBeNull();
 });
 test('idle Admin sessions lock and remove business data from the interface',async({page})=>{
  const {initialAccessState}=await import('../packages/core/src/access');await page.clock.install();await startLive(page,{...initialAccessState(),revision:0});await page.clock.fastForward(10*60_000+1);await expect(page.getByRole('heading',{name:'Welcome back'})).toBeVisible();await expect(page.locator('.access-user-row')).toHaveCount(0);
@@ -317,4 +317,22 @@ test('Profile page uses bento cards and functional personal preferences',async({
 test('Staff profile displays only assigned sites and hides privileged actions',async({page})=>{
  await open(page);await choose(page,'Preview identity','sokha');await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.getByRole('menuitem',{name:'My profile',exact:true}).click();
  await expect(page.locator('.profile-identity')).toContainText('@sokha');await expect(page.locator('.profile-sites')).toContainText('Riverside');await expect(page.locator('.profile-sites')).not.toContainText('Market');await expect(page.getByRole('button',{name:'Edit profile',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Reset PIN',exact:true})).toHaveCount(0);
+});
+
+test('Remembered sign-in validates on reload and reopening, then clears on sign-out',async({page,context})=>{
+ const {initialAccessState}=await import('../packages/core/src/access');const state={...initialAccessState(),revision:0};let validations=0;
+ await context.route('**/functions/v1/admin-access',async route=>{const {action}=route.request().postDataJSON();if(action==='bootstrap.status')return route.fulfill({json:{ownerCreated:true}});if(action==='me'){validations++;expect(route.request().headers().authorization).toBe('Bearer '+'a'.repeat(64));}return route.fulfill({json:{actor:state.users[0],state}});});
+ await startLive(page,state);await page.reload();await expect(page.locator('.access-user-row')).not.toHaveCount(0);expect(validations).toBe(1);
+ const reopened=await context.newPage();await reopened.addInitScript(()=>localStorage.setItem('onebite-language','en'));await reopened.goto('http://127.0.0.1:5174');await expect(reopened.locator('.access-user-row')).not.toHaveCount(0);expect(validations).toBe(2);
+ await reopened.getByRole('button',{name:'Profile menu',exact:true}).click();await reopened.getByRole('menuitem',{name:'Sign out',exact:true}).click();await expect(reopened.getByRole('heading',{name:'Welcome back'})).toBeVisible();await expect(page.getByRole('heading',{name:'Welcome back'})).toBeVisible();
+ expect(await reopened.evaluate(()=>localStorage.getItem('onebite-admin-session'))).toBeNull();await reopened.reload();await expect(reopened.getByRole('heading',{name:'Welcome back'})).toBeVisible();
+});
+
+for(const reason of ['revoked','expired','malformed','network'])test(`Remembered sign-in handles ${reason} sessions safely`,async({page})=>{
+ const {initialAccessState}=await import('../packages/core/src/access');const state={...initialAccessState(),revision:0};let validations=0;
+ await page.addInitScript(reason=>localStorage.setItem('onebite-admin-session',reason==='malformed'?'invalid-json':JSON.stringify({token:'b'.repeat(64),expiresAt:Date.now()+(reason==='expired'?-1000:3600000)})),reason);
+ await page.route('**/functions/v1/admin-access',async route=>{const {action}=route.request().postDataJSON();if(action==='me'){validations++;return reason==='network'?route.abort():route.fulfill({status:401,json:{error:'unauthorized'}});}return route.fulfill({json:{ownerCreated:true}});});
+ await page.goto('http://127.0.0.1:5174');await expect(page.locator('.access-user-row')).toHaveCount(0);
+ if(reason==='network'){await expect(page.getByRole('button',{name:'Retry connection',exact:true})).toBeVisible();expect(await page.evaluate(()=>localStorage.getItem('onebite-admin-session'))).not.toBeNull();await page.route('**/functions/v1/admin-access',route=>route.fulfill({json:{actor:state.users[0],state}}));await page.getByRole('button',{name:'Retry connection',exact:true}).click();await expect(page.locator('.access-user-row')).not.toHaveCount(0);}
+ else{await expect(page.getByRole('heading',{name:'Welcome back'})).toBeVisible();expect(await page.evaluate(()=>localStorage.getItem('onebite-admin-session'))).toBeNull();expect(validations).toBe(reason==='revoked'?1:0);}
 });
