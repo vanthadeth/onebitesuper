@@ -21,7 +21,8 @@
     "preview:pages": "node scripts/serve-pages.mjs",
     "test:pages": "playwright test --config playwright.pages.config.mjs",
     "test:secrets": "node scripts/scan-secrets.mjs --history",
-    "dev:inventory": "npm run dev --workspace @onebite/inventory"
+    "dev:inventory": "npm run dev --workspace @onebite/inventory",
+    "icons": "node scripts/app-icons.mjs"
   },
   "dependencies": {
     "@fontsource/noto-sans-khmer": "5.3.0",

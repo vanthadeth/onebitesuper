@@ -1,0 +1,21 @@
+{
+  "background": "#FFFDF8",
+  "apps": [
+    {
+      "app": "pos",
+      "color": "#F57921"
+    },
+    {
+      "app": "admin",
+      "color": "#282A2E"
+    },
+    {
+      "app": "inventory",
+      "color": "#3F6B52"
+    },
+    {
+      "app": "attendance",
+      "color": "#456B8B"
+    }
+  ]
+}

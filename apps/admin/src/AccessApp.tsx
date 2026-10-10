@@ -17,7 +17,7 @@ import { uploadSitePhoto } from "./site-photo";
 import { SiteDirectory, SiteEditor, SiteDetails } from "./Sites";
 import { saveRequest } from "./save-request";
 import { version } from "../../../package.json";
-import icon from "../../../resources/brand/one-bite-icon-orange.svg";
+import icon from "../../../resources/app-icons/admin.svg";
 import logo from "../../../resources/brand/one-bite-logo-orange.svg";
 import { generateTemporaryPin } from "./temporary-pin";
 type Tab = "users" | "roles" | "permissions" | "activity" | "sites" | "settings" | "hub" | "profile";

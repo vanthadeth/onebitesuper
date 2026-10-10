@@ -6,7 +6,7 @@ import {newCatalogItem,projectCatalog,type CatalogItem} from '@onebite/core/inve
 import {InventoryProfile} from './InventoryProfile';
 import {CatalogEditor} from './CatalogEditor';
 import {useCatalog} from './useCatalog';
-import icon from '../../../resources/brand/one-bite-icon-orange.svg';
+import icon from '../../../resources/app-icons/inventory.svg';
 import logo from '../../../resources/brand/one-bite-logo-orange.svg';
 import {version} from '../../../package.json';
 type Tab='material'|'sellable'|'sync'|'profile'|'hub';
