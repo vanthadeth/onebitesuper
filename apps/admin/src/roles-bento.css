@@ -1,0 +1,10 @@
+/* Saved role summaries follow the App Settings bento cards. */
+.access-role-list.roles-bento-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:stretch}
+.access-role-row.roles-bento-card{display:flex;flex-direction:column;min-width:0;padding:0;border:1px solid var(--line);border-radius:24px;background:var(--surface);overflow:hidden;box-shadow:0 3px 12px #20212403}
+.roles-card-header{display:flex;align-items:flex-start;gap:14px;padding:24px}
+.roles-card-icon{display:grid;place-items:center;width:44px;height:44px;flex-shrink:0;border-radius:14px;background:var(--soft);color:var(--text-orange)}
+.roles-card-heading{flex:1;min-width:0}.roles-card-heading h2{margin:0;font-size:18px;font-weight:600;line-height:1.5}.roles-card-heading p{margin:4px 0 0;font-size:14px;font-weight:400;line-height:1.7;color:var(--muted);overflow-wrap:anywhere}
+.roles-card-edit.d-btn{width:44px;height:44px;min-height:44px;padding:0;flex-shrink:0;color:var(--text-orange);border-radius:14px}
+.roles-card-summary{padding:0 24px 24px;margin-top:auto}.roles-summary-label{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px;font-size:14px;color:var(--muted)}.roles-summary-label span{display:grid;place-items:center;min-width:28px;height:28px;background:var(--soft);border-radius:9px;color:var(--text-orange);font-weight:600}
+.roles-bento-card .roles-module-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0;padding:0;list-style:none}.roles-bento-card .roles-module-grid li{display:flex;align-items:center;gap:10px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--surface-hover);color:var(--ink);font-size:14px;line-height:1.6;min-width:0;overflow-wrap:anywhere}.roles-module-grid li svg{color:var(--text-orange);flex-shrink:0}
+@media(max-width:680px){.access-role-list.roles-bento-grid{grid-template-columns:minmax(0,1fr);gap:16px}.roles-card-header{padding:20px;gap:12px}.roles-card-summary{padding:0 20px 20px}.roles-card-heading h2{font-size:17px}.roles-bento-card .roles-module-grid li{padding:12px;gap:8px}}
