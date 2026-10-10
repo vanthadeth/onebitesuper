@@ -133,6 +133,7 @@ test('inline reference creation preserves draft and offline references sync befo
  await unit.getByLabel('Name',{exact:true}).fill('Kilograms');await unit.getByLabel('Unit symbol',{exact:true}).fill('kg');await unit.getByRole('button',{name:'Create',exact:true}).click();
  await expect(item.getByRole('combobox',{name:'Base unit'})).toContainText('Kilograms (kg)');
  await item.getByLabel('Pack name',{exact:true}).fill('Bag');await item.getByLabel('Quantity per pack',{exact:false}).fill('1.5');await item.getByRole('button',{name:'Create item',exact:true}).click();
+ await expect(item).toHaveCount(0);await expect(page.locator('.inventory-card')).toContainText('Custom flour');
  await page.reload();await expect(page.locator('.inventory-card')).toContainText('Custom flour');
  await nav(page).getByRole('button',{name:'Changes',exact:true}).click();await expect(page.locator('.inventory-change')).toHaveCount(3);
  await page.evaluate(()=>window.scrollTo({top:500,behavior:'instant'}));
