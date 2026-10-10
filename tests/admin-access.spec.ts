@@ -118,7 +118,7 @@ test('Title bar profile actions, theme persistence and menu keyboard dismissal',
  await open(page);await expect(page.locator('.ob-app-identity strong')).toHaveText('OneBite - Admin');await expect(page.locator('.ob-app-identity span')).toHaveCount(0);
  if(info.project.name==='desktop'){await expect(page.locator('.access-brand>span')).toBeHidden();await expect(page.locator('.access-brand img')).toBeVisible();await expect(page.locator('.access-sidebar-foot')).toContainText('App version 0.1.0');await expect(page.locator('.access-sidebar-foot .access-person')).toHaveCount(0);await expect(page.locator('.access-sidebar-foot button')).toHaveCount(0);await expect(page.locator('.ob-app-identity>img')).toBeHidden();}else{await expect(page.locator('.ob-app-identity>img')).toBeVisible();}
  const sync=page.locator('.ob-sync');await expect(sync).toHaveCSS('border-top-width','0px');const center=await sync.locator('.ob-sync-center').boundingBox(),ring=await sync.locator('.ob-sync-ring').boundingBox();expect(center&&ring&&Math.abs(center.x+center.width/2-ring.x-ring.width/2)<1&&Math.abs(center.y+center.height/2-ring.y-ring.height/2)<1).toBe(true);
- await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.getByRole('menuitem',{name:'My profile',exact:true}).click();await expect(page.getByRole('heading',{name:'My profile',exact:true})).toBeVisible();await expect(page.locator('.profile-identity')).toContainText('@dara');await expect(page.getByRole('dialog')).toHaveCount(0);
+ await page.getByRole('button',{name:'Profile menu',exact:true}).click();await expect(page.getByRole('menuitem')).toHaveText(['Dara@dara','ខ្មែរ','Dark mode','Hub','Sign out']);await expect(page.getByRole('menuitem',{name:'My profile',exact:true})).toHaveCount(0);await page.keyboard.press('Home');await expect(page.locator('.ob-profile-label')).toBeFocused();await page.keyboard.press('Enter');await expect(page.getByRole('heading',{name:'My profile',exact:true})).toBeVisible();await expect(page.locator('.profile-identity')).toContainText('@dara');await expect(page.getByRole('dialog')).toHaveCount(0);
  await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.getByRole('menuitem',{name:'Dark mode',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
  await page.screenshot({path:`artifacts/admin-titlebar-dark-${info.project.name}.png`,fullPage:true});
  await page.reload();await expect(page.locator('.access-main')).toBeVisible();await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
@@ -306,7 +306,7 @@ test('Reset PIN generates a read-only PIN, regenerates, copies and submits it',a
 });
 
 test('Profile page uses bento cards and functional personal preferences',async({page},info)=>{
- await open(page);await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.getByRole('menuitem',{name:'My profile',exact:true}).click();
+ await open(page);await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.locator('.ob-profile-label').click();
  await expect(page.getByRole('heading',{name:'My profile',exact:true})).toBeVisible();await expect(page.locator('.profile-grid .profile-card')).toHaveCount(6);await expect(page.getByRole('dialog')).toHaveCount(0);
  await expect(page.locator('.profile-sites')).toContainText('Riverside');await expect(page.locator('.profile-access')).toContainText('Admin');await expect(page.getByRole('button',{name:'Reset PIN',exact:true})).toBeEnabled();
  await page.getByRole('button',{name:'Edit profile',exact:true}).click();await expect(page.getByRole('dialog').getByRole('heading',{name:'Edit account'})).toBeVisible();await page.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).click();
@@ -317,7 +317,7 @@ test('Profile page uses bento cards and functional personal preferences',async({
 });
 
 test('Staff profile displays only assigned sites and hides privileged actions',async({page})=>{
- await open(page);await choose(page,'Preview identity','sokha');await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.getByRole('menuitem',{name:'My profile',exact:true}).click();
+ await open(page);await choose(page,'Preview identity','sokha');await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.locator('.ob-profile-label').click();
  await expect(page.locator('.profile-identity')).toContainText('@sokha');await expect(page.locator('.profile-sites')).toContainText('Riverside');await expect(page.locator('.profile-sites')).not.toContainText('Market');await expect(page.getByRole('button',{name:'Edit profile',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Reset PIN',exact:true})).toHaveCount(0);
 });
 

@@ -1,5 +1,5 @@
 import * as Menu from '@radix-ui/react-dropdown-menu';
-import { LayoutGrid, RefreshCw, Check, CircleAlert, UserRound, Languages, Moon, Sun, LogOut } from 'lucide-react';
+import { LayoutGrid, RefreshCw, Check, CircleAlert, Languages, Moon, Sun, LogOut } from 'lucide-react';
 import { useLanguage } from './shared';
 
 export type SyncStatus = 'idle' | 'syncing' | 'complete' | 'failed';
@@ -16,11 +16,10 @@ export function AppTitleBar({icon,title,name,username,syncStatus,pendingCount,di
    <span className="ob-sr-only" role="status" aria-live="polite">{status} · {count}</span>
    <Menu.Root><Menu.Trigger asChild><button className="ob-profile-badge" aria-label={t('ម៉ឺនុយគណនី','Profile menu')}><span className="access-avatar small">{Array.from(name)[0]}</span></button></Menu.Trigger>
     <Menu.Portal><Menu.Content className="d-menu ob-profile-menu" align="end" sideOffset={10} collisionPadding={12}>
-     <Menu.Label className="ob-profile-label"><strong>{name}</strong><small>@{username}</small></Menu.Label><Menu.Separator className="ob-menu-separator"/>
-     {onHub&&<Menu.Item className="ob-menu-item" onSelect={onHub}><LayoutGrid size={18}/>{t('មជ្ឈមណ្ឌល','Hub')}</Menu.Item>}
-     <Menu.Item className="ob-menu-item" onSelect={onProfile}><UserRound size={18}/>{t('ប្រវត្តិរូបរបស់ខ្ញុំ','My profile')}</Menu.Item>
+     <Menu.Item className="ob-menu-item ob-profile-label" onSelect={onProfile}><strong>{name}</strong><small>@{username}</small></Menu.Item><Menu.Separator className="ob-menu-separator"/>
      <Menu.Item className="ob-menu-item" onSelect={onLanguage}><Languages size={18}/>{lang==='km'?'English':'ខ្មែរ'}</Menu.Item>
      <Menu.Item className="ob-menu-item" onSelect={onTheme}>{dark?<Sun size={18}/>:<Moon size={18}/ >}{dark?t('របៀបភ្លឺ','Light mode'):t('របៀបងងឹត','Dark mode')}</Menu.Item>
+     {onHub&&<Menu.Item className="ob-menu-item" onSelect={onHub}><LayoutGrid size={18}/>{t('មជ្ឈមណ្ឌល','Hub')}</Menu.Item>}
      <Menu.Separator className="ob-menu-separator"/><Menu.Item disabled={disabled} className="ob-menu-item ob-menu-danger" onSelect={onSignOut}><LogOut size={18}/>{t('ចាកចេញ','Sign out')}</Menu.Item>
     </Menu.Content></Menu.Portal>
    </Menu.Root>
