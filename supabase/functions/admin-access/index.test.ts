@@ -1,3 +1,5 @@
+import jpeg from 'jpeg-js';
+import {boundedBody,encodeBase32,totp,verifyTotp,sanitizeJpeg} from './security.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 let handler:(request:Request)=>Promise<Response>;
@@ -23,20 +25,41 @@ test('RPC failure diagnostics contain only action, status and error code',async(
  globalThis.fetch=async()=>Response.json({code:'23505',message:'private username',details:'secret token'},{status:400});
  try{const response=await handler(request('user.update',{pin:'654321'},{Authorization:'Bearer '+ 'a'.repeat(64)}));assert.deepEqual(await response.json(),{error:'request_failed'});assert.deepEqual(JSON.parse(messages[0]),{event:'admin_rpc_failed',action:'user.update',status:400,code:'23505'});assert.equal(messages.join('').includes('654321'),false);assert.equal(messages.join('').includes('secret'),false);}finally{globalThis.fetch=previous;console.error=previousLog;}
 });
+const validJpeg=Buffer.from(jpeg.encode({data:Buffer.from([255,0,0,255]),width:1,height:1},80).data).toString('base64');
 const uploadRequest=(image:string,token='a'.repeat(64))=>request('site.photo.upload',{image},{Authorization:'Bearer '+token});
 test('site photos require authorization, validate image bytes and use server-only Storage credentials',async()=>{
  const previous=globalThis.fetch;const actorId='11111111-1111-4111-8111-111111111111';let calls=0;
- globalThis.fetch=async(url,init)=>{calls++;const headers=new Headers(init!.headers);assert.equal(headers.get('apikey'),'sb_secret_server_only');if(String(url).includes('/rpc/')){const rpc=JSON.parse(init!.body as string);assert.equal(rpc.p_action,'site.photo.authorize');assert.match(rpc.p_session_hash,/^[a-f0-9]{64}$/);return Response.json({actor:{id:actorId}});}assert.match(String(url),new RegExp('/storage/v1/object/site-photos/'+actorId+'/[a-f0-9-]{36}\\.jpg$'));assert.equal(headers.get('Content-Type'),'image/jpeg');assert.equal(headers.get('x-upsert'),'false');assert.deepEqual([...init!.body as Uint8Array],[255,216,255,217]);return Response.json({Key:'stored'});};
- try{const response=await handler(uploadRequest('/9j/2Q=='));assert.equal(response.status,200);const data=await response.json();assert.match(data.photoPath,new RegExp('^'+actorId+'/[a-f0-9-]{36}\\.jpg$'));assert.equal(calls,2);assert.equal(JSON.stringify(data).includes('sb_secret'),false);}finally{globalThis.fetch=previous;}
+ globalThis.fetch=async(url,init)=>{calls++;const headers=new Headers(init!.headers);assert.equal(headers.get('apikey'),'sb_secret_server_only');if(String(url).includes('/rpc/onebite_orphan_photos'))return Response.json({paths:[]});if(String(url).includes('/rpc/')){const rpc=JSON.parse(init!.body as string);assert.equal(rpc.p_action,'site.photo.authorize');assert.match(rpc.p_session_hash,/^[a-f0-9]{64}$/);return Response.json({actor:{id:actorId}});}assert.match(String(url),new RegExp('/storage/v1/object/site-photos/'+actorId+'/[a-f0-9-]{36}\\.jpg$'));assert.equal(headers.get('Content-Type'),'image/jpeg');assert.equal(headers.get('x-upsert'),'false');const image=jpeg.decode(init!.body as Uint8Array);assert.equal(image.width,1);assert.equal(image.height,1);return Response.json({Key:'stored'});};
+ try{const response=await handler(uploadRequest(validJpeg));assert.equal(response.status,200);const data=await response.json();assert.match(data.photoPath,new RegExp('^'+actorId+'/[a-f0-9-]{36}\\.jpg$'));assert.equal(calls,3);assert.equal(JSON.stringify(data).includes('sb_secret'),false);}finally{globalThis.fetch=previous;}
 });
 test('denied photo permissions and invalid images never upload; Storage failures are retryable',async()=>{
  const previous=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;return Response.json({error:'forbidden'});};
- try{assert.equal((await handler(uploadRequest('/9j/2Q=='))).status,403);assert.equal(calls,1);calls=0;assert.equal((await handler(uploadRequest('/9j/2Q==','bad'))).status,401);assert.equal(calls,0);
+ try{assert.equal((await handler(uploadRequest(validJpeg))).status,403);assert.equal(calls,1);calls=0;assert.equal((await handler(uploadRequest(validJpeg,'bad'))).status,401);assert.equal(calls,0);
  globalThis.fetch=async(url)=>{if(String(url).includes('/rpc/'))return Response.json({actor:{id:'11111111-1111-4111-8111-111111111111'}});throw new Error('Invalid image reached Storage');};for(const image of ['cGxhaW4gdGV4dA==','<svg/>','!', 'A'.repeat(950001)])assert.equal((await handler(uploadRequest(image))).status,400);
- globalThis.fetch=async(url)=>String(url).includes('/rpc/')?Response.json({actor:{id:'11111111-1111-4111-8111-111111111111'}}):Response.json({private:'details'},{status:500});const response=await handler(uploadRequest('/9j/2Q=='));assert.equal(response.status,502);assert.deepEqual(await response.json(),{error:'photo_upload_failed'});
+ globalThis.fetch=async(url)=>String(url).includes('/rpc/')?Response.json({actor:{id:'11111111-1111-4111-8111-111111111111'}}):Response.json({private:'details'},{status:500});const response=await handler(uploadRequest(validJpeg));assert.equal(response.status,502);assert.deepEqual(await response.json(),{error:'photo_upload_failed'});
  }finally{globalThis.fetch=previous;}
 });
 test('activity reads use a separate protected paged RPC without forwarding action overrides',async()=>{
  const previous=globalThis.fetch;globalThis.fetch=async(url,init)=>{assert.equal(String(url),'https://example.supabase.co/rest/v1/rpc/onebite_activity_page');const rpc=JSON.parse(init!.body as string);assert.equal(rpc.p_action,undefined);assert.deepEqual(rpc.p_payload,{start:'2026-10-01',end:'2026-10-09'});assert.match(rpc.p_session_hash,/^[a-f0-9]{64}$/);return Response.json({events:[],nextCursor:null});};
  try{assert.equal((await handler(request('activity.list'))).status,401);const response=await handler(request('activity.list',{start:'2026-10-01',end:'2026-10-09'},{Authorization:'Bearer '+'a'.repeat(64)}));assert.equal(response.status,200);assert.deepEqual(await response.json(),{events:[],nextCursor:null});}finally{globalThis.fetch=previous;}
+});
+test('TOTP matches RFC 4226 vectors and accepts only the bounded time window',async()=>{
+ const secret=encodeBase32(new TextEncoder().encode('12345678901234567890'));
+ assert.equal(await totp(secret,0),'755224');assert.equal(await totp(secret,1),'287082');
+ assert.equal(await verifyTotp(secret,'287082',30000),1);assert.equal(await verifyTotp(secret,'755224',120000),null);
+});
+test('body limit is applied to streamed bytes before parsing and JPEG marker-only uploads fail',async()=>{
+ await assert.rejects(()=>boundedBody(new Request('https://example.test',{method:'POST',body:'x'.repeat(101)}),100),/payload_too_large/);
+ const stream=new ReadableStream({start(controller){controller.enqueue(new Uint8Array(60));controller.enqueue(new Uint8Array(60));controller.close();}});
+ await assert.rejects(()=>boundedBody(new Request('https://example.test',{method:'POST',body:stream,duplex:'half'} as RequestInit),100),/payload_too_large/);
+ assert.throws(()=>sanitizeJpeg(new Uint8Array([255,216,255,217])));
+});
+test('CORS rejects untrusted origins and reflects only the production app origin',async()=>{
+ const rejected=await handler(request('bootstrap.status',{}, {origin:'https://attacker.example'}));assert.equal(rejected.status,403);assert.equal(rejected.headers.get('Access-Control-Allow-Origin'),null);
+ const response=await handler(new Request('https://example.test',{method:'OPTIONS',headers:{origin:'https://vanthadeth.github.io'}}));assert.equal(response.headers.get('Access-Control-Allow-Origin'),'https://vanthadeth.github.io');assert.equal(response.headers.get('Vary'),'Origin');
+});
+test('MFA enrollment secrets and verification counters cannot be injected by the browser',async()=>{
+ const previous=globalThis.fetch;const seen:Record<string,unknown>[]=[];
+ globalThis.fetch=async(_url,init)=>{const rpc=JSON.parse(init!.body as string);seen.push(rpc);return Response.json({secret:'A'.repeat(32),username:'staff'});};
+ try{const result=await handler(request('mfa.enroll',{secret:'attacker',counter:99,_context:{source_hash:'attacker'}},{Authorization:'Bearer '+'a'.repeat(64)}));assert.equal(result.status,200);const payload=seen[0].p_payload as Record<string,unknown>;assert.match(payload.secret as string,/^[A-Z2-7]{32}$/);assert.notEqual(payload.secret,'attacker');assert.equal(payload.counter,undefined);assert.notEqual((payload._context as Record<string,unknown>).source_hash,'attacker');}finally{globalThis.fetch=previous;}
 });

@@ -1,13 +1,15 @@
 import publicConfig from "../../../config/supabase.public.json";
 import type { Account, AccessState, AccessEvent } from "@onebite/core/access";
 export type Snapshot = AccessState & { revision: number };
-export type AccessReply = { actor?: Account; state?: Snapshot; session?: string; mustChangePin?: boolean; ownerCreated?: boolean; ok?: boolean; photoPath?: string; events?: AccessEvent[]; nextCursor?: {time:string;id:string}|null };
+export type AccessReply = { actor?: Account; state?: Snapshot; session?: string; mustChangePin?: boolean; ownerCreated?: boolean; ok?: boolean; mfaRequired?:boolean; mfaEnrollment?:boolean; secret?:string; uri?:string; recoveryCodes?:string[]; photoPath?: string; events?: AccessEvent[]; nextCursor?: {time:string;id:string}|null };
 const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || publicConfig.url;
 const key = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) || publicConfig.publishableKey;
 export const configured = Boolean(url && key);
 const storageKey = "onebite-admin-session";
-export function readSession() { try { return sessionStorage.getItem(storageKey) || ""; } catch { return ""; } }
-export function setSession(token: string) { try { if(token)sessionStorage.setItem(storageKey,token);else sessionStorage.removeItem(storageKey); } catch { /* Session remains usable in memory. */ } }
+// Tokens stay in memory; remove credentials left by older versions.
+let currentSession="";
+export function readSession(){try{sessionStorage.removeItem(storageKey);}catch{}return currentSession;}
+export function setSession(token:string){currentSession=token;try{sessionStorage.removeItem(storageKey);}catch{}}
 export class ApiError extends Error { constructor(public code: string, public status: number) { super(code); } }
 export async function accessApi(action: string, payload: Record<string,unknown> = {}, session = ""): Promise<AccessReply> {
  if(!configured)throw new ApiError("not_connected",503);

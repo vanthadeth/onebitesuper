@@ -120,8 +120,9 @@ export function saveAccount(state: AccessState, actorId: string, account: Accoun
   const existing=state.users.find(u=>u.id===account.id);
   if(creating ? Boolean(existing) : !existing)throw new AccessError("not_found");
   if(!roleIds(state).includes(account.role))throw new AccessError("invalid_role");
-  if(actor.role!=="Owner"&&(existing?.role==="Owner"||account.role==="Owner"))throw new AccessError("forbidden");
+  if(actor.role!=="Owner"&&(privilegedRole(state,account.role)||(existing&&privilegedRole(state,existing.role))))throw new AccessError("forbidden");
   if(creating&&account.role==="Owner")throw new AccessError("invalid_role");
+  if((actor.role!=="Owner"||!can(state,actor,"staff.assign"))&&existing&&JSON.stringify([...account.sites].sort())!==JSON.stringify([...existing.sites].sort()))throw new AccessError("forbidden");
   const next=normalize(creating?{...account,active:true,sites:[]}:account,state.sites,creating||existing?.sites.length===0);
   if(state.users.some(u=>u.id!==next.id&&u.username.toLowerCase()===next.username))throw new AccessError("duplicate_username");
   const users=creating?[...state.users,next]:state.users.map(u=>u.id===next.id?next:u);
@@ -152,16 +153,18 @@ function validateGrants(role: Role, permissions: Permission[], previous: Permiss
   if(role==="Owner"&&ownerRequiredPermissions.some(p=>!grants.includes(p)))throw new AccessError("immutable_grant");
   return grants;
 }
+export function privilegedRole(state:AccessState,role:Role):boolean {return role==="Owner"||(state.grants[role]||[]).some(p=>["roles.manage","users.manage","settings.manage","sites.manage","staff.assign"].includes(p));}
+export function validStaffPin(pin:string):boolean{return /^[0-9]{6}$/.test(pin)&&!/^([0-9])\1{5}$/.test(pin)&&!["123456","654321","012345","543210","111222","121212","112233","123123"].includes(pin);}
 export function saveGrants(state: AccessState, actorId: string, role: Role, permissions: Permission[]): AccessState {
   const actor=getActor(state,actorId);
-  if(!can(state,actor,"roles.manage")||(role==="Owner"&&actor.role!=="Owner"))throw new AccessError("forbidden");
+  if(actor.role!=="Owner"||!can(state,actor,"roles.manage"))throw new AccessError("forbidden");
   if(!roleIds(state).includes(role))throw new AccessError("invalid_role");
   const grants=validateGrants(role,permissions,state.grants[role]||[]);
   return {...state,grants:{...state.grants,[role]:grants},events:event(state,actor,"permissions.updated",roleDisplayName(state,role),grants.join(", "))};
 }
 export function createRole(state: AccessState, actorId: string, role: CustomRole, permissions: Permission[]): AccessState {
   const actor=getActor(state,actorId);
-  if(!can(state,actor,"roles.manage"))throw new AccessError("forbidden");
+  if(actor.role!=="Owner"||!can(state,actor,"roles.manage"))throw new AccessError("forbidden");
   if(!/^role_[a-f0-9-]{36}$/.test(role.id)||roleIds(state).includes(role.id))throw new AccessError("invalid_role");
   const name=role.name.trim(),description=role.description.trim();
   if(!name||name.length>60)throw new AccessError("invalid_name");

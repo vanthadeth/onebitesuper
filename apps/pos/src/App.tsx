@@ -86,6 +86,7 @@ const orderName = (cart: Cart) =>
 
 export function App() {
   const { t, lang } = useLanguage();const money=usePrice();
+  const [previewConfirmed,setPreviewConfirmed]=useState(()=>{try{return sessionStorage.getItem("onebite-pos-demo")==="yes";}catch{return false;}});
   const [state, setState, storageError] = useLocalState<Store>(
     "onebite-pos-preview-v1",
     initial,
@@ -439,6 +440,7 @@ export function App() {
       )}
     </>
   );
+  if(!previewConfirmed)return <main className="access-auth"><div className="d-card auth-card"><h1>{t("OneBite POS · សាកល្បង","OneBite POS · Preview")}</h1><p>{t("សម្រាប់សាកល្បងប៉ុណ្ណោះ។ កុំប្រើសម្រាប់លក់ពិត ឬប្រមូលប្រាក់។ ទិន្នន័យត្រូវរក្សាទុកតែក្នុងឧបករណ៍ និងអាចផ្លាស់ប្ដូរ ឬបាត់បង់។","This app is for sample orders only. Do not accept real sales or payments. Records are stored only in this browser and can be changed or lost.")}</p><button className="d-btn d-btn-primary" onClick={()=>{try{sessionStorage.setItem("onebite-pos-demo","yes");}catch{}setPreviewConfirmed(true);}}>{t("យល់ព្រម · បើក POS សាកល្បង","I understand · Open sample POS")}</button></div></main>;
   return (
     <div className="app pos-app">
       <Header
@@ -448,6 +450,7 @@ export function App() {
         onSite={switchSite}
       />
       <DemoBanner />
+      <div className="notice danger" role="note">{t("POS សាកល្បងប៉ុណ្ណោះ។ កុំប្រើសម្រាប់ការលក់ពិត ឬប្រមូលប្រាក់។ ទិន្នន័យនេះអាចផ្លាស់ប្ដូរ ឬបាត់បង់។","Sample POS only. Do not use for real sales or collect payments. This browser data can be changed or lost.")}</div>
       {!online && (
         <div className="notice">
           <WifiOff size={16} />
@@ -997,6 +1000,7 @@ function ItemEditor({
   onSave: (line: Line) => void;
 }) {
   const { t, lang } = useLanguage();const money=usePrice();
+  const [previewConfirmed,setPreviewConfirmed]=useState(()=>{try{return sessionStorage.getItem("onebite-pos-demo")==="yes";}catch{return false;}});
   const [qty, setQty] = useState(existing?.qty ?? 1);
   const [sauce, setSauce] = useState<Sauce | null>(
     existing?.sauce ??

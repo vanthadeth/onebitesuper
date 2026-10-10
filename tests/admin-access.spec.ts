@@ -1,6 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
 test.beforeEach(async({page},info)=>{if(!info.title.startsWith('Khmer'))await page.addInitScript(()=>localStorage.setItem('onebite-language','en'));});
 async function open(page:Page){await page.route('**/functions/v1/admin-access',route=>route.abort());await page.goto('http://127.0.0.1:5174');await page.getByRole('button',{name:'Open local preview'}).click();}
+async function startLive(page:Page,state:any){
+ await page.route('**/functions/v1/admin-access',async route=>{const {action}=route.request().postDataJSON();if(action==='bootstrap.status')return route.fulfill({json:{ownerCreated:true}});if(action==='login')return route.fulfill({json:{actor:state.users.find((u:any)=>u.id==='owner'),state,session:'a'.repeat(64)}});return route.fallback();});
+ await page.goto('http://127.0.0.1:5174');await page.getByLabel('Username',{exact:true}).fill('test.owner');await page.getByLabel('6-digit PIN',{exact:true}).fill('739284');await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.locator('.ob-sync')).toBeVisible();
+}
 async function choose(page:Page,label:string,value:string){await page.getByLabel(label,{exact:true}).click();await page.locator(`[role="option"][data-value="${value}"]`).click();}
 async function viewUser(page:Page,name:string){await page.locator('.access-user-row').filter({hasText:name}).click();await expect(page.getByRole('dialog').getByRole('heading',{name:'User details',exact:true})).toBeVisible();}
 async function editUser(page:Page,name:string){await viewUser(page,name);await page.getByRole('dialog').getByRole('button',{name:'Edit',exact:true}).click();}
@@ -125,13 +129,13 @@ test('Title bar profile actions, theme persistence and menu keyboard dismissal',
 
 test('Live sync tracks in-flight changes, failures and successful refresh',async({page})=>{
  const {initialAccessState}=await import('../packages/core/src/access');const snapshot={...initialAccessState(),revision:0};
- await page.addInitScript(()=>sessionStorage.setItem('onebite-admin-session','a'.repeat(64)));
+
  let release:()=>void=()=>{},fail=false,hold=false;
  await page.route('**/functions/v1/admin-access',async route=>{
   const {action}=route.request().postDataJSON();if(hold)await new Promise<void>(resolve=>{release=resolve;});
   await route.fulfill({status:fail?503:200,json:fail?{error:'network_failed'}:{state:snapshot,actor:snapshot.users.find(u=>u.id==='owner'),ok:true}});
  });
- await page.goto('http://127.0.0.1:5174');const sync=page.locator('.ob-sync');await expect(sync).toHaveAttribute('data-state','complete');await expect(sync.locator('.ob-sync-center')).toBeVisible();
+ await startLive(page,snapshot);const sync=page.locator('.ob-sync');await expect(sync).toHaveAttribute('data-state','complete');await expect(sync.locator('.ob-sync-center')).toBeVisible();
  hold=true;await sync.click();await expect(sync).toHaveAttribute('data-state','syncing');await expect(sync).toBeDisabled();await expect(sync.locator('.ob-sync-count')).toHaveText('0');release();await expect(sync).toHaveAttribute('data-state','complete');
  await page.getByRole('button',{name:'Create new user',exact:true}).click();const dialog=page.getByRole('dialog');await dialog.getByLabel('Full name').fill('Sync Tester');await dialog.getByLabel('Username',{exact:true}).fill('sync.tester');await choose(page,'Role','Cashier');
  fail=true;await dialog.getByRole('button',{name:'Create User',exact:true}).click();await expect(sync.locator('.ob-sync-count')).toHaveText('1');await expect(sync).toHaveAttribute('data-state','syncing');release();await expect(sync).toHaveAttribute('data-state','failed');await expect(sync.locator('.ob-sync-count')).toHaveCount(0);await expect(dialog.getByRole('alert')).toBeVisible();await expect(dialog.getByLabel('Username',{exact:true})).toHaveValue('sync.tester');
@@ -140,14 +144,14 @@ test('Live sync tracks in-flight changes, failures and successful refresh',async
 
 for(const conflict of [false,true])test(`Stale user save ${conflict?'preserves draft and reloads a changed record':'refreshes unrelated changes and retries once'}`,async({page})=>{
  const {initialAccessState}=await import('../packages/core/src/access');const original={...initialAccessState(),revision:1};const latest=structuredClone(original);latest.revision=2;if(conflict)latest.users.find(user=>user.id==='owner')!.name='New server name';else latest.users.find(user=>user.id==='sokha')!.name='Changed elsewhere';
- let reads=0;const writes:Array<Record<string,unknown>>=[];
- await page.addInitScript(()=>sessionStorage.setItem('onebite-admin-session','a'.repeat(64)));
+ let reads=1;const writes:Array<Record<string,unknown>>=[];
+
  await page.route('**/functions/v1/admin-access',async route=>{
   const {action,payload}=route.request().postDataJSON();if(action==='bootstrap.status'){await route.fulfill({json:{ownerCreated:true}});return;}if(action==='me'){const state=++reads===1?original:latest;await route.fulfill({json:{state,actor:state.users.find(user=>user.id==='owner')}});return;}
   writes.push(payload);if(writes.length===1){await route.fulfill({status:409,json:{error:'stale_revision'}});return;}
   const updated=structuredClone(latest);Object.assign(updated.users.find(user=>user.id==='owner')!,payload);updated.revision=3;await route.fulfill({json:{state:updated,ok:true}});
  });
- await page.goto('http://127.0.0.1:5174');await editUser(page,'Dara');const dialog=page.getByRole('dialog');await dialog.getByLabel('Full name').fill('My draft');await dialog.getByRole('button',{name:'Save changes',exact:true}).click();
+ await startLive(page,original);await editUser(page,'Dara');const dialog=page.getByRole('dialog');await dialog.getByLabel('Full name').fill('My draft');await dialog.getByRole('button',{name:'Save changes',exact:true}).click();
  if(conflict){await expect(dialog.getByRole('alert')).toContainText('Data changed');await expect(dialog.getByLabel('Full name')).toHaveValue('My draft');expect(writes).toHaveLength(1);await dialog.getByRole('button',{name:'Reload latest · Discard this draft',exact:true}).click();await expect(dialog.getByLabel('Full name')).toHaveValue('New server name');await dialog.getByLabel('Full name').fill('Reviewed draft');await dialog.getByRole('button',{name:'Save changes',exact:true}).click();}
  await expect(dialog).toHaveCount(0);expect(writes).toHaveLength(2);expect(writes.map(write=>write.revision)).toEqual([1,2]);await expect(page.locator('.access-user-row').filter({hasText:conflict?'Reviewed draft':'My draft'})).toBeVisible();await expect(page.locator('.ob-sync')).toHaveAttribute('data-state','complete');
 });
@@ -201,7 +205,7 @@ test('Owner creates a custom role, configures permissions and assigns it to a us
 });
 
 test('Role creation waits for a current backend snapshot and unlocks after sync',async({page})=>{
- const {initialAccessState}=await import('../packages/core/src/access');const state={...initialAccessState(),revision:0};let modern=false;await page.addInitScript(()=>sessionStorage.setItem('onebite-admin-session','a'.repeat(64)));await page.route('**/functions/v1/admin-access',r=>r.fulfill({json:{actor:state.users[0],state:modern?{...state,customRoles:[]}:state}}));await page.goto('http://127.0.0.1:5174');await tab(page,'Roles');await expect(page.getByRole('button',{name:'Create new role',exact:true})).toBeDisabled();await reviewRole(page,'Cashier');await expect(page.getByRole('dialog').getByRole('switch',{name:'Manage user accounts',exact:true})).toBeDisabled();await page.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).click();modern=true;await page.locator('.ob-sync').click();await expect(page.getByRole('button',{name:'Create new role',exact:true})).toBeEnabled();await reviewRole(page,'Cashier');await expect(page.getByRole('dialog').getByRole('switch',{name:'Manage user accounts',exact:true})).toBeEnabled();
+ const {initialAccessState}=await import('../packages/core/src/access');const state={...initialAccessState(),revision:0};let modern=false;await page.route('**/functions/v1/admin-access',r=>r.fulfill({json:{actor:state.users[0],state:modern?{...state,customRoles:[]}:state}}));await startLive(page,state);await tab(page,'Roles');await expect(page.getByRole('button',{name:'Create new role',exact:true})).toBeDisabled();await reviewRole(page,'Cashier');await expect(page.getByRole('dialog').getByRole('switch',{name:'Manage user accounts',exact:true})).toBeDisabled();await page.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).click();modern=true;await page.locator('.ob-sync').click();await expect(page.getByRole('button',{name:'Create new role',exact:true})).toBeEnabled();await reviewRole(page,'Cashier');await expect(page.getByRole('dialog').getByRole('switch',{name:'Manage user accounts',exact:true})).toBeEnabled();
 });
 
 test('Site creation, operating schedule, editing and deactivation persist without changing staff assignments',async({page},info)=>{
@@ -239,9 +243,9 @@ test('Site photos can be added, replaced and removed with persisted card preview
 });
 
 test('Live site photo failures preserve the current photo and retry saves the uploaded path',async({page})=>{
- const {initialAccessState,saveSite}=await import('../packages/core/src/access');const oldPath='11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222.jpg',newPath='11111111-1111-4111-8111-111111111111/33333333-3333-4333-8333-333333333333.jpg';let state={...initialAccessState(),revision:0};state.sites[0]={...state.sites[0],location:'Phnom Penh',photoPath:oldPath};let fail=true;await page.addInitScript(()=>sessionStorage.setItem('onebite-admin-session','a'.repeat(64)));
+ const {initialAccessState,saveSite}=await import('../packages/core/src/access');const oldPath='11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222.jpg',newPath='11111111-1111-4111-8111-111111111111/33333333-3333-4333-8333-333333333333.jpg';let state={...initialAccessState(),revision:0};state.sites[0]={...state.sites[0],location:'Phnom Penh',photoPath:oldPath};let fail=true;
  await page.route('**/storage/v1/object/public/site-photos/**',r=>r.fulfill({status:404}));await page.route('**/functions/v1/admin-access',async route=>{const {action,payload}=route.request().postDataJSON();if(action==='site.photo.upload'){expect(route.request().headers().authorization).toBe('Bearer '+'a'.repeat(64));expect(payload.image).toMatch(/^\/9j/);return route.fulfill(fail?{status:502,json:{error:'photo_upload_failed'}}:{json:{photoPath:newPath}});}if(action==='site.update'){expect(payload.photoPath).toBe(newPath);state={...saveSite(state,'owner',payload),revision:state.revision+1};}return route.fulfill({json:{actor:state.users[0],state}});});
- await page.goto('http://127.0.0.1:5174');await tab(page,'Site');await page.getByRole('button',{name:'Edit site Riverside',exact:true}).click();const dialog=page.getByRole('dialog');const png=Buffer.from(await page.evaluate(()=>{const c=document.createElement('canvas');c.width=40;c.height=40;return c.toDataURL('image/png').split(',')[1];}),'base64');const photo={name:'live.png',mimeType:'image/png',buffer:png};await dialog.getByLabel('Choose site photo',{exact:true}).setInputFiles(photo);await expect(dialog.getByRole('alert')).toContainText('Could not upload the photo');await expect(dialog.getByRole('img',{name:'Site photo',exact:true})).toHaveAttribute('src',new RegExp(oldPath));fail=false;await dialog.getByLabel('Choose site photo',{exact:true}).setInputFiles(photo);await expect(dialog.getByRole('img',{name:'Site photo',exact:true})).toHaveAttribute('src',new RegExp(newPath));await expect(dialog.getByRole('alert')).toHaveCount(0);await dialog.getByRole('button',{name:'Save changes',exact:true}).click();await expect(dialog).toHaveCount(0);await expect(page.getByRole('button',{name:'Edit site Riverside',exact:true}).getByRole('img')).toHaveAttribute('src',new RegExp(newPath));
+ await startLive(page,state);await tab(page,'Site');await page.getByRole('button',{name:'Edit site Riverside',exact:true}).click();const dialog=page.getByRole('dialog');const png=Buffer.from(await page.evaluate(()=>{const c=document.createElement('canvas');c.width=40;c.height=40;return c.toDataURL('image/png').split(',')[1];}),'base64');const photo={name:'live.png',mimeType:'image/png',buffer:png};await dialog.getByLabel('Choose site photo',{exact:true}).setInputFiles(photo);await expect(dialog.getByRole('alert')).toContainText('Could not upload the photo');await expect(dialog.getByRole('img',{name:'Site photo',exact:true})).toHaveAttribute('src',new RegExp(oldPath));fail=false;await dialog.getByLabel('Choose site photo',{exact:true}).setInputFiles(photo);await expect(dialog.getByRole('img',{name:'Site photo',exact:true})).toHaveAttribute('src',new RegExp(newPath));await expect(dialog.getByRole('alert')).toHaveCount(0);await dialog.getByRole('button',{name:'Save changes',exact:true}).click();await expect(dialog).toHaveCount(0);await expect(page.getByRole('button',{name:'Edit site Riverside',exact:true}).getByRole('img')).toHaveAttribute('src',new RegExp(newPath));
 });
 
 test('App settings save validated geofence rules and preferences, with delegated permission controls',async({page},info)=>{
@@ -257,13 +261,33 @@ test('Hub links all allowed Admin menus and mobile navigation has five items wit
 
 test('Activity history scrolls in pages, groups Cambodia dates and filters the full history with retry',async({page},info)=>{
  const {initialAccessState}=await import('../packages/core/src/access');const snapshot={...initialAccessState(),revision:0};const events=Array.from({length:245},(_,i)=>({id:`log-${String(i).padStart(3,'0')}`,time:new Date(Date.UTC(2026,9,9,18)-i*3600000).toISOString(),actorId:'owner',actorName:'Dara',action:'user.updated',targetName:`Log ${i}`,detail:`Detail ${i}`}));const requests:Record<string,unknown>[]=[];let failNext=false;
- await page.addInitScript(()=>sessionStorage.setItem('onebite-admin-session','a'.repeat(64)));
+
  await page.route('**/functions/v1/admin-access',async route=>{const {action,payload}=route.request().postDataJSON();if(action==='bootstrap.status'){await route.fulfill({json:{ownerCreated:true}});return;}if(action!=='activity.list'){await route.fulfill({json:{state:snapshot,actor:snapshot.users[0]}});return;}
   requests.push(payload);if(failNext){failNext=false;await route.fulfill({status:503,json:{error:'network_failed'}});return;}
   const day=(time:string)=>new Date(new Date(time).getTime()+7*3600000).toISOString().slice(0,10);const filtered=events.filter(e=>(!payload.start||day(e.time)>=payload.start)&&(!payload.end||day(e.time)<=payload.end));const offset=payload.cursor?filtered.findIndex(e=>e.id===payload.cursor.id)+1:0;const rows=filtered.slice(offset,offset+30);await route.fulfill({json:{events:rows,nextCursor:offset+30<filtered.length?{id:rows.at(-1)!.id,time:rows.at(-1)!.time}:null}});
  });
- await page.goto('http://127.0.0.1:5174');await tab(page,'Activity');await expect(page.locator('.access-activity-row')).toHaveCount(30);await expect(page.locator('.access-activity-group').first().getByRole('heading')).toContainText('10 October 2026');
+ await startLive(page,snapshot);await tab(page,'Activity');await expect(page.locator('.access-activity-row')).toHaveCount(30);await expect(page.locator('.access-activity-group').first().getByRole('heading')).toContainText('10 October 2026');
  failNext=true;await page.locator('.access-activity-load').scrollIntoViewIfNeeded();await expect(page.locator('.access-activity-load').getByRole('alert')).toContainText('Could not load logs');await page.locator('.access-activity-load').getByRole('button',{name:'Retry',exact:true}).click();await expect(page.locator('.access-activity-row')).toHaveCount(60);expect(requests[1].cursor).toEqual(requests[2].cursor);
  await page.getByLabel('From date',{exact:true}).fill('2026-09-29');await page.getByLabel('To date',{exact:true}).fill('2026-09-30');await page.getByRole('button',{name:'Show logs',exact:true}).click();await expect(page.locator('.access-activity-row')).toHaveCount(27);await expect(page.locator('.access-activity')).toContainText('Log 244');await expect(page.locator('.access-activity')).not.toContainText('Log 0');await expect(page.locator('.access-activity-group')).toHaveCount(2);await expect(page.locator('.access-activity')).toContainText('All logs shown');
  await page.getByLabel('From date',{exact:true}).fill('2020-01-01');await page.getByLabel('To date',{exact:true}).fill('2020-01-02');await page.getByRole('button',{name:'Show logs',exact:true}).click();await expect(page.locator('.access-activity')).toContainText('No logs in this date range');await page.getByRole('button',{name:'Clear dates',exact:true}).click();await expect(page.locator('.access-activity-row')).toHaveCount(30);await page.screenshot({path:`artifacts/admin-activity-${info.project.name}.png`,fullPage:true});
+});
+test('MFA gates business data, tokens stay out of storage and failed logout is explicit',async({page})=>{
+ const {initialAccessState}=await import('../packages/core/src/access');const snapshot={...initialAccessState(),revision:0};let verified=false;
+ await page.addInitScript(()=>sessionStorage.setItem('onebite-admin-session','old-token'));
+ await page.route('**/functions/v1/admin-access',async route=>{
+  const {action}=route.request().postDataJSON();
+  if(action==='bootstrap.status')return route.fulfill({json:{ownerCreated:true}});
+  if(action==='login')return route.fulfill({json:{actor:snapshot.users[0],session:'a'.repeat(64),mfaRequired:true,mfaEnrollment:false}});
+  if(action==='mfa.verify'){verified=true;return route.fulfill({json:{actor:snapshot.users[0],state:snapshot}});}
+  if(action==='logout')return route.fulfill({status:503,json:{error:'network_failed'}});
+  return route.fulfill({status:401,json:{error:'unauthorized'}});
+ });
+ await page.goto('http://127.0.0.1:5174');await page.getByLabel('Username',{exact:true}).fill('test.owner');await page.getByLabel('6-digit PIN',{exact:true}).fill('739284');await page.getByRole('button',{name:'Sign in',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Verify your identity'})).toBeVisible();await expect(page.locator('.access-user-row')).toHaveCount(0);expect(verified).toBe(false);
+ await page.getByLabel('Verification code',{exact:true}).fill('123456');await page.getByRole('button',{name:'Verify',exact:true}).click();await expect(page.locator('.access-user-row')).not.toHaveCount(0);
+ expect(await page.evaluate(()=>({session:sessionStorage.getItem('onebite-admin-session'),local:localStorage.getItem('onebite-admin-session')}))).toEqual({session:null,local:null});
+ await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.getByRole('menuitem',{name:'Sign out',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Server revocation could not be confirmed');await expect(page.locator('.access-user-row')).toHaveCount(0);
+});
+test('idle Admin sessions lock and remove business data from the interface',async({page})=>{
+ const {initialAccessState}=await import('../packages/core/src/access');await page.clock.install();await startLive(page,{...initialAccessState(),revision:0});await page.clock.fastForward(10*60_000+1);await expect(page.getByRole('heading',{name:'Welcome back'})).toBeVisible();await expect(page.locator('.access-user-row')).toHaveCount(0);
 });

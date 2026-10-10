@@ -1,5 +1,7 @@
+// Acknowledge the sample-only gate in fixtures; a separate test checks the gate itself.
 import publicConfig from "../config/supabase.public.json" with { type: "json" };
 import {test,expect} from '@playwright/test';
+test.beforeEach(async({page})=>{await page.addInitScript(()=>sessionStorage.setItem('onebite-pos-demo','yes'));});
 const base=process.env.PAGES_TEST_BASE_URL||'http://127.0.0.1:5185/onebitesuper/';
 test('repository-hosted apps have separate install scopes and offline shells',async({page,context})=>{
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));

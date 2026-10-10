@@ -94,3 +94,13 @@ test("site creation defaults active, validates operating details, and preserves 
 test('app settings validate defaults, enforce permissions, and record accepted changes',async()=>{
  const {saveAppSettings}=await import('./access.ts');const {defaultAppSettings,validAppSettings}=await import('./app-settings.ts');const s=initialAccessState();const updated={...defaultAppSettings,exchangeRate:4100,gpsAccuracyM:20};const n=saveAppSettings(s,'owner',updated);assert.equal(n.appSettings!.exchangeRate,4100);assert.equal(n.events.at(-1)!.action,'settings.updated');assert.equal(s.appSettings,undefined);assert.throws(()=>saveAppSettings(s,'supervisor',updated),error('forbidden'));assert.throws(()=>saveAppSettings(s,'owner',{...updated,geofenceRadiusM:0}),error('invalid_settings'));assert.equal(validAppSettings({...updated,defaultLanguage:null}),false);assert.equal(validAppSettings({...updated,exchangeRate:4100.5}),false);assert.equal(validAppSettings({...updated,secret:'never stored'}),false);const delegated=saveGrants(s,'owner','Supervisor',[...s.grants.Supervisor,'settings.manage']);assert.equal(saveAppSettings(delegated,'supervisor',updated).appSettings!.gpsAccuracyM,20);
 });
+test('delegated role management cannot escalate or create stronger roles',()=>{
+ const s=saveGrants(initialAccessState(),'owner','Supervisor',['admin.access','roles.manage']);
+ assert.throws(()=>saveGrants(s,'supervisor','Supervisor',['admin.access','roles.manage','users.manage']),error('forbidden'));
+ assert.throws(()=>createRole(s,'supervisor',{id:'role_11111111-1111-4111-8111-111111111111',name:'Powerful',description:''},['admin.access','users.manage']),error('forbidden'));
+});
+test('delegated account administration cannot assign or take over a privileged role',()=>{
+ const s=saveGrants(initialAccessState(),'owner','Cashier',['admin.access','users.manage']);const actor=s.users.find(u=>u.role==='Cashier')!;
+ assert.throws(()=>saveAccount(s,actor.id,{...s.users.find(u=>u.id==='supervisor')!}),error('forbidden'));
+ assert.throws(()=>saveAccount(s,actor.id,{...actor,role:'Supervisor'}),error('forbidden'));
+});

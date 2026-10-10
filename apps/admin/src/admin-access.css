@@ -100,3 +100,4 @@
 
 @media(max-width:680px){.access-bottom-nav{visibility:visible;transition:transform .18s ease,opacity .18s ease,visibility 0s}.access-bottom-nav.is-scroll-hidden{transform:translateY(100%);opacity:0;visibility:hidden;pointer-events:none;transition:transform .18s ease,opacity .18s ease,visibility 0s .18s}}
 @media(prefers-reduced-motion:reduce){.access-bottom-nav,.access-bottom-nav.is-scroll-hidden{transition:none}}
+.mfa-recovery{padding:1rem;border-radius:1rem;background:var(--color-base-200);font:1rem/1.8 monospace;user-select:text;white-space:pre-wrap;}

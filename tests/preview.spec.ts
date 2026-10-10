@@ -1,3 +1,4 @@
+// Acknowledge the sample-only gate in fixtures; a separate test checks the gate itself.
 import { test, expect, type Page } from "@playwright/test";
 
 test('independent PWA manifests and offline shell preserve a sample cart',async({page,context})=>{
@@ -13,6 +14,7 @@ test('independent PWA manifests and offline shell preserve a sample cart',async(
  const adminManifest=await page.evaluate(async()=>{const response=await fetch('/manifest.webmanifest');return response.json();});expect(adminManifest.id).toBe('/onebite-admin');expect(adminManifest.id).not.toBe(posManifest.id);
 });
 test.beforeEach(async ({ page }) => {
+  await page.addInitScript(()=>sessionStorage.setItem("onebite-pos-demo","yes"));
   await page.addInitScript(() =>
     localStorage.setItem("onebite-language", "en"),
   );
@@ -184,4 +186,7 @@ test('shared defaults apply currency, exchange rate and QR payment while preserv
 
 test('new devices use the default language and cached preferences remain available offline',async({page,context})=>{
  const {defaultAppSettings}=await import('../packages/core/src/app-settings');await page.addInitScript(()=>localStorage.removeItem('onebite-language'));await page.route('**/functions/v1/admin-access',route=>route.fulfill({json:{ownerCreated:true,appSettings:{...defaultAppSettings,defaultLanguage:'en',defaultTheme:'dark'}}}));await page.goto('http://127.0.0.1:5173');await expect(page.locator('html')).toHaveAttribute('lang','en');await expect(page.locator('html')).toHaveAttribute('data-theme','dark');await page.evaluate(async()=>{localStorage.setItem('onebite-theme','light');await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));await context.setOffline(true);await page.reload();await expect(page.locator('html')).toHaveAttribute('lang','en');await expect(page.locator('html')).toHaveAttribute('data-theme','light');await expect(page.locator('.product-card')).toHaveCount(6);
+});
+test('POS preview requires acknowledgment and warns against real payments',async({page})=>{
+ await page.addInitScript(()=>sessionStorage.removeItem('onebite-pos-demo'));await page.goto('http://127.0.0.1:5173');await expect(page.getByRole('heading',{name:'OneBite POS · Preview',exact:true})).toBeVisible();await expect(page.locator('.product-card')).toHaveCount(0);await page.getByRole('button',{name:'I understand · Open sample POS',exact:true}).click();await expect(page.locator('.product-card')).toHaveCount(6);await expect(page.getByRole('note')).toContainText('Do not use for real sales');
 });
