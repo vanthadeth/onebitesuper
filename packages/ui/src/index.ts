@@ -11,3 +11,5 @@ export * from './date-range-picker';
 export { InteractionFeedback } from "./feedback";
 
 export { ConnectionNotice, SyncToast, type ConnectionStatus, type SyncTask } from './sync-status';
+
+export { UserAvatar } from './user-avatar';

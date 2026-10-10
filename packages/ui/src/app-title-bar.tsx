@@ -1,3 +1,4 @@
+import { UserAvatar } from './user-avatar';
 import type { KeyboardEvent } from 'react';
 import * as Menu from '@radix-ui/react-dropdown-menu';
 import { LayoutGrid, Moon, Sun, LogOut } from 'lucide-react';
@@ -11,9 +12,9 @@ export function AppTitleBar({icon,title,name,username,photo,syncStatus,pendingCo
   <div className="ob-app-identity"><img src={icon} alt="OneBite"/><div><strong>{title}</strong></div></div>
   <div className="access-header-actions">
    <SyncControl status={syncStatus} pendingCount={pendingCount} connection={connection} task={syncTask} lastSyncedAt={lastSyncedAt} disabled={disabled} onSync={onSync}/>
-   <Menu.Root><Menu.Trigger asChild><button className="ob-profile-badge" aria-label={t('ម៉ឺនុយគណនី','Profile menu')}><span className="access-avatar small">{photo?<img src={photo} alt=""/>:Array.from(name)[0]}</span></button></Menu.Trigger>
+   <Menu.Root><Menu.Trigger asChild><button className="ob-profile-badge" aria-label={t('ម៉ឺនុយគណនី','Profile menu')}><UserAvatar name={name} photo={photo} className="access-avatar small"/></button></Menu.Trigger>
     <Menu.Portal><Menu.Content className="d-menu ob-profile-menu" align="end" sideOffset={10} collisionPadding={12}>
-     <Menu.Item className="ob-menu-item ob-profile-label" onSelect={onProfile}><strong>{name}</strong><small>@{username}</small></Menu.Item><Menu.Separator className="ob-menu-separator"/>
+     <Menu.Item className="ob-menu-item ob-profile-label" onSelect={onProfile}><span className="ob-menu-account"><UserAvatar name={name} photo={photo}/><span><strong>{name}</strong><small>@{username}</small></span></span></Menu.Item><Menu.Separator className="ob-menu-separator"/>
      <div className="ob-preference-row"><Menu.Label className="ob-preference-label">{t('ភាសា','Language')}</Menu.Label><Menu.RadioGroup className="ob-menu-segments" aria-label={t('ភាសា','Language')} value={lang} onValueChange={value=>{if(value!==lang)onLanguage();}} onKeyDown={moveSegment}>
       <Menu.RadioItem value="en" className="ob-menu-segment" aria-label="English" onSelect={event=>event.preventDefault()}>EN</Menu.RadioItem>
       <Menu.RadioItem value="km" className="ob-menu-segment" aria-label="ខ្មែរ" onSelect={event=>event.preventDefault()}>ខ្មែរ</Menu.RadioItem>

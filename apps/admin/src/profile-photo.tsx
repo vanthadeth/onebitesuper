@@ -1,20 +1,37 @@
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Camera, Check, Trash2 } from 'lucide-react';
-import { AppDialog, useLanguage } from '@onebite/ui';
+import { AppDialog, UserAvatar, useLanguage } from '@onebite/ui';
+import type { Account } from '@onebite/core/access';
 import { accessApi } from './access-api';
 import { prepareSitePhoto } from './site-photo';
 
 // Private images are fetched through the session-checked API, never public URLs.
 export function useProfilePhoto(path:string|null|undefined,session:string,online:boolean,id?:string){
- const [photo,setPhoto]=useState<{path:string;session:string;image:string}|null>(null);
- useEffect(()=>{let active=true;if(path&&session&&online)void accessApi('profile.photo.read',id?{id}:{},session).then(reply=>{if(active&&reply.photo&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(reply.photo))setPhoto({path,session,image:reply.photo});}).catch(()=>{});return()=>{active=false;};},[path,session,online,id]);
- return photo&&photo.path===path&&photo.session===session?photo.image:undefined;
+ const cache=useContext(UserPhotos)?.cache;
+ const [photo,setPhoto]=useState<{path:string;session:string;id?:string;image:string}|null>(null);
+ useEffect(()=>{
+  let active=true;
+  if(path&&session&&online){
+   const key=JSON.stringify([session,id,path]);
+   let request=cache?.get(key);
+   if(!request){request=accessApi('profile.photo.read',id?{id}:{},session).then(reply=>reply.photo??undefined);cache?.set(key,request);void request.catch(()=>cache?.delete(key));}
+   void request.then(image=>{if(active&&image&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(image))setPhoto({path,session,id,image});}).catch(()=>{});
+  }
+  return()=>{active=false;};
+ },[path,session,online,id,cache]);
+ return photo&&photo.path===path&&photo.session===session&&photo.id===id?photo.image:undefined;
 }
 
-export function UserListAvatar({name,role,path,session,online,id,ownPhoto,isSelf}:{name:string;role:string;path?:string|null;session:string;online:boolean;id:string;ownPhoto?:string;isSelf:boolean}){
- const fetched=useProfilePhoto(path,session,online&&!isSelf,id),photo=isSelf?ownPhoto:fetched;
- const [failed,setFailed]=useState<string>();
- return <span className={`access-avatar ${role.toLowerCase()}`} aria-hidden="true">{photo&&failed!==photo?<img src={photo} alt="" loading="lazy" onError={()=>setFailed(photo)}/>:Array.from(name)[0]}</span>;
+const UserPhotos=createContext<{users:Account[];session:string;online:boolean;actorId:string;ownPhoto?:string;cache:Map<string,Promise<string|undefined>>}|null>(null);
+export function UserPhotoProvider({children,...value}:{children:ReactNode;users:Account[];session:string;online:boolean;actorId:string;ownPhoto?:string}){
+ const scope=useRef({session:value.session,cache:new Map<string,Promise<string|undefined>>()});
+ if(scope.current.session!==value.session)scope.current={session:value.session,cache:new Map()};
+ return <UserPhotos.Provider value={{...value,cache:scope.current.cache}}>{children}</UserPhotos.Provider>;
+}
+export function AccountAvatar({id,name,className='access-avatar'}:{id:string;name:string;className?:string}){
+ const context=useContext(UserPhotos),account=context?.users.find(user=>user.id===id),self=id===context?.actorId;
+ const fetched=useProfilePhoto(account?.photoPath,context?.session||'',!!context?.online&&!self,id);
+ return <UserAvatar name={name} photo={self?context?.ownPhoto:fetched} className={className} lazy/>;
 }
 
 export function ProfilePhotoEditor({photo,hasPhoto,busy,error,onClose,onSave}:{photo?:string;hasPhoto:boolean;busy:boolean;error:string;onClose:()=>void;onSave:(image:string|null)=>Promise<boolean>}){

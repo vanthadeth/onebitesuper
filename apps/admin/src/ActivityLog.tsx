@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { History, LoaderCircle, RefreshCw } from 'lucide-react';
 import { DateRangePicker, EmptyState, useLanguage } from '@onebite/ui';
 import type { AccessEvent } from '@onebite/core/access';
+import { AccountAvatar } from './profile-photo';
 import { accessApi, ApiError } from './access-api';
 type CreateAction=Parameters<typeof EmptyState>[0]['action'];
 const zone='Asia/Phnom_Penh';
@@ -36,7 +37,7 @@ function ActivityFeed({events,live,session,range,createAction,onUnauthorized}:{e
  const groups=new Map<string,AccessEvent[]>();for(const event of items){const day=eventDay(event.time);groups.set(day,[...(groups.get(day)||[]),event]);}
  const locale=lang==='km'?'km-KH':'en-GB';
  return <div className="access-activity" aria-busy={loading}>
-  {[...groups].map(([day,logs])=><section className="access-activity-group" key={day}><h2><time dateTime={day}>{new Intl.DateTimeFormat(locale,{timeZone:zone,dateStyle:'full'}).format(new Date(logs[0].time))}</time><span>{logs.length}</span></h2>{logs.map(e=><article className="access-activity-row" key={e.id}><span className="access-avatar small"><History size={16}/></span><div><strong>{e.targetName}</strong><p>{e.action} · {e.actorName}</p><small>{e.detail}</small></div><time dateTime={e.time}>{new Intl.DateTimeFormat(locale,{timeZone:zone,timeStyle:'short'}).format(new Date(e.time))}</time></article>)}</section>)}
+  {[...groups].map(([day,logs])=><section className="access-activity-group" key={day}><h2><time dateTime={day}>{new Intl.DateTimeFormat(locale,{timeZone:zone,dateStyle:'full'}).format(new Date(logs[0].time))}</time><span>{logs.length}</span></h2>{logs.map(e=><article className="access-activity-row" key={e.id}><AccountAvatar id={e.actorId} name={e.actorName} className="access-avatar small"/><div><strong>{e.targetName}</strong><p>{e.action} · {e.actorName}</p><small>{e.detail}</small></div><time dateTime={e.time}>{new Intl.DateTimeFormat(locale,{timeZone:zone,timeStyle:'short'}).format(new Date(e.time))}</time></article>)}</section>)}
   {!items.length&&!loading&&!failed&&<EmptyState className="access-empty" icon={<History size={30}/>} title={range.start||range.end?t('មិនមានប្រវត្តិក្នុងរយៈពេលនេះ','No logs in this date range'):t('មិនទាន់មានការផ្លាស់ប្ដូរ','No changes yet')} body={range.start||range.end?t('សាកល្បងកាលបរិច្ឆេទផ្សេង។','Try another date range.'):t('ការផ្លាស់ប្ដូរគណនី និងសិទ្ធិនឹងបង្ហាញនៅទីនេះ។','Account and permission changes will appear here.')} action={range.start||range.end?undefined:createAction}/>}
   <div className="access-activity-load" ref={sentinel}>
    {loading?<span role="status"><LoaderCircle size={18} className="access-activity-spinner"/>{t('កំពុងផ្ទុកប្រវត្តិ…','Loading logs…')}</span>:failed?<><p role="alert">{t('មិនអាចផ្ទុកប្រវត្តិបាន។ សូមព្យាយាមម្តងទៀត។','Could not load logs. Please retry.')}</p><button className="access-text" onClick={()=>void load()}><RefreshCw size={16}/>{t('ព្យាយាមម្តងទៀត','Retry')}</button></>:more?<button className="access-text" onClick={()=>void load()}>{t('ផ្ទុកបន្ថែម','Load more')}</button>:items.length?<small>{t('ប្រវត្តិទាំងអស់បានបង្ហាញ','All logs shown')}</small>:null}

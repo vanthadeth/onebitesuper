@@ -1,5 +1,5 @@
 import { Building2, Check, Globe2, KeyRound, LogOut, MapPin, Moon, Pencil, ShieldCheck, Sun, UserRound, LockKeyhole, ArrowUpRight, Camera } from 'lucide-react';
-import { useLanguage } from '@onebite/ui';
+import { UserAvatar, useLanguage } from '@onebite/ui';
 import { hasPermission, permissionAvailable, moduleDefinitions, type Account, type AccessState } from '@onebite/core/access';
 import './profile.css';
 import { version } from '../../../package.json';
@@ -17,7 +17,7 @@ export function ProfilePage({account,state,roleName,dark,live,busy,onLanguage,on
  return <div className="profile-grid">
   <section className="d-card profile-card profile-identity" aria-labelledby="profile-identity-title">
    <div className="profile-identity-top"><span className="profile-overline">ONEBITE TEAM</span><span className="d-badge profile-active"><span/>{t('ដំណើរការ','Active')}</span></div>
-   <div className="profile-photo"><div className="profile-avatar" aria-hidden="true">{photo?<img src={photo} alt=""/>:Array.from(account.name)[0]}</div><button type="button" className="d-btn d-btn-circle profile-photo-action" aria-label={account.photoPath?t('ប្ដូររូបថត','Change photo'):t('បញ្ចូលរូបថត','Add photo')} title={account.photoPath?t('ប្ដូររូបថត','Change photo'):t('បញ្ចូលរូបថត','Add photo')} disabled={busy||!live||!onPhoto} onClick={onPhoto}><Camera size={20}/></button></div>
+   <div className="profile-photo"><UserAvatar name={account.name} photo={photo} className="profile-avatar"/><button type="button" className="d-btn d-btn-circle profile-photo-action" aria-label={account.photoPath?t('ប្ដូររូបថត','Change photo'):t('បញ្ចូលរូបថត','Add photo')} title={account.photoPath?t('ប្ដូររូបថត','Change photo'):t('បញ្ចូលរូបថត','Add photo')} disabled={busy||!live||!onPhoto} onClick={onPhoto}><Camera size={20}/></button></div>
    <div className="profile-identity-copy"><h2 id="profile-identity-title">{account.name}</h2><p>@{account.username}</p><span className="d-badge profile-role"><ShieldCheck size={14}/>{roleName}</span></div>
    <div className="profile-identity-bottom"><span>{t('គណនីរបស់អ្នក','Your personal account')}</span>{onEdit&&<button type="button" className="d-btn d-btn-ghost" disabled={busy} onClick={onEdit}><Pencil size={16}/>{t('កែប្រែ','Edit profile')}</button>}</div>
   </section>
