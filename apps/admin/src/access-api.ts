@@ -2,12 +2,12 @@ import {saveSnapshot,loadSnapshot,clearSnapshots} from "@onebite/offline";
 import publicConfig from "../../../config/supabase.public.json";
 import type { Account, AccessState, AccessEvent } from "@onebite/core/access";
 export type Snapshot = AccessState & { revision: number };
-export type AccessReply = { offline?:boolean; cachedAt?:number; cacheUnavailable?:boolean; actor?: Account; state?: Snapshot; session?: string; mustChangePin?: boolean; ownerCreated?: boolean; ok?: boolean; mfaRequired?:boolean; mfaEnrollment?:boolean; secret?:string; uri?:string; recoveryCodes?:string[]; photoPath?: string; events?: AccessEvent[]; nextCursor?: {time:string;id:string}|null };
+export type AccessReply = { offline?:boolean; cachedAt?:number; cacheUnavailable?:boolean; actor?: Account; state?: Snapshot; session?: string; sessionExpiresAt?: number; mustChangePin?: boolean; ownerCreated?: boolean; ok?: boolean; mfaRequired?:boolean; mfaEnrollment?:boolean; secret?:string; uri?:string; recoveryCodes?:string[]; photoPath?: string; events?: AccessEvent[]; nextCursor?: {time:string;id:string}|null };
 const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || publicConfig.url;
 const key = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) || publicConfig.publishableKey;
 export const configured = Boolean(url && key);
 export const rememberedSessionKey = "onebite-admin-session";
-const maximumSessionAge = 8 * 60 * 60 * 1000;
+const maximumSessionAge = 7 * 24 * 60 * 60 * 1000;
 let currentSession = "", expiresAt = 0, memoryOnly=false;
 function clearLegacySession(){try{sessionStorage.removeItem(rememberedSessionKey);}catch{}}
 export function readSession(){
@@ -23,8 +23,12 @@ export function readSession(){
  if(expiresAt<=Date.now()){setSession("");return "";}
  return currentSession;
 }
-export function setSession(token:string, persist=true){
- currentSession=/^[a-f0-9]{64}$/.test(token)?token:"";expiresAt=currentSession?Date.now()+maximumSessionAge:0;
+export function sessionExpiry(){return readSession()?expiresAt:0;}
+export function setSession(token:string, persist=true, serverExpiry?:number){
+ currentSession=/^[a-f0-9]{64}$/.test(token)?token:"";
+ const now=Date.now();
+ const validExpiry=typeof serverExpiry==='number'&&Number.isFinite(serverExpiry)&&serverExpiry>now&&serverExpiry<=now+maximumSessionAge;
+ expiresAt=currentSession?(validExpiry?serverExpiry:now+maximumSessionAge):0;
  clearLegacySession();memoryOnly=false;
  if(!persist)return;
  if(!currentSession)void clearSnapshots().catch(()=>{});

@@ -141,3 +141,10 @@ Verified deployment results: database migration applied through the SQL fallback
 Follow-up on 10 October: at the user’s request, Admin now remembers the opaque session token in local storage for reload/reopen, bounded by the existing eight-hour maximum and server-side ten-minute idle timeout. This replaces memory-only storage; PINs and MFA/recovery secrets are not persisted. The server validates restoration before exposing business data. This convenience introduces JavaScript-readable persistent session storage; HttpOnly cookies remain a future hosting/backend improvement.
 
 Sample-data cleanup follow-up: demo modes and bundled demo records have been removed from Admin/POS. Supabase records were preserved; exact legacy demo usernames and site names returned zero matches. Admin now has a session-bound, encrypted SQLite snapshot cache with read-only offline access bounded by the ten-minute authorization window. Reconnect revalidates access and replaces the snapshot. POS is a setup shell pending its production financial backend. See `offline-sync.md`.
+
+
+## Session policy update — October 10, 2026
+
+The Owner authorized seven-day remembered sign-in without an inactivity logout. Supabase supplies the absolute expiry; refreshing does not extend it. Expired/revoked sessions and inactive accounts remain rejected. Only Owner requires authenticator verification, including fresh verification for sensitive changes. Other roles use their personal PIN, including temporary-PIN replacement. Account-management permissions remain enforced independently of MFA. Offline snapshots still expire ten minutes after their last server authorization and remain read-only.
+
+Shared UI motion is brief and honors reduced-motion preferences. Optional vibration provides selection, success and failure feedback on supported devices, with throttling and safe no-op behavior elsewhere.

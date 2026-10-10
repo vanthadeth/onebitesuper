@@ -15,11 +15,11 @@ async function pickLogRange(page:Page,start:string,end:string){
 }
 async function viewUser(page:Page,name:string){await page.locator('.access-user-row').filter({hasText:name}).click();await expect(page.getByRole('dialog').getByRole('heading',{name:'User details',exact:true})).toBeVisible();}
 async function editUser(page:Page,name:string){await viewUser(page,name);await page.getByRole('dialog').getByRole('button',{name:'Edit',exact:true}).click();}
-async function reviewRole(page:Page,role:string){await expect(page.getByRole('dialog')).toHaveCount(0);const row=page.locator('.access-role-row').filter({has:page.getByRole('heading',{name:role,exact:true})});const review=row.getByRole('button',{name:'Review permissions',exact:true});if(!await review.isVisible())await row.getByRole('button',{name:role,exact:true}).click();await row.getByRole('button',{name:'Review permissions',exact:true}).click();}
+async function reviewRole(page:Page,role:string){await expect(page.getByRole('dialog')).toHaveCount(0);await expect(page.locator('.access-main')).not.toHaveAttribute('aria-hidden','true');const row=page.locator('.access-role-row').filter({has:page.getByRole('heading',{name:role,exact:true})});const review=row.getByRole('button',{name:'Review permissions',exact:true});if(!await review.isVisible())await row.getByRole('button',{name:role,exact:true}).click();await row.getByRole('button',{name:'Review permissions',exact:true}).click();}
 async function tab(page:Page,name:string){
  await expect(page.locator('.access-main')).toBeVisible();
  if(page.viewportSize()!.width>680){await page.locator('.access-sidebar nav').getByRole('button',{name,exact:true}).click();return;}
- await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));const nav=page.locator('.access-bottom-nav');await expect(nav).not.toHaveClass(/is-scroll-hidden/);await expect(nav).not.toHaveAttribute('inert','');
+ await page.evaluate(()=>new Promise<void>(resolve=>{window.scrollTo({top:0,behavior:'instant'});requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()));}));const nav=page.locator('.access-bottom-nav');await expect(nav).not.toHaveClass(/is-scroll-hidden/);await expect(nav).not.toHaveAttribute('inert','');await expect(nav).not.toHaveAttribute('aria-hidden','true');
  if(['App settings','Permissions'].includes(name)){await nav.getByRole('button',{name:'Hub',exact:true}).click();await page.locator('.access-hub-grid').getByRole('button',{name,exact:true}).click();}
  else await nav.getByRole('button',{name:name==='Site'?'Sites':name==='Activity'?'Logs':name,exact:true}).click();
 }
@@ -87,6 +87,7 @@ test('Custom menus support keyboard selection, Escape and modal focus restoratio
 });
 
 test('New user requires a staff role and offers generated, regenerated and copyable PINs',async({page,context})=>{
+ await page.emulateMedia({reducedMotion:'reduce'}); // Measure fixed popup geometry without entrance motion.
  await context.grantPermissions(['clipboard-read','clipboard-write'],{origin:'http://127.0.0.1:5174'});
  await open(page);await page.getByRole('button',{name:'Create new user',exact:true}).click();const dialog=page.getByRole('dialog');
  const pin=dialog.getByLabel('Temporary 6-digit PIN',{exact:true});const first=await pin.inputValue();expect(first).toMatch(/^[0-9]{6}$/);
@@ -298,8 +299,14 @@ test('MFA gates business data, only opaque sessions are remembered and failed lo
  const remembered=await page.evaluate(()=>({session:sessionStorage.getItem('onebite-admin-session'),local:JSON.parse(localStorage.getItem('onebite-admin-session')!)}));expect(remembered.session).toBeNull();expect(remembered.local.token).toBe('a'.repeat(64));expect(Object.keys(remembered.local).sort()).toEqual(['expiresAt','token']);
  await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.getByRole('menuitem',{name:'Sign out',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Server revocation could not be confirmed');await expect(page.locator('.access-user-row')).toHaveCount(0);expect(await page.evaluate(()=>localStorage.getItem('onebite-admin-session'))).toBeNull();
 });
-test('idle Admin sessions lock and remove business data from the interface',async({page})=>{
- await page.clock.install();await startLive(page,{...initialAccessState(),revision:0});await page.clock.fastForward(10*60_000+1);await expect(page.getByRole('heading',{name:'Welcome back'})).toBeVisible();await expect(page.locator('.access-user-row')).toHaveCount(0);
+test('Seven-day sign-in survives inactivity and expires without extending on refresh',async({page})=>{
+ await page.clock.install();const state={...initialAccessState(),revision:0};
+ await page.route('**/functions/v1/admin-access',route=>route.fulfill({json:{actor:state.users[0],state}}));
+ await startLive(page,state);const original=await page.evaluate(()=>JSON.parse(localStorage.getItem('onebite-admin-session')!).expiresAt);
+ await page.clock.fastForward(6*24*60*60_000);await expect(page.locator('.access-main')).toBeVisible();
+ await page.locator('.ob-sync').click();await expect(page.locator('.ob-sync')).toHaveAttribute('data-state','complete');
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('onebite-admin-session')!).expiresAt)).toBe(original);
+ await page.clock.fastForward(24*60*60_000+1);await expect(page.getByRole('heading',{name:'Welcome back'})).toBeVisible();await expect(page.locator('.access-user-row')).toHaveCount(0);
 });
 
 test('Reset PIN generates a read-only PIN, regenerates, copies and submits it',async({page})=>{
@@ -388,5 +395,29 @@ test('Settings bento cards and popup editors fit Khmer on mobile and desktop',as
 
 
 test('Settings popup retains a failed save for retry without changing saved summaries',async({page})=>{
- await open(page);let fail=true;await page.route('**/functions/v1/admin-access',async route=>{if(route.request().postDataJSON().action==='settings.update'&&fail)await route.fulfill({status:503,json:{error:'network_failed'}});else await route.fallback();});await tab(page,'App settings');await page.getByRole('button',{name:'Exchange rate',exact:true}).click();const dialog=page.getByRole('dialog');await dialog.getByLabel('KHR for USD 1',{exact:true}).fill('4200');await dialog.getByRole('button',{name:'Save settings',exact:true}).click();await expect(dialog.getByRole('alert')).toBeVisible();await expect(dialog.getByLabel('KHR for USD 1',{exact:true})).toHaveValue('4200');await expect(page.locator('.settings-rate strong')).toHaveText('4,000 KHR');fail=false;await dialog.getByRole('button',{name:'Save settings',exact:true}).click();await expect(dialog).toHaveCount(0);await expect(page.locator('.settings-rate strong')).toHaveText('4,200 KHR');
+ await page.emulateMedia({reducedMotion:'no-preference'});await page.addInitScript(()=>Object.defineProperty(navigator,'vibrate',{value:(pattern:number|number[])=>{((window as any).feedback ||= []).push(pattern);return true;}}));
+ await open(page);let fail=true;await page.route('**/functions/v1/admin-access',async route=>{if(route.request().postDataJSON().action==='settings.update'&&fail)await route.fulfill({status:503,json:{error:'network_failed'}});else await route.fallback();});await tab(page,'App settings');await page.getByRole('button',{name:'Exchange rate',exact:true}).click();const dialog=page.getByRole('dialog');await dialog.getByLabel('KHR for USD 1',{exact:true}).fill('4200');await dialog.getByRole('button',{name:'Save settings',exact:true}).click();await expect(dialog.getByRole('alert')).toBeVisible();expect(await page.evaluate(()=>(window as any).feedback)).toContainEqual([25,45,25]);await expect(dialog.getByLabel('KHR for USD 1',{exact:true})).toHaveValue('4200');await expect(page.locator('.settings-rate strong')).toHaveText('4,000 KHR');fail=false;await dialog.getByRole('button',{name:'Save settings',exact:true}).click();await expect(dialog).toHaveCount(0);await expect(page.locator('.settings-rate strong')).toHaveText('4,200 KHR');expect(await page.evaluate(()=>(window as any).feedback)).toContainEqual([12,40,18]);
+});
+
+
+test('Shared motion and haptics respect reduced motion and unsupported devices',async({page})=>{
+ await page.emulateMedia({reducedMotion:'no-preference'});
+ await page.addInitScript(()=>Object.defineProperty(navigator,'vibrate',{configurable:true,value:(pattern:number|number[])=>{((window as any).feedback ||= []).push(pattern);return true;}}));
+ await open(page);await tab(page,'Roles');expect(await page.locator('.ob-page-transition').evaluate(e=>getComputedStyle(e).animationName)).toBe('ob-page-enter');
+ expect(await page.evaluate(()=>(window as any).feedback.length)).toBeGreaterThan(0);
+ await page.waitForTimeout(100);await reviewRole(page,'Cashier');expect(await page.getByRole('dialog').evaluate(e=>getComputedStyle(e).animationName)).toMatch(/ob-(sheet|dialog)-enter/);
+ await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toHaveCount(0);
+ await page.emulateMedia({reducedMotion:'reduce'});const count=await page.evaluate(()=>(window as any).feedback.length);await tab(page,'Users');
+ expect(await page.locator('.ob-page-transition').evaluate(e=>getComputedStyle(e).animationName)).toBe('none');expect(await page.evaluate(()=>(window as any).feedback.length)).toBe(count);
+ await page.emulateMedia({reducedMotion:'no-preference'});await page.evaluate(()=>Object.defineProperty(navigator,'vibrate',{value:undefined,configurable:true}));await tab(page,'Roles');await expect(page.getByRole('heading',{name:'Roles',exact:true})).toBeVisible();
+});
+
+test('Server expiry updates preserve same-account tabs and staff profile uses PIN only',async({page,context})=>{
+ const state={...initialAccessState(),revision:0};const actor=state.users.find(u=>u.role==='Supervisor')!;const expiresAt=Date.now()+7*24*60*60_000-1000;
+ await context.route('**/functions/v1/admin-access',route=>route.fulfill({json:{actor,state,sessionExpiresAt:expiresAt}}));
+ await page.addInitScript(()=>localStorage.setItem('onebite-admin-session',JSON.stringify({token:'a'.repeat(64),expiresAt:Date.now()+3600000})));
+ await page.goto('http://127.0.0.1:5174');await expect(page.locator('.access-main')).toBeVisible();
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('onebite-admin-session')!).expiresAt)).toBe(expiresAt);
+ const other=await context.newPage();await other.goto('http://127.0.0.1:5174');await expect(other.locator('.access-main')).toBeVisible();await expect(page.locator('.access-main')).toBeVisible();
+ await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.locator('.ob-profile-label').click();await expect(page.getByText('Personal PIN sign-in',{exact:true})).toBeVisible();await expect(page.getByText('Sign-in remembered for 7 days.',{exact:true})).toBeVisible();
 });

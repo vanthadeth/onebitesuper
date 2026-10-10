@@ -45,9 +45,8 @@ export function useLanguage() {
     t: (km: string, en: string) => (context.lang === "km" ? km : en),
   };
 }
-export function haptic() {
-  navigator.vibrate?.(12);
-}
+import { haptic } from "./feedback";
+export { haptic } from "./feedback";
 export function useLocalState<T>(key: string, initial: () => T) {
   const [value, setValue] = useState<T>(() => {
     try {

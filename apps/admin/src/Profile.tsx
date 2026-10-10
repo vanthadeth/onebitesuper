@@ -1,6 +1,6 @@
 import { Building2, Check, Globe2, KeyRound, LogOut, MapPin, Moon, Pencil, ShieldCheck, Sun, UserRound, LockKeyhole, ArrowUpRight } from 'lucide-react';
 import { useLanguage } from '@onebite/ui';
-import { hasPermission, permissionAvailable, moduleDefinitions, privilegedRole, type Account, type AccessState } from '@onebite/core/access';
+import { hasPermission, permissionAvailable, moduleDefinitions, type Account, type AccessState } from '@onebite/core/access';
 import './profile.css';
 import { version } from '../../../package.json';
 
@@ -12,7 +12,7 @@ type Props = {
 export function ProfilePage({account,state,roleName,dark,live,busy,onLanguage,onTheme,onSignOut,onEdit,onResetPin}:Props){
  const {t,lang}=useLanguage();
  const sites=state.sites.filter(site=>account.role==='Owner'||account.sites.includes(site.id));
- const needsMfa=privilegedRole(state,account.role);
+ const needsMfa=account.role==='Owner';
  return <div className="profile-grid">
   <section className="d-card profile-card profile-identity" aria-labelledby="profile-identity-title">
    <div className="profile-identity-top"><span className="profile-overline">ONEBITE TEAM</span><span className="d-badge profile-active"><span/>{t('ដំណើរការ','Active')}</span></div>
@@ -31,7 +31,7 @@ export function ProfilePage({account,state,roleName,dark,live,busy,onLanguage,on
    <div className="profile-card-heading"><span className="profile-symbol"><LockKeyhole size={20}/></span><div><h2 id="profile-security-title">{t('ការពារគណនី','Account security')}</h2><p>{live?t('រក្សាសិទ្ធិចូលប្រើរបស់អ្នកឱ្យមានសុវត្ថិភាព។','Keep your account access secure.'):t('អាចមើលទិន្នន័យបានតែប៉ុណ្ណោះពេលគ្មានអ៊ីនធឺណិត។','Offline data is read-only.')}</p></div></div>
    <div className="profile-security-note"><ShieldCheck size={23}/><div><strong>{needsMfa?t('តម្រូវឱ្យមាន Authenticator','Authenticator required'):t('ចូលប្រើដោយ PIN ផ្ទាល់ខ្លួន','Personal PIN sign-in')}</strong><p>{needsMfa?t('តួនាទីនេះត្រូវការបញ្ជាក់អត្តសញ្ញាណមុនធ្វើសកម្មភាពសំខាន់ៗ។','This role requires verification for sensitive actions.'):t('កុំចែករំលែក PIN របស់អ្នកជាមួយអ្នកដទៃ។','Keep your PIN private and use your own account.')}</p></div></div>
    {onResetPin&&<button type="button" className="d-btn d-btn-outline profile-security-action" disabled={busy||!live} onClick={onResetPin}><KeyRound size={17}/>{t('កំណត់ PIN ឡើងវិញ','Reset PIN')}<ArrowUpRight size={16}/></button>}
-   <small>{t('ចាក់សោបន្ទាប់ពីអសកម្ម 10 នាទី។','Locks after 10 minutes of inactivity.')}</small>
+   <small>{t('រក្សាការចូលប្រើរយៈពេល 7 ថ្ងៃ។','Sign-in remembered for 7 days.')}</small>
   </section>
 
   <section className="d-card profile-card profile-sites" aria-labelledby="profile-sites-title">

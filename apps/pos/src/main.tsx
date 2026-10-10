@@ -5,12 +5,13 @@ import "@onebite/ui/daisy.css";
 import "@onebite/ui/styles.css";
 import "@onebite/ui/controls.css";
 import "@onebite/ui/polish.css";
-import { LanguageProvider, AppSettingsProvider, registerPwa } from "@onebite/ui";
+import "@onebite/ui/motion.css";
+import { InteractionFeedback, LanguageProvider, AppSettingsProvider, registerPwa } from "@onebite/ui";
 import { App } from "./App";
 cleanSampleData();
 if(window.top!==window.self){document.getElementById("root")!.textContent="Open OneBite directly to continue.";}else createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <AppSettingsProvider><LanguageProvider>
+    <AppSettingsProvider><LanguageProvider><InteractionFeedback/>
       <App />
     </LanguageProvider></AppSettingsProvider>
   </React.StrictMode>,
