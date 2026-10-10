@@ -29,6 +29,12 @@ test('repository-hosted SQLite cache restores real-server-shaped data after a fu
  const {initialAccessState}=await import('./fixtures/access');const snapshot={...initialAccessState(),customRoles:[],revision:1};
  await page.addInitScript(()=>{localStorage.setItem('onebite-language','en');localStorage.setItem('onebite-admin-session',JSON.stringify({token:'a'.repeat(64),expiresAt:Date.now()+3600000}));});
  await page.route('**/functions/v1/admin-access',route=>route.fulfill({json:{actor:snapshot.users[0],state:snapshot}}));
- await page.goto(base+'admin/');await expect(page.locator('.access-user-row')).toHaveCount(6);await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));await page.unroute('**/functions/v1/admin-access');
+ await page.goto(base+'admin/');await expect(page.locator('.access-user-row')).toHaveCount(6);
+ const mobile=page.viewportSize()!.width<680,nav=page.locator(mobile?'.access-bottom-nav':'.access-sidebar nav');
+ for(const name of [mobile?'Sites':'Site','Roles','Users']){
+  await nav.getByRole('button',{name,exact:true}).click();const tools=page.locator('.ob-directory-tools');await expect(tools).toBeVisible();await expect(tools.getByRole('searchbox')).toBeVisible();await expect(tools.getByRole('group').first()).toBeVisible();
+ }
+ await page.locator('.access-main').evaluate(element=>{element.style.minHeight='2000px';});await page.evaluate(()=>window.scrollTo({top:400,behavior:'instant'}));await expect(page.locator('.ob-directory-tools')).toHaveClass(/is-scroll-hidden/);await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));await expect(page.locator('.ob-directory-tools')).not.toHaveClass(/is-scroll-hidden/);await page.locator('.access-main').evaluate(element=>{element.style.minHeight='';});
+ await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));await page.unroute('**/functions/v1/admin-access');
  await context.setOffline(true);await page.reload();await expect(page.locator('.access-offline-notice')).toContainText('View saved data. Reconnect to make changes.');await expect(page.locator('.access-user-row')).toHaveCount(6);await expect(page.getByRole('button',{name:'Create new user',exact:true})).toBeDisabled();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await context.setOffline(false);
 });

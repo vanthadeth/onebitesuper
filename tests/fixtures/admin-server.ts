@@ -3,7 +3,7 @@ import {initialAccessState} from './access';
 import {saveAccount,assignSites,saveGrants,createRole,saveSite,saveAppSettings,type AccessState} from '../../packages/core/src/access';
 const sessions=new WeakMap<Page,{actorId:string}>();
 export async function mockAdminServer(page:Page,initial?:AccessState){
- let state={...(initial||initialAccessState()),customRoles:[],revision:0};const session={actorId:'owner'};sessions.set(page,session);
+ let state={...(initial||initialAccessState()),customRoles:initial?.customRoles||[],revision:0};const session={actorId:'owner'};sessions.set(page,session);
  await page.route('**/functions/v1/admin-access',async route=>{
   const {action,payload}=route.request().postDataJSON();
   try{
