@@ -14,4 +14,13 @@ export { ConnectionNotice, SyncToast, type ConnectionStatus, type SyncTask } fro
 
 export { UserAvatar } from './user-avatar';
 
-export { DirectoryTools, DirectorySearch, DirectorySegments } from './directory-tools';
+export { DirectoryTools, DirectorySearch, DirectorySegments, DirectoryStatusFilter, type DirectoryStatus } from './directory-tools';
+
+export { NewAction } from './actions';
+export { ActiveStatusBadge } from './status-badge';
+export { InlineError } from './inline-alert';
+export { IdentitySummary } from './identity-summary';
+export { GeneratedPinField } from './generated-pin-field';
+export { CardHeading } from './card-heading';
+
+export { PinInput } from './pin-input';

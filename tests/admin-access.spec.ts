@@ -7,6 +7,32 @@ async function startLive(page:Page,state:any){
  await page.route('**/functions/v1/admin-access',async route=>{const {action}=route.request().postDataJSON();if(action==='bootstrap.status')return route.fulfill({json:{ownerCreated:true}});if(action==='login')return route.fulfill({json:{actor:state.users.find((u:any)=>u.id==='owner'),state,session:'a'.repeat(64)}});return route.fallback();});
  await page.goto('http://127.0.0.1:5174');await page.getByLabel('Username',{exact:true}).fill('test.owner');await page.getByLabel('6-digit PIN',{exact:true}).fill('739284');await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.locator('.ob-sync')).toBeVisible();
 }
+test('PIN keypad supports touch editing and physical keyboard login without a device keyboard',async({page})=>{
+ await mockAdminServer(page);let submitted:Record<string,unknown>|undefined;
+ await page.route('**/functions/v1/admin-access',async route=>{const {action,payload}=route.request().postDataJSON();if(action==='login')submitted=payload;await route.fallback();});
+ await page.goto('http://127.0.0.1:5174');await page.getByLabel('Username',{exact:true}).fill('owner');
+ const pin=page.getByLabel('6-digit PIN',{exact:true}),pad=page.getByRole('group',{name:'6-digit PIN keypad',exact:true});
+ await expect(pin).toHaveAttribute('inputmode','none');await expect(pin).toHaveAttribute('type','password');
+ await pad.getByRole('button',{name:'7',exact:true}).click();await pad.getByRole('button',{name:'3',exact:true}).click();
+ await expect(pin).toHaveValue('73');await pad.getByRole('button',{name:'Delete last digit',exact:true}).click();await expect(pin).toHaveValue('7');
+ await pad.getByRole('button',{name:'Clear PIN',exact:true}).click();await expect(pin).toHaveValue('');
+ await pin.focus();await page.keyboard.type('73x9284');await expect(pin).toHaveValue('739284');
+ await expect(pad.getByRole('button',{name:'1',exact:true})).toBeDisabled();
+ await page.keyboard.press('Backspace');await expect(pin).toHaveValue('73928');await page.keyboard.type('4');
+ await page.keyboard.press('Enter');await expect(page.locator('.access-main')).toBeVisible();expect(submitted).toEqual({username:'owner',pin:'739284'});
+});
+test('Mandatory PIN change selects one app keypad and preserves current, new and confirmation values',async({page})=>{
+ await mockAdminServer(page);let submitted:Record<string,unknown>|undefined;
+ const state=initialAccessState();
+ await page.route('**/functions/v1/admin-access',async route=>{const {action,payload}=route.request().postDataJSON();if(action==='login')return route.fulfill({json:{actor:state.users.find(user=>user.id==='owner'),state,session:'a'.repeat(64),mustChangePin:true}});if(action==='pin.change')submitted=payload;await route.fallback();});
+ await page.goto('http://127.0.0.1:5174');await page.getByLabel('Username',{exact:true}).fill('owner');await page.getByLabel('6-digit PIN',{exact:true}).fill('739284');await page.getByRole('button',{name:'Sign in',exact:true}).click();
+ const current=page.getByLabel('Current PIN',{exact:true}),next=page.getByLabel('New 6-digit PIN',{exact:true}),confirmation=page.getByLabel('Confirm PIN',{exact:true});
+ await expect(next).toHaveValue('');await expect(page.locator('.ob-pin-keypad')).toHaveCount(1);await expect(page.getByRole('group',{name:'Current PIN keypad',exact:true})).toBeVisible();
+ await current.fill('739284');await next.click();const pad=page.getByRole('group',{name:'New 6-digit PIN keypad',exact:true});
+ for(const digit of '482957')await pad.getByRole('button',{name:digit,exact:true}).click();
+ await confirmation.click();await expect(page.locator('.ob-pin-keypad')).toHaveCount(1);await confirmation.fill('482957');
+ await expect(current).toHaveValue('739284');await expect(next).toHaveValue('482957');await page.getByRole('button',{name:'Save new PIN',exact:true}).click();await expect(page.locator('.access-main')).toBeVisible();expect(submitted).toEqual({pin:'482957',current_pin:'739284'});
+});
 async function choose(page:Page,label:string,value:string){if(label==='Preview identity'){await switchTestActor(page,value);return;}if(label==='Filter status'){await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));await expect(page.locator('.ob-directory-tools')).not.toHaveClass(/is-scroll-hidden/);await page.getByRole('group',{name:label,exact:true}).getByRole('button',{name:value==='active'?'Active':value==='inactive'?'Inactive':'All',exact:true}).click();return;}const trigger=page.getByLabel(label,{exact:true});await trigger.click();await page.locator(`[role="option"][data-value="${value}"]`).click();await expect(page.getByRole('listbox')).toHaveCount(0);await expect(trigger).toBeFocused();}
 async function pickLogRange(page:Page,start:string,end:string){
  await page.getByRole('button',{name:/^Date range:/}).click();const dialog=page.getByRole('dialog');await dialog.getByRole('button',{name:'All dates',exact:true}).click();

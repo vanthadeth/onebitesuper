@@ -1,5 +1,5 @@
 import { Building2, Check, Globe2, KeyRound, LogOut, MapPin, Moon, Pencil, ShieldCheck, Sun, UserRound, LockKeyhole, ArrowUpRight, Camera } from 'lucide-react';
-import { UserAvatar, useLanguage } from '@onebite/ui';
+import { ActiveStatusBadge, CardHeading, UserAvatar, useLanguage } from '@onebite/ui';
 import { hasPermission, permissionAvailable, moduleDefinitions, type Account, type AccessState } from '@onebite/core/access';
 import './profile.css';
 import { version } from '../../../package.json';
@@ -23,25 +23,25 @@ export function ProfilePage({account,state,roleName,dark,live,busy,onLanguage,on
   </section>
 
   <section className="d-card profile-card profile-preferences" aria-labelledby="profile-preferences-title">
-   <div className="profile-card-heading"><span className="profile-symbol"><Sun size={20}/></span><div><h2 id="profile-preferences-title">{t('តាមចំណូលចិត្តអ្នក','Make it yours')}</h2><p>{t('ចំណូលចិត្តសម្រាប់ឧបករណ៍នេះ។','Preferences for this device.')}</p></div></div>
+   <CardHeading className="profile-card-heading" iconClassName="profile-symbol" id="profile-preferences-title" icon={<Sun size={20}/>} title={t('តាមចំណូលចិត្តអ្នក','Make it yours')} description={t('ចំណូលចិត្តសម្រាប់ឧបករណ៍នេះ។','Preferences for this device.')}/>
    <div className="profile-setting"><span><Globe2 size={18}/><span>{t('ភាសា','Language')}<small>{lang==='km'?'ខ្មែរ':'English'}</small></span></span><button type="button" className="d-btn d-btn-outline profile-choice" onClick={onLanguage} aria-label={t('ប្ដូរភាសា','Switch language')}>{lang==='km'?'English':'ខ្មែរ'}<ArrowUpRight size={15}/></button></div>
    <div className="profile-setting"><span>{dark?<Moon size={18}/>:<Sun size={18}/>}<span>{t('រូបរាង','Appearance')}<small>{dark?t('ងងឹត','Dark'):t('ភ្លឺ','Light')}</small></span></span><button type="button" className="d-btn d-btn-outline profile-choice" role="switch" aria-checked={dark} aria-label={t('រូបរាងងងឹត','Dark mode')} onClick={onTheme}>{dark?<Sun size={16}/>:<Moon size={16}/>} {dark?t('ភ្លឺ','Light'):t('ងងឹត','Dark')}</button></div>
   </section>
 
   <section className="d-card profile-card profile-security" aria-labelledby="profile-security-title">
-   <div className="profile-card-heading"><span className="profile-symbol"><LockKeyhole size={20}/></span><div><h2 id="profile-security-title">{t('ការពារគណនី','Account security')}</h2><p>{live?t('រក្សាសិទ្ធិចូលប្រើរបស់អ្នកឱ្យមានសុវត្ថិភាព។','Keep your account access secure.'):t('អាចមើលទិន្នន័យបានតែប៉ុណ្ណោះពេលគ្មានអ៊ីនធឺណិត។','Offline data is read-only.')}</p></div></div>
+   <CardHeading className="profile-card-heading" iconClassName="profile-symbol" id="profile-security-title" icon={<LockKeyhole size={20}/>} title={t('ការពារគណនី','Account security')} description={live?t('រក្សាសិទ្ធិចូលប្រើរបស់អ្នកឱ្យមានសុវត្ថិភាព។','Keep your account access secure.'):t('អាចមើលទិន្នន័យបានតែប៉ុណ្ណោះពេលគ្មានអ៊ីនធឺណិត។','Offline data is read-only.')}/>
    <div className="profile-security-note"><ShieldCheck size={23}/><div><strong>{needsMfa?t('តម្រូវឱ្យមាន Authenticator','Authenticator required'):t('ចូលប្រើដោយ PIN ផ្ទាល់ខ្លួន','Personal PIN sign-in')}</strong><p>{needsMfa?t('តួនាទីនេះត្រូវការបញ្ជាក់អត្តសញ្ញាណមុនធ្វើសកម្មភាពសំខាន់ៗ។','This role requires verification for sensitive actions.'):t('កុំចែករំលែក PIN របស់អ្នកជាមួយអ្នកដទៃ។','Keep your PIN private and use your own account.')}</p></div></div>
    {onResetPin&&<button type="button" className="d-btn d-btn-outline profile-security-action" disabled={busy||!live} onClick={onResetPin}><KeyRound size={17}/>{t('កំណត់ PIN ឡើងវិញ','Reset PIN')}<ArrowUpRight size={16}/></button>}
    <small>{t('រក្សាការចូលប្រើរយៈពេល 7 ថ្ងៃ។','Sign-in remembered for 7 days.')}</small>
   </section>
 
   <section className="d-card profile-card profile-sites" aria-labelledby="profile-sites-title">
-   <div className="profile-card-heading"><span className="profile-symbol"><Building2 size={20}/></span><div><h2 id="profile-sites-title">{t('សាខារបស់អ្នក','Your sites')}</h2><p>{account.role==='Owner'?t('ចូលប្រើគ្រប់សាខាក្នុងនាមម្ចាស់។','Access to every site as Owner.'):t('ទីតាំងដែលអ្នកត្រូវបានចាត់តាំង។','The locations you are assigned to.')}</p></div><span className="d-badge d-badge-soft">{sites.length}</span></div>
-   {sites.length?<ul className="profile-site-list">{sites.map(site=><li key={site.id}><span className="profile-site-icon"><MapPin size={18}/></span><div><strong>{site.name}</strong><small>{site.location||t('មិនទាន់មានទីតាំង','Location not added')}</small></div><span className={`d-badge d-badge-soft access-status ${site.active?'active':'inactive'}`}>{site.active?t('ដំណើរការ','Active'):t('ផ្អាក','Inactive')}</span></li>)}</ul>:<div className="profile-empty"><MapPin size={26}/><strong>{t('មិនទាន់បានចាត់តាំងសាខា','No sites assigned yet')}</strong><p>{t('សូមទាក់ទងអ្នកត្រួតពិនិត្យ ឬម្ចាស់ ដើម្បីចាត់តាំងសាខា។','Ask your supervisor or Owner to assign your sites.')}</p></div>}
+   <CardHeading className="profile-card-heading" iconClassName="profile-symbol" id="profile-sites-title" icon={<Building2 size={20}/>} title={t('សាខារបស់អ្នក','Your sites')} description={account.role==='Owner'?t('ចូលប្រើគ្រប់សាខាក្នុងនាមម្ចាស់។','Access to every site as Owner.'):t('ទីតាំងដែលអ្នកត្រូវបានចាត់តាំង។','The locations you are assigned to.')} action={<span className="d-badge d-badge-soft">{sites.length}</span>}/>
+   {sites.length?<ul className="profile-site-list">{sites.map(site=><li key={site.id}><span className="profile-site-icon"><MapPin size={18}/></span><div><strong>{site.name}</strong><small>{site.location||t('មិនទាន់មានទីតាំង','Location not added')}</small></div><ActiveStatusBadge active={site.active} dot={false}/></li>)}</ul>:<div className="profile-empty"><MapPin size={26}/><strong>{t('មិនទាន់បានចាត់តាំងសាខា','No sites assigned yet')}</strong><p>{t('សូមទាក់ទងអ្នកត្រួតពិនិត្យ ឬម្ចាស់ ដើម្បីចាត់តាំងសាខា។','Ask your supervisor or Owner to assign your sites.')}</p></div>}
   </section>
 
   <section className="d-card profile-card profile-access" aria-labelledby="profile-access-title">
-   <div className="profile-card-heading"><span className="profile-symbol"><UserRound size={20}/></span><div><h2 id="profile-access-title">{t('សិទ្ធិម៉ូឌុល','Module access')}</h2><p>{t('កំណត់តាមតួនាទីរបស់អ្នក។','Defined by your role.')}</p></div></div>
+   <CardHeading className="profile-card-heading" iconClassName="profile-symbol" id="profile-access-title" icon={<UserRound size={20}/>} title={t('សិទ្ធិម៉ូឌុល','Module access')} description={t('កំណត់តាមតួនាទីរបស់អ្នក។','Defined by your role.')}/>
    <ul className="profile-module-list">{moduleDefinitions.map(module=>{const available=permissionAvailable(module.id),allowed=hasPermission(state.grants[account.role],account.role,module.id);return <li key={module.id}><span>{t(module.km,module.en)}</span><span className={`d-badge d-badge-soft ${allowed?'profile-allowed':'profile-denied'}`}>{allowed&&<Check size={13}/>} {!available?t('មិនទាន់អាចប្រើបាន','Unavailable'):allowed?t('អនុញ្ញាត','Allowed'):t('បដិសេធ','Denied')}</span></li>;})}</ul>
   </section>
 

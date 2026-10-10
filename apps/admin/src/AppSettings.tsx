@@ -1,6 +1,6 @@
 import {useEffect,useId,useState,type ReactNode} from 'react';
 import {MapPin,SlidersHorizontal,Check,Globe2,Banknote,Settings,LocateFixed,Languages,Moon,Sun,Wallet,QrCode,Clock3} from 'lucide-react';
-import {AppDialog,SelectField,useLanguage} from '@onebite/ui';
+import {InlineError, AppDialog,SelectField,useLanguage} from '@onebite/ui';
 import {appSettingsOrDefault,validAppSettings,type AppSettings} from '@onebite/core/app-settings';
 import './settings-bento.css';
 
@@ -55,7 +55,7 @@ function SettingsSection({className,title,description,icon,summary,children,open
   {open&&<AppDialog title={title} wide={className==='settings-preferences'} onClose={editor.onClose} footer={<div className="settings-popup-actions"><button type="button" className="d-btn access-btn secondary" disabled={editor.saving} onClick={editor.onClose}>{t('បោះបង់','Cancel')}</button><button type="submit" form={`${id}-form`} className="d-btn d-btn-primary access-btn" disabled={!editor.dirty||editor.busy||!editor.valid}><Check size={18}/>{editor.busy?t('កំពុងរក្សាទុក…','Saving…'):t('រក្សាទុកការកំណត់','Save settings')}</button></div>}>
    <form id={`${id}-form`} className="access-form settings-popup-fields" onSubmit={event=>{event.preventDefault();void editor.onSubmit();}}>
     <p className="settings-popup-description">{description}</p>{children}
-    {editor.error&&<div className="d-alert d-alert-error access-error" role="alert">{editor.error}{editor.recovery}</div>}
+    <InlineError message={editor.error} recovery={editor.recovery}/>
    </form>
   </AppDialog>}
  </section>;

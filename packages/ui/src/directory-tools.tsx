@@ -12,3 +12,9 @@ export function DirectorySearch({label,placeholder,value,onChange}:{label:string
 export function DirectorySegments({label,value,options,onChange}:{label:string;value:string;options:{value:string;label:string}[];onChange:(value:string)=>void}){
  return <div className="d-join ob-directory-segments" role="group" aria-label={label}>{options.map(option=><button key={option.value} type="button" className={`d-btn d-join-item ${value===option.value?'d-btn-primary':'d-btn-ghost'}`} aria-pressed={value===option.value} onClick={()=>onChange(option.value)}>{option.label}</button>)}</div>;
 }
+
+export type DirectoryStatus = 'active'|'inactive'|'all';
+export function DirectoryStatusFilter({label,value,onChange}:{label:string;value:DirectoryStatus;onChange:(value:DirectoryStatus)=>void}){
+ const {t}=useLanguage();
+ return <DirectorySegments label={label} value={value} options={[{value:'active',label:t('ដំណើរការ','Active')},{value:'inactive',label:t('ផ្អាក','Inactive')},{value:'all',label:t('ទាំងអស់','All')}]} onChange={selected=>onChange(selected as DirectoryStatus)}/>;
+}
