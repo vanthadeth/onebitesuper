@@ -1,7 +1,7 @@
+import {seedConfig} from "../../../tests/fixtures/menu.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  seedConfig,
   lineAmounts,
   cartAmounts,
   roundInvoice,

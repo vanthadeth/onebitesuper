@@ -21,8 +21,8 @@ export async function prepareSitePhoto(file:File):Promise<string>{
   return data;
  }finally{bitmap.close();}
 }
-export async function uploadSitePhoto(file:File,session:string,preview:boolean):Promise<string>{
- const photo=await prepareSitePhoto(file);if(preview)return photo;
+export async function uploadSitePhoto(file:File,session:string):Promise<string>{
+ const photo=await prepareSitePhoto(file);
  const reply=await accessApi('site.photo.upload',{image:photo.split(',')[1]},session);
  if(!reply.photoPath)throw new ApiError('photo_upload_failed',502);
  return reply.photoPath;

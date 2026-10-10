@@ -211,24 +211,12 @@ export function Header({
         </button>
         <div
           className="avatar"
-          title={app === "POS" ? "Sokha · Cashier" : "Dara · Owner"}
+          title={t("គណនី","Account")}
         >
-          {app === "POS" ? "S" : "D"}
+          {app[0]}
         </div>
       </div>
     </header>
-  );
-}
-export function DemoBanner() {
-  const { t } = useLanguage();
-  return (
-    <div className="demo-banner">
-      <span className="demo-dot" />
-      {t("សាកល្បងជាមួយទិន្នន័យគំរូ", "Preview with sample data")}
-      <span className="demo-description">
-        {t("ការទូទាត់មិនមែនជាប្រតិបត្តិការពិតទេ", "Payments are simulated")}
-      </span>
-    </div>
   );
 }
 export function FoodArt({

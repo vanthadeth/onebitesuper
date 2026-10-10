@@ -28,7 +28,7 @@ export function ProfilePage({account,state,roleName,dark,live,busy,onLanguage,on
   </section>
 
   <section className="d-card profile-card profile-security" aria-labelledby="profile-security-title">
-   <div className="profile-card-heading"><span className="profile-symbol"><LockKeyhole size={20}/></span><div><h2 id="profile-security-title">{t('ការពារគណនី','Account security')}</h2><p>{live?t('រក្សាសិទ្ធិចូលប្រើរបស់អ្នកឱ្យមានសុវត្ថិភាព។','Keep your account access secure.'):t('គណនីសាកល្បងក្នុងឧបករណ៍។','This is a local preview account.')}</p></div></div>
+   <div className="profile-card-heading"><span className="profile-symbol"><LockKeyhole size={20}/></span><div><h2 id="profile-security-title">{t('ការពារគណនី','Account security')}</h2><p>{live?t('រក្សាសិទ្ធិចូលប្រើរបស់អ្នកឱ្យមានសុវត្ថិភាព។','Keep your account access secure.'):t('អាចមើលទិន្នន័យបានតែប៉ុណ្ណោះពេលគ្មានអ៊ីនធឺណិត។','Offline data is read-only.')}</p></div></div>
    <div className="profile-security-note"><ShieldCheck size={23}/><div><strong>{needsMfa?t('តម្រូវឱ្យមាន Authenticator','Authenticator required'):t('ចូលប្រើដោយ PIN ផ្ទាល់ខ្លួន','Personal PIN sign-in')}</strong><p>{needsMfa?t('តួនាទីនេះត្រូវការបញ្ជាក់អត្តសញ្ញាណមុនធ្វើសកម្មភាពសំខាន់ៗ។','This role requires verification for sensitive actions.'):t('កុំចែករំលែក PIN របស់អ្នកជាមួយអ្នកដទៃ។','Keep your PIN private and use your own account.')}</p></div></div>
    {onResetPin&&<button type="button" className="d-btn d-btn-outline profile-security-action" disabled={busy||!live} onClick={onResetPin}><KeyRound size={17}/>{t('កំណត់ PIN ឡើងវិញ','Reset PIN')}<ArrowUpRight size={16}/></button>}
    <small>{t('ចាក់សោបន្ទាប់ពីអសកម្ម 10 នាទី។','Locks after 10 minutes of inactivity.')}</small>
@@ -45,7 +45,7 @@ export function ProfilePage({account,state,roleName,dark,live,busy,onLanguage,on
   </section>
 
   <section className="d-card profile-card profile-session" aria-labelledby="profile-session-title">
-   <div><h2 id="profile-session-title">{t('សម័យចូលប្រើនេះ','This session')}</h2><p>{live?t('ចាកចេញពេលអ្នកបានបញ្ចប់ការងារ។','Sign out when you’re done on this device.'):t('អ្នកកំពុងមើលទិន្នន័យសាកល្បង។','You’re viewing sample data.')}</p><small>OneBite - Admin · v{version}</small></div>
+   <div><h2 id="profile-session-title">{t('សម័យចូលប្រើនេះ','This session')}</h2><p>{live?t('ចាកចេញពេលអ្នកបានបញ្ចប់ការងារ។','Sign out when you’re done on this device.'):t('អ្នកកំពុងមើលទិន្នន័យ Supabase ដែលបានរក្សាទុក។','You’re viewing saved Supabase data.')}</p><small>OneBite - Admin · v{version}</small></div>
    <button type="button" className="d-btn d-btn-outline profile-signout" disabled={busy} onClick={onSignOut}><LogOut size={18}/>{t('ចាកចេញ','Sign out')}</button>
   </section>
  </div>;

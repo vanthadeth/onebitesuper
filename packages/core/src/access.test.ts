@@ -1,6 +1,7 @@
+import {initialAccessState} from "../../../tests/fixtures/access.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
-import {initialAccessState,saveAccount,assignSites,saveGrants,can,visibleAccounts,AccessError,createRole,roleIds,saveSite,siteDraft} from "./access.ts";
+import {saveAccount,assignSites,saveGrants,can,visibleAccounts,AccessError,createRole,roleIds,saveSite,siteDraft} from "./access.ts";
 const error=(code:string)=>(e:unknown)=>e instanceof AccessError&&e.code===code;
 test("usernames are normalized and unique across inactive and active accounts",()=>{
  const s=initialAccessState();const a={...s.users[2],id:"new",name:"  New User  ",username:" New.User ",sites:[1]};
