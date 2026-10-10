@@ -6,7 +6,7 @@
 @plugin "daisyui" {
   themes: false;
   prefix: "d-";
-  include: button, input, textarea, select, badge, card, alert, menu, divider;
+  include: button, input, textarea, select, badge, card, alert, menu, divider, loading, progress, status, toast;
   logs: false;
 }
 @plugin "daisyui/theme" {

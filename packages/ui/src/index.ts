@@ -9,3 +9,5 @@ export * from "./app-settings";
 export * from './date-range-picker';
 
 export { InteractionFeedback } from "./feedback";
+
+export { ConnectionNotice, SyncToast, type ConnectionStatus, type SyncTask } from './sync-status';
