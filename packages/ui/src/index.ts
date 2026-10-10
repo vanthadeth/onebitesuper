@@ -24,3 +24,5 @@ export { GeneratedPinField } from './generated-pin-field';
 export { CardHeading } from './card-heading';
 
 export { PinInput } from './pin-input';
+
+export {useScrollHidden} from "./use-scroll-hidden";

@@ -24,7 +24,7 @@ test("Supervisor can change managed assignments while preserving outside-site as
  assert.throws(()=>saveAccount(s,"supervisor",{...target,role:"Owner"}),error("forbidden"));
 });
 test("Owners configure available permissions while protecting recovery and business rules",()=>{
- const s=initialAccessState();const expanded=saveGrants(s,"owner","Cashier",["admin.access","users.manage"]);assert.equal(can(expanded,expanded.users[2],"users.manage"),true);assert.throws(()=>saveGrants(s,"owner","Cashier",["inventory.access"]),error("permission_ceiling"));
+ const s=initialAccessState();const expanded=saveGrants(s,"owner","Cashier",["admin.access","users.manage"]);assert.equal(can(expanded,expanded.users[2],"users.manage"),true);assert.throws(()=>saveGrants(s,"owner","Cashier",["catalog.manage"]),error("permission_ceiling"));
  assert.throws(()=>saveGrants(s,"owner","Owner",[]),error("immutable_grant"));
  const n=saveGrants(s,"owner","Supervisor",[]);assert.throws(()=>assignSites(n,"supervisor","srey",[0,1,2]),error("forbidden"));
  for(const u of s.users){assert.equal(can(s,u,"orders.override"),false);assert.equal(can(s,u,"orders.refund"),false);}

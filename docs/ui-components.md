@@ -83,3 +83,10 @@ The review found repeated markup and interaction state for these patterns, parti
 ```
 
 The masked input uses `inputMode="none"` to suppress the device keyboard while retaining ordinary physical typing, Backspace, paste, password-manager fill and Enter submission. The app keypad provides digits, clear and delete without submitting the form. Values stay in the parent and are limited to six ASCII digits. No auto-submit, logging or persistence is added. In forms with multiple PIN fields, pass `active` and `onActivate` so only the selected field shows its keypad. Authentication and PIN-policy validation remain in the form and backend.
+
+
+## Shared workspace and account entry
+
+`@onebite/ui/workspace.css` and `workspace-framework.css` provide the same workspace, sidebar, mobile navigation, form and card foundations for Admin and Inventory. Import them in the same order as Admin, with controls, polish and motion. `@onebite/accounts` exports the shared seven-day session API, app PIN `AuthForm`, and Owner-only `MfaChallenge`. Callers still authorize their own module actions. `AppTitleBar` accepts `offlineWrites` for apps that persist an outbox; Admin keeps its read-only offline status wording.
+
+`useScrollHidden(page)` shares the mobile navigation scroll behavior across Admin and Inventory. Apply its result to the nav class, `inert`, and `aria-hidden`, and retain `access-bottom-nav-region` so the page does not shift.

@@ -29,6 +29,7 @@ export default defineConfig({
     { name: "desktop", use: { viewport: { width: 1440, height: 1000 } } },
   ],
   webServer: [
+    {command:"npm run preview --workspace @onebite/inventory",url:"http://127.0.0.1:5175",reuseExistingServer:true},
     {
       command: "npm run preview --workspace @onebite/pos",
       url: "http://127.0.0.1:5173",

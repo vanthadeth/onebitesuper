@@ -1,3 +1,7 @@
 [functions.admin-access]
 # The function validates publishable keys and custom opaque sessions itself.
 verify_jwt = false
+
+[functions.inventory-access]
+# Publishable key and opaque session are validated in the function and SQL guard.
+verify_jwt = false

@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/domain.ts",
     "./access": "./src/access.ts",
-    "./app-settings": "./src/app-settings.ts"
+    "./app-settings": "./src/app-settings.ts",
+    "./inventory": "./src/inventory.ts"
   }
 }

@@ -3,6 +3,8 @@
 @source "./";
 @source "../../../apps/admin/src/";
 @source "../../../apps/pos/src/";
+@source "../../../apps/inventory/src/";
+@source "../../accounts/src/";
 @plugin "daisyui" {
   themes: false;
   prefix: "d-";

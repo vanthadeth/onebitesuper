@@ -1,0 +1,66 @@
+import {test,expect,type Page} from '@playwright/test';
+import jpeg from 'jpeg-js';
+import {newCatalogItem,type CatalogItem} from '../packages/core/src/inventory';
+import {defaultAppSettings} from '../packages/core/src/app-settings';
+const token='b'.repeat(64),actor={id:'11111111-1111-4111-8111-111111111111',name:'Inventory Owner',username:'inventory-owner',role:'Owner',sites:[],active:true};
+async function fixture(page:Page,options:{staff?:boolean;items?:CatalogItem[];signin?:boolean}={}){
+ let items=options.items||[],online=true,failSave='',saveCalls=0;const receipts=new Map<string,unknown>(),photos=new Map<string,string>();
+ const identity=options.staff?{...actor,id:'22222222-2222-4222-8222-222222222222',role:'Cashier',name:'Inventory Cashier'}:actor;
+ await page.addInitScript(({token,signin})=>{localStorage.setItem('onebite-language','en');if(!signin)localStorage.setItem('onebite-admin-session',JSON.stringify({token,expiresAt:Date.now()+3600000}));},{token,signin:options.signin});
+ await page.route('**/functions/v1/admin-access',route=>{const {action}=route.request().postDataJSON();return route.fulfill({json:action==='login'?{actor:identity,session:token,sessionExpiresAt:Date.now()+3600000}:action==='profile.photo.read'?{photo:null}:{ownerCreated:true,appSettings:defaultAppSettings}});});
+ await page.route('**/functions/v1/inventory-access',async route=>{
+  if(!online)return route.abort();const {action,payload}=route.request().postDataJSON();
+  if(action==='list')return route.fulfill({json:{actor:identity,canEdit:!options.staff,items}});
+  if(action==='save'){
+   saveCalls++;if(options.staff)return route.fulfill({status:403,json:{error:'forbidden'}});if(failSave)return route.fulfill({status:409,json:{error:failSave}});
+   if(receipts.has(payload.id))return route.fulfill({json:receipts.get(payload.id)});
+   const current=items.find(item=>item.id===payload.item.id);
+   if((current?.revision||0)!==payload.item.revision)return route.fulfill({status:409,json:{error:'stale_revision'}});
+   const item={...payload.item,revision:payload.item.revision+1};if(payload.image){item.photoPath=identity.id+'/'+payload.id+'.jpg';photos.set(item.photoPath,payload.image);}items=[...items.filter(value=>value.id!==item.id),item];const receipt={item};receipts.set(payload.id,receipt);return route.fulfill({json:receipt});
+  }
+  if(action==='photo.read')return route.fulfill({json:{photo:photos.get(payload.photoPath)}});
+  return route.fulfill({status:400,json:{error:'invalid_action'}});
+ });
+ await page.goto('http://127.0.0.1:5175');
+ if(!options.signin)await expect(page.getByRole('heading',{name:'Materials',exact:true})).toBeVisible();
+ return {setOnline:(value:boolean)=>{online=value;},setFailure:(value:string)=>{failSave=value;},items:()=>items,calls:()=>saveCalls};
+}
+function nav(page:Page){return page.locator(page.viewportSize()!.width<680?'.access-bottom-nav':'.access-sidebar nav');}
+async function createMaterial(page:Page,name='Wrapper'){
+ await page.getByRole('button',{name:'New material',exact:true}).click();const dialog=page.getByRole('dialog');await dialog.getByLabel('Name',{exact:true}).fill(name);await dialog.getByLabel('Pack name',{exact:true}).fill('Pack');await dialog.getByLabel('Quantity per pack').fill('100');return dialog;
+}
+test('Owner creates real catalog records, edits and filters without sample data',async({page})=>{
+ const server=await fixture(page);await expect(page.locator('.inventory-card')).toHaveCount(0);
+ const dialog=await createMaterial(page);await expect(dialog.getByRole('switch',{name:'Active',exact:true})).toHaveCount(0);await dialog.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);await expect(page.locator('.inventory-card')).toContainText('Wrapper');await expect(page.locator('.inventory-card')).not.toContainText('Pending sync');expect(server.items()[0].packQuantity).toBe(100);
+ await page.getByRole('button',{name:'Wrapper',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'Edit',exact:true}).click();await expect(page.getByRole('dialog').getByRole('combobox',{name:'Base unit'})).toBeDisabled();await page.getByRole('switch',{name:'Active',exact:true}).uncheck();await page.getByRole('button',{name:'Save changes',exact:true}).click();await expect(page.locator('.inventory-card')).toHaveCount(0);await page.getByRole('button',{name:'Inactive',exact:true}).click();await expect(page.locator('.inventory-card')).toContainText('Wrapper');
+ await nav(page).getByRole('button',{name:'Items',exact:true}).click();await page.getByRole('button',{name:'New sellable item',exact:true}).click();await page.getByLabel('Name',{exact:true}).fill('Small dumpling box');await page.getByRole('dialog').getByLabel('Category',{exact:true}).fill('Dumplings');await page.getByLabel('Master price (KHR)',{exact:true}).fill('5000');await page.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.locator('.inventory-card')).toContainText('5,000 KHR');await page.getByRole('searchbox').fill('Tea');await expect(page.locator('.inventory-card')).toHaveCount(0);await page.getByRole('button',{name:'Reset filters'}).click();await expect(page.locator('.inventory-card')).toHaveCount(1);expect(server.items()).toHaveLength(2);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
+test('SQLite keeps offline edits through reload and publishes once after reconnect',async({page,context})=>{
+ const server=await fixture(page);await expect(page.locator('.ob-sync')).toHaveAttribute('data-state','complete');await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));
+ server.setOnline(false);await context.setOffline(true);
+ const dialog=await createMaterial(page,'Offline wrapper');await dialog.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.locator('.inventory-card')).toContainText('Pending sync');await page.reload();await expect(page.locator('.inventory-card')).toContainText('Offline wrapper');await expect(page.locator('.inventory-notice')).toContainText('Offline');expect(server.items()).toHaveLength(0);
+ await nav(page).getByRole('button',{name:'Changes',exact:true}).click();await expect(page.locator('.inventory-change')).toHaveCount(1);server.setOnline(true);await context.setOffline(false);await expect(page.locator('.inventory-change')).toHaveCount(0);await expect(page.getByText('No pending changes', {exact:true})).toBeVisible();expect(server.items()).toHaveLength(1);await page.locator('.ob-sync').click();await expect(page.locator('.ob-sync')).toHaveAttribute('data-state','complete');expect(server.calls()).toBe(1);
+});
+test('stale changes stay visible for review and never overwrite the server',async({page})=>{
+ const server=await fixture(page);server.setFailure('stale_revision');const dialog=await createMaterial(page,'Conflicting wrapper');await dialog.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.locator('.inventory-card')).toContainText('Needs review');expect(server.items()).toHaveLength(0);await nav(page).getByRole('button',{name:'Changes',exact:true}).click();await expect(page.locator('.inventory-change')).toContainText('changed on another device');await page.getByRole('button',{name:'Review saved copy'}).click();await expect(page.getByRole('dialog')).toContainText('Pack · 100 pcs');await expect(page.getByRole('dialog').getByRole('button',{name:'Edit',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'Close',exact:true}).click();await page.getByRole('button',{name:'Discard change',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'Discard change',exact:true}).click();await expect(page.getByText('No pending changes',{exact:true})).toBeVisible();
+});
+test('staff view the catalog without catalog authoring controls',async({page})=>{
+ const item={...newCatalogItem('material'),name:'Cucumber',unit:'g',revision:1};await fixture(page,{staff:true,items:[item]});await expect(page.getByRole('button',{name:'New material',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'Cucumber',exact:true}).click();await expect(page.getByRole('dialog').getByRole('button',{name:'Edit',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'Close',exact:true}).click();await nav(page).getByRole('button',{name:'Hub',exact:true}).click();await expect(page.locator('.inventory-bento')).toBeVisible();await expect(page.getByRole('link',{name:/Admin/})).toBeVisible();
+});
+test('Inventory signs in with the shared app keypad and physical keyboard',async({page})=>{
+ await fixture(page,{signin:true,staff:true});await expect(page.getByRole('heading',{name:'Welcome back'})).toBeVisible();await page.getByLabel('Username',{exact:true}).fill('cashier');await page.getByRole('textbox',{name:'6-digit PIN',exact:true}).focus();await page.keyboard.type('483927');await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Materials',exact:true})).toBeVisible();expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('onebite-admin-session')!).token)).toBe(token);
+});
+
+test('catalog photos persist with offline changes and remain visible after publishing',async({page,context})=>{
+ const server=await fixture(page);await expect(page.locator('.ob-sync')).toHaveAttribute('data-state','complete');await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));server.setOnline(false);await context.setOffline(true);
+ const dialog=await createMaterial(page,'Photo wrapper');const rgba=Buffer.alloc(64*64*4,255),photo=jpeg.encode({data:rgba,width:64,height:64},75).data;await dialog.locator('input[type="file"]').setInputFiles({name:'wrapper.jpg',mimeType:'image/jpeg',buffer:Buffer.from(photo)});await expect(dialog.locator('.inventory-photo-editor img')).toBeVisible();await dialog.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.locator('.inventory-card-photo')).toBeVisible();await page.reload();await expect(page.locator('.inventory-card-photo')).toBeVisible();server.setOnline(true);await context.setOffline(false);await expect(page.locator('.inventory-card')).not.toContainText('Pending sync');await expect(page.locator('.ob-sync')).toHaveAttribute('data-state','complete');await expect(page.locator('.inventory-card-photo')).toBeVisible();expect(server.items()[0].photoPath).toMatch(/\.jpg$/);
+ await context.setOffline(true);server.setOnline(false);await page.reload();await expect(page.locator('.inventory-card-photo')).toBeVisible();
+});
+
+test('Owner verification completes before catalog access and resumes queued writes',async({page})=>{
+ await fixture(page,{signin:true});let verified=false,requireVerification=false;
+ await page.route('**/functions/v1/admin-access',async route=>{const {action}=route.request().postDataJSON();if(action==='login')return route.fulfill({json:{actor,session:token,sessionExpiresAt:Date.now()+3600000,mfaRequired:true,mfaEnrollment:false}});if(action==='mfa.verify'){verified=true;requireVerification=false;return route.fulfill({json:{actor}});}return route.fallback();});
+ await page.route('**/functions/v1/inventory-access',async route=>{const {action}=route.request().postDataJSON();if(!verified)return route.fulfill({status:400,json:{error:'mfa_required'}});if(action==='save'&&requireVerification)return route.fulfill({status:400,json:{error:'reauth_required'}});return route.fallback();});
+ await page.getByLabel('Username',{exact:true}).fill('owner');await page.getByLabel('6-digit PIN',{exact:true}).fill('483927');await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Verify your identity',exact:true})).toBeVisible();await expect(page.locator('.inventory-card')).toHaveCount(0);await page.getByLabel('Verification code',{exact:true}).fill('123456');await page.getByRole('button',{name:'Verify',exact:true}).click();await expect(page.getByRole('heading',{name:'Materials',exact:true})).toBeVisible();await expect(page.locator('.ob-sync')).toHaveAttribute('data-state','complete');
+ requireVerification=true;const dialog=await createMaterial(page,'Verified wrapper');await dialog.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.getByRole('heading',{name:'Verify your identity',exact:true})).toBeVisible();await page.getByLabel('Verification code',{exact:true}).fill('654321');await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await expect(page.getByLabel('Verification code',{exact:true})).toHaveValue('654321');await page.getByRole('button',{name:'Verify',exact:true}).click();await expect(page.locator('.inventory-card')).toContainText('Verified wrapper');await expect(page.locator('.inventory-card')).not.toContainText('Pending sync');
+});

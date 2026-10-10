@@ -1,0 +1,13 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import '@onebite/ui/daisy.css';
+import '@onebite/ui/workspace.css';
+import '@onebite/ui/controls.css';
+import '@onebite/ui/workspace-framework.css';
+import '@onebite/ui/polish.css';
+import '@onebite/ui/motion.css';
+import './inventory.css';
+import {AppSettingsProvider,LanguageProvider,InteractionFeedback,registerPwa} from '@onebite/ui';
+import {InventoryApp} from './InventoryApp';
+if(window.top!==window.self){document.getElementById('root')!.textContent='Open OneBite directly to continue.';}else createRoot(document.getElementById('root')!).render(<React.StrictMode><AppSettingsProvider><LanguageProvider><InteractionFeedback/><InventoryApp/></LanguageProvider></AppSettingsProvider></React.StrictMode>);
+if(import.meta.env.PROD)registerPwa();

@@ -33,3 +33,5 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010054118_profile_photos.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010055908_profile_photo_lock_order.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/profile-photos.verify.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010122414_inventory_catalog.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/inventory-catalog.verify.sql

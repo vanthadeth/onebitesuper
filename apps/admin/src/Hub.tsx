@@ -1,8 +1,8 @@
-import { ArrowUpRight, type LucideIcon } from 'lucide-react';
+import { Boxes, ArrowUpRight, type LucideIcon } from 'lucide-react';
 import { useLanguage } from '@onebite/ui';
 export type HubMenuId='users'|'sites'|'roles'|'permissions'|'settings'|'activity';
 type HubMenu={id:HubMenuId;label:string;icon:LucideIcon};
-export function AdminHub({menus,activeUsers,activeSites,roleCount,onOpen}:{menus:HubMenu[];activeUsers:number;activeSites:number;roleCount:number;onOpen:(id:HubMenuId)=>void}){
+export function AdminHub({menus,activeUsers,activeSites,roleCount,onOpen,inventoryHref}:{inventoryHref?:string;menus:HubMenu[];activeUsers:number;activeSites:number;roleCount:number;onOpen:(id:HubMenuId)=>void}){
  const {t,lang}=useLanguage();
  const descriptions:Record<HubMenuId,string>={
   users:t('ថែរក្សាគណនីក្រុម និងព័ត៌មានអ្នកប្រើ។','Manage your team and their accounts.'),
@@ -19,6 +19,7 @@ export function AdminHub({menus,activeUsers,activeSites,roleCount,onOpen}:{menus
  };
  const format=new Intl.NumberFormat(lang==='km'?'km-KH':'en');
  return <div className="access-hub-grid" aria-label={t('ម៉ឺនុយគ្រប់គ្រង','Admin menus')}>
+  {inventoryHref&&<a className="d-card access-hub-card access-hub-inventory" href={inventoryHref}><span className="access-hub-card-top"><span className="access-hub-symbol"><Boxes size={24}/></span><ArrowUpRight className="access-hub-arrow" size={20}/></span><span className="access-hub-copy"><strong>{t("ស្តុក","Inventory")}</strong><span className="access-hub-description">{t("សម្ភារៈ និងមុខទំនិញលក់។","Materials and sellable items.")}</span></span></a>}
   {menus.map(({id,label,icon:Icon})=>{const stat=stats[id];return <button key={id} type="button" aria-label={label} className={`d-card access-hub-card access-hub-${id}`} onClick={()=>onOpen(id)}>
    <span className="access-hub-card-top"><span className="access-hub-symbol"><Icon size={24} aria-hidden="true"/></span><ArrowUpRight className="access-hub-arrow" size={20} aria-hidden="true"/></span>
    {id==='users'&&<Icon className="access-hub-watermark" size={156} strokeWidth={1} aria-hidden="true"/>}

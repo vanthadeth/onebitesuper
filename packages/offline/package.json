@@ -5,6 +5,10 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./cleanup": "./src/cleanup.ts"
+    "./cleanup": "./src/cleanup.ts",
+    "./inventory": "./src/inventory.ts"
+  },
+  "dependencies": {
+    "@onebite/core": "0.1.0"
   }
 }

@@ -11,6 +11,7 @@
   "dependencies": {
     "@onebite/core": "0.1.0",
     "@onebite/ui": "0.1.0",
-    "@onebite/offline": "0.1.0"
+    "@onebite/offline": "0.1.0",
+    "@onebite/accounts": "0.1.0"
   }
 }

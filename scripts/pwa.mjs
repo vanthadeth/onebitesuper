@@ -2,7 +2,7 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 const app = process.argv[2];
-if (!["pos", "admin"].includes(app)) throw new Error("Expected pos or admin");
+if (!["pos", "admin", "inventory"].includes(app)) throw new Error("Expected pos or admin");
 const base = process.env.ONEBITE_BASE_PATH || "/";
 if (!/^\/(?:[a-zA-Z0-9_.-]+\/)*$/.test(base)) throw new Error("Invalid app base path");
 const dir = resolve(import.meta.dirname, `../apps/${app}/dist`);

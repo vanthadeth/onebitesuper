@@ -9,7 +9,9 @@
     "./controls.css": "./src/controls.css",
     "./daisy.css": "./src/daisy.css",
     "./polish.css": "./src/polish.css",
-    "./motion.css": "./src/motion.css"
+    "./motion.css": "./src/motion.css",
+    "./workspace.css": "./src/workspace.css",
+    "./workspace-framework.css": "./src/workspace-framework.css"
   },
   "dependencies": {
     "@onebite/core": "0.1.0",
