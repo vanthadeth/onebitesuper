@@ -4,14 +4,14 @@ const sha256=async(value:string)=>[...new Uint8Array(await crypto.subtle.digest(
 const randomHex=(length:number)=>[...crypto.getRandomValues(new Uint8Array(length))].map(v=>v.toString(16).padStart(2,'0')).join('');
 declare const Deno:{env:{get(key:string):string|undefined};serve(handler:(request:Request)=>Promise<Response>):void};
 Deno.serve(async req=>{
+ let requestAction='unknown';const requestId=crypto.randomUUID();
  const allowed=(Deno.env.get('ONEBITE_ALLOWED_ORIGINS')||'https://vanthadeth.github.io').split(',').map(v=>v.trim());
  const origin=req.headers.get('origin');const cors:Record<string,string>={'Access-Control-Allow-Headers':'authorization, apikey, content-type','Access-Control-Allow-Methods':'POST, OPTIONS','Cache-Control':'no-store','Vary':'Origin','X-Content-Type-Options':'nosniff'};
  if(origin&&allowed.includes(origin))cors['Access-Control-Allow-Origin']=origin;
- const respond=(data:unknown,status=200)=>Response.json(data,{status,headers:cors});
+ const respond=(data:unknown,status=200)=>{if(status>=400){const raw=(data as {error?:unknown})?.error;const code=typeof raw==='string'&&/^[a-z_]{1,40}$/.test(raw)?raw:'unknown';console.warn(JSON.stringify({event:'admin_request_rejected',action:requestAction,status,code,request_id:requestId}));}return Response.json(data,{status,headers:cors});};
  if(origin&&!allowed.includes(origin))return respond({error:'forbidden'},403);
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
  if(req.method!=='POST')return respond({error:'method_not_allowed'},405);
- let requestAction='unknown';
  try{
   const suppliedKey=req.headers.get('apikey'),publicKeys=Deno.env.get('SUPABASE_PUBLISHABLE_KEYS');
   const allowedPublic=[Deno.env.get('SUPABASE_ANON_KEY'),...(publicKeys?Object.values(JSON.parse(publicKeys)):[])];
@@ -25,7 +25,7 @@ Deno.serve(async req=>{
   for(const field of ['bootstrap_hash','new_session_hash','_context','secret','counter','recovery_hash','recovery_hashes'])delete payload[field];
   // Source throttling is defense in depth; global and per-account limits still apply if proxy headers vary.
   const source=req.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim()||'unknown';
-  const context={request_id:crypto.randomUUID(),source_hash:await sha256(source)};
+  const context={request_id:requestId,source_hash:await sha256(source)};
   payload._context=context;
   let newToken:string|undefined;
   if(action==='bootstrap'){
