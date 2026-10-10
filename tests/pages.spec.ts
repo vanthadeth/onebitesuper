@@ -48,3 +48,23 @@ test('hosted Inventory rejects unauthenticated catalog and private photo request
  const direct=await request.post(publicConfig.url+'/rest/v1/rpc/onebite_inventory_api',{headers,data:{p_action:'list',p_payload:{},p_session_hash:'0'.repeat(64)}});expect([401,403]).toContain(direct.status());
  const read=await request.get(publicConfig.url+'/rest/v1/onebite_catalog?select=id',{headers});expect([401,403]).toContain(read.status());
 });
+
+test('app hub preserves language and explains installation for each device', async ({page}) => {
+ await page.goto(base);
+ await expect(page.locator('html')).toHaveAttribute('lang','km');
+ await page.getByRole('button',{name:'EN',exact:true}).click();
+ await expect(page.locator('html')).toHaveAttribute('lang','en');
+ await expect(page.getByRole('heading',{name:'Meet your OneBite apps'})).toBeVisible();
+ for(const app of ['POS','Admin','Inventory']) await expect(page.getByRole('link',{name:`OneBite ${app}`,exact:true})).toHaveAttribute('href',`${app.toLowerCase()}/`);
+ await expect(page.getByRole('link',{name:/OneBite Attendance/})).toHaveCount(0);
+ await expect(page.locator('.attendance')).toContainText('Coming soon');
+ await page.getByRole('button',{name:'Android',exact:true}).click();
+ await expect(page.locator('#install-steps')).toContainText('Install app or Add to Home screen');
+ await page.getByRole('button',{name:'iPhone / iPad',exact:true}).click();
+ await expect(page.locator('#install-steps')).toContainText('Safari');
+ await page.getByRole('button',{name:'Desktop',exact:true}).click();
+ await expect(page.locator('#install-steps')).toContainText('Chrome or Edge');
+ await page.reload();
+ await expect(page.locator('html')).toHaveAttribute('lang','en');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
