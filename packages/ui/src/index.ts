@@ -6,3 +6,4 @@ export * from "./empty-state";
 export * from "./page-heading";
 
 export * from "./app-settings";
+export * from './date-range-picker';

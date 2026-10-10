@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CalendarDays, History, LoaderCircle, RefreshCw } from 'lucide-react';
-import { EmptyState, useLanguage } from '@onebite/ui';
+import { History, LoaderCircle, RefreshCw } from 'lucide-react';
+import { DateRangePicker, EmptyState, useLanguage } from '@onebite/ui';
 import type { AccessEvent } from '@onebite/core/access';
 import { accessApi, ApiError } from './access-api';
 type CreateAction=Parameters<typeof EmptyState>[0]['action'];
@@ -8,18 +8,9 @@ const zone='Asia/Phnom_Penh';
 const dayFormatter=new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'});
 export function eventDay(time:string){return dayFormatter.format(new Date(time));}
 export function ActivityLog({events,live,session,revision,createAction,onUnauthorized}:{events:AccessEvent[];live:boolean;session:string;revision:number;createAction?:CreateAction;onUnauthorized:(error:unknown)=>void}){
- const {t}=useLanguage();
- const [start,setStart]=useState(''),[end,setEnd]=useState(''),[range,setRange]=useState({start:'',end:''});
- const invalid=Boolean(start&&end&&start>end);
+ const [range,setRange]=useState({start:'',end:''});
  return <div className="access-activity-page">
-  <form className="access-activity-filters d-card" onSubmit={e=>{e.preventDefault();if(!invalid)setRange({start,end});}}>
-   <label><span><CalendarDays size={16}/>{t('ពីថ្ងៃ','From date')}</span><input type="date" value={start} max={end||undefined} onChange={e=>setStart(e.target.value)}/></label>
-   <label><span>{t('ដល់ថ្ងៃ','To date')}</span><input type="date" value={end} min={start||undefined} onChange={e=>setEnd(e.target.value)}/></label>
-   <button className="access-btn" disabled={invalid}>{t('បង្ហាញប្រវត្តិ','Show logs')}</button>
-   {(start||end||range.start||range.end)&&<button type="button" className="access-text" onClick={()=>{setStart('');setEnd('');setRange({start:'',end:''});}}>{t('កំណត់ឡើងវិញ','Clear dates')}</button>}
-   <small>{t('កាលបរិច្ឆេទតាមម៉ោងកម្ពុជា។','Dates use Cambodia time.')}</small>
-   {invalid&&<p role="alert" className="access-error">{t('ថ្ងៃបញ្ចប់ត្រូវនៅក្រោយថ្ងៃចាប់ផ្ដើម។','To date must be on or after From date.')}</p>}
-  </form>
+  <div className="access-activity-filters d-card"><DateRangePicker value={range} onChange={setRange}/></div>
   <ActivityFeed key={`${range.start}:${range.end}:${revision}`} events={events} live={live} session={session} range={range} createAction={createAction} onUnauthorized={onUnauthorized}/>
  </div>;
 }

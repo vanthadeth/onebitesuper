@@ -75,12 +75,10 @@
 .access-matrix-row{min-height:44px;padding:7px 14px;gap:8px}.access-matrix-head{min-height:40px}.access-matrix-row>div strong{line-height:20px}.access-matrix-row>div small{line-height:16px}
 .access-grants{gap:6px}.access-grants label{min-height:44px;padding:7px 10px}.access-module-actions{gap:4px;margin-top:8px}.access-grant-module{padding:8px}
 .access-activity-page{display:grid;gap:20px}.access-activity-filters{display:flex;flex-direction:row;flex-wrap:wrap;gap:12px;align-items:flex-end;padding:16px;background:var(--surface);border:1px solid var(--line)}
-.access-activity-filters label{display:grid;gap:4px;flex:1;max-width:240px;min-width:140px;font-size:13px}.access-activity-filters label span{display:flex;align-items:center;gap:6px}.access-activity-filters input{min-height:44px;background:var(--surface);color:var(--ink);color-scheme:light}.access-activity-filters>small{width:100%}.access-activity-filters .access-btn{min-height:44px}
 .access-activity-group h2{display:flex;align-items:center;gap:10px;background:var(--surface-hover);padding:10px 16px;border-bottom:1px solid var(--line);font-size:14px;font-weight:600}.access-activity-group h2 time{margin:0;max-width:none;width:auto;font:inherit;color:var(--ink);white-space:normal}.access-activity-group h2>span{font-size:13px;color:var(--muted)}
 .access-activity-row{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}.access-activity-row>div{min-width:0;flex:1;overflow-wrap:anywhere}.access-activity-row time{width:auto;max-width:none;white-space:nowrap;margin-left:auto}.access-activity>div.access-activity-load{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;padding:16px;border:0;gap:8px}.access-activity-load span{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
 .access-activity-spinner{animation:activity-spin 1s linear infinite}@keyframes activity-spin{to{transform:rotate(360deg)}}
-[data-theme=dark] .access-activity-filters input{color-scheme:dark}
-@media(max-width:680px){.access-activity-filters label{max-width:none;min-width:0}.access-activity-filters .access-btn{width:100%}.access-matrix-row{padding:7px 10px}.access-matrix-row>div strong{line-height:20px}}
+@media(max-width:680px){.access-matrix-row{padding:7px 10px}.access-matrix-row>div strong{line-height:20px}}
 @media(prefers-reduced-motion:reduce){.access-activity-spinner{animation:none}}
 /* Admin Hub: a responsive Bento grid. */
 .access-hub-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;grid-auto-flow:row dense;align-items:stretch}
