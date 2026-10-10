@@ -22,6 +22,6 @@ await mkdir(resolve(output, 'assets'), { recursive: true });
 for (const app of ['pos', 'admin', 'inventory', 'attendance']) {
   await cp(resolve(root, `resources/app-icons/${app}.svg`), resolve(output, `assets/${app}.svg`));
 }
-await cp(resolve(root, 'resources/brand/one-bite-wordmark-black.svg'), resolve(output, 'assets/wordmark.svg'));
+await cp(resolve(root, 'resources/brand/one-bite-logo-orange.svg'), resolve(output, 'assets/logo-orange.svg'));
 await cp(resolve(root, 'resources/fonts/google-sans/GoogleSans-KhmerLatin.ttf'), resolve(output, 'assets/google-sans.ttf'));
 console.log(`GitHub Pages output: dist/pages; app base: ${base}`);
