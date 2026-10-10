@@ -1,12 +1,13 @@
 import {test,expect,type Page} from '@playwright/test';
 import jpeg from 'jpeg-js';
-import {newCatalogItem,type CatalogItem} from '../packages/core/src/inventory';
+import {newCatalogItem,type CatalogItem,type CatalogReference} from '../packages/core/src/inventory';
 import {defaultAppSettings} from '../packages/core/src/app-settings';
 const token='b'.repeat(64),actor={id:'11111111-1111-4111-8111-111111111111',name:'Inventory Owner',username:'inventory-owner',role:'Owner',sites:[],active:true};
 async function fixture(page:Page,options:{staff?:boolean;items?:CatalogItem[];signin?:boolean}={}){
  let items=options.items||[],online=true,failSave='',saveCalls=0;const receipts=new Map<string,unknown>(),photos=new Map<string,string>();
  const identity:typeof actor&{photoPath?:string|null}=options.staff?{...actor,id:'22222222-2222-4222-8222-222222222222',role:'Cashier',name:'Inventory Cashier'}:actor;
  await page.addInitScript(({token,signin})=>{localStorage.setItem('onebite-language','en');if(!signin)localStorage.setItem('onebite-admin-session',JSON.stringify({token,expiresAt:Date.now()+3600000}));},{token,signin:options.signin});
+ let references:CatalogReference[]=[['material_category','ingredient','Ingredient'],['material_category','packaging','Packaging'],['sellable_category','Dumplings','Dumplings'],['unit','pcs','Pieces'],['unit','g','Grams'],['unit','ml','Millilitres'],['unit','box','Box']].map(([kind,value,name])=>({id:crypto.randomUUID(),kind:kind as CatalogReference['kind'],value,name,active:true,revision:1}));
  let profilePhoto:string|null=null;
  await page.route('**/functions/v1/admin-access',route=>{const {action,payload}=route.request().postDataJSON();
   if(action==='profile.photo.upload'){profilePhoto='data:image/jpeg;base64,'+payload.image;return route.fulfill({json:{photoPath:identity.id+'/11111111-1111-4111-8111-111111111111.jpg'}});}
@@ -15,7 +16,15 @@ async function fixture(page:Page,options:{staff?:boolean;items?:CatalogItem[];si
  });
  await page.route('**/functions/v1/inventory-access',async route=>{
   if(!online)return route.abort();const {action,payload}=route.request().postDataJSON();
-  if(action==='list')return route.fulfill({json:{actor:identity,canEdit:!options.staff,items}});
+  if(action==='list')return route.fulfill({json:{actor:identity,canEdit:!options.staff,items,references}});
+  if(action==='reference.save'){
+   if(options.staff)return route.fulfill({status:403,json:{error:'forbidden'}});
+   if(receipts.has(payload.id))return route.fulfill({json:receipts.get(payload.id)});
+   const current=references.find(reference=>reference.id===payload.reference.id);
+   if((current?.revision||0)!==payload.reference.revision)return route.fulfill({status:409,json:{error:'stale_revision'}});
+   if(current&&current.active!==payload.reference.active&&!payload.confirmedActive)return route.fulfill({status:409,json:{error:'confirmation_required'}});
+   const reference={...payload.reference,revision:payload.reference.revision+1};references=[...references.filter(value=>value.id!==reference.id),reference];const receipt={reference};receipts.set(payload.id,receipt);return route.fulfill({json:receipt});
+  }
   if(action==='save'){
    saveCalls++;if(options.staff)return route.fulfill({status:403,json:{error:'forbidden'}});if(failSave)return route.fulfill({status:409,json:{error:failSave}});
    if(receipts.has(payload.id))return route.fulfill({json:receipts.get(payload.id)});
@@ -37,8 +46,8 @@ async function createMaterial(page:Page,name='Wrapper'){
 test('Owner creates real catalog records, edits and filters without sample data',async({page})=>{
  const server=await fixture(page);await expect(page.locator('.inventory-card')).toHaveCount(0);
  const dialog=await createMaterial(page);await expect(dialog.getByRole('switch',{name:'Active',exact:true})).toHaveCount(0);await dialog.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);await expect(page.locator('.inventory-card')).toContainText('Wrapper');await expect(page.locator('.inventory-card')).not.toContainText('Pending sync');expect(server.items()[0].packQuantity).toBe(100);
- await page.getByRole('button',{name:'Wrapper',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'Edit',exact:true}).click();for(const button of await page.getByRole('dialog').getByRole('radiogroup',{name:'Base unit'}).getByRole('radio').all())await expect(button).toBeDisabled();await page.getByRole('switch',{name:'Active',exact:true}).uncheck();await page.getByRole('button',{name:'Save changes',exact:true}).click();await expect(page.locator('.inventory-card')).toHaveCount(0);await page.getByRole('button',{name:'Inactive',exact:true}).click();await expect(page.locator('.inventory-card')).toContainText('Wrapper');
- await nav(page).getByRole('button',{name:'Items',exact:true}).click();await page.getByRole('button',{name:'New sellable item',exact:true}).click();await page.getByLabel('Name',{exact:true}).fill('Small dumpling box');await page.getByRole('dialog').getByLabel('Category',{exact:true}).fill('Dumplings');await page.getByLabel('Master price (KHR)',{exact:true}).fill('5000');await page.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.locator('.inventory-card')).toContainText('5,000 KHR');await page.getByRole('searchbox').fill('Tea');await expect(page.locator('.inventory-card')).toHaveCount(0);await page.getByRole('button',{name:'Reset filters'}).click();await expect(page.locator('.inventory-card')).toHaveCount(1);expect(server.items()).toHaveLength(2);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.getByRole('button',{name:'Wrapper',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'Edit',exact:true}).click();await expect(page.getByRole('dialog').getByRole('combobox',{name:'Base unit'})).toBeDisabled();await page.getByRole('switch',{name:'Active',exact:true}).click();await page.getByRole('dialog',{name:'Deactivate this record?'}).getByRole('button',{name:'Confirm',exact:true}).click();await page.getByRole('button',{name:'Save changes',exact:true}).click();await expect(page.locator('.inventory-card')).toHaveCount(0);await page.getByRole('button',{name:'Inactive',exact:true}).click();await expect(page.locator('.inventory-card')).toContainText('Wrapper');
+ await nav(page).getByRole('button',{name:'Items',exact:true}).click();await page.getByRole('button',{name:'New sellable item',exact:true}).click();await page.getByLabel('Name',{exact:true}).fill('Small dumpling box');await page.getByRole('dialog').getByRole('radiogroup',{name:'Category'}).getByRole('radio',{name:'Dumplings',exact:true}).click();await page.getByLabel('Master price (KHR)',{exact:true}).fill('5000');await page.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.locator('.inventory-card')).toContainText('5,000 KHR');await page.getByRole('searchbox').fill('Tea');await expect(page.locator('.inventory-card')).toHaveCount(0);await page.getByRole('button',{name:'Reset filters'}).click();await expect(page.locator('.inventory-card')).toHaveCount(1);expect(server.items()).toHaveLength(2);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 test('SQLite keeps offline edits through reload and publishes once after reconnect',async({page,context})=>{
  const server=await fixture(page);await expect(page.locator('.ob-sync')).toHaveAttribute('data-state','complete');await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));
@@ -70,10 +79,12 @@ test('Owner verification completes before catalog access and resumes queued writ
  requireVerification=true;const dialog=await createMaterial(page,'Verified wrapper');await dialog.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.getByRole('heading',{name:'Verify your identity',exact:true})).toBeVisible();await page.getByLabel('Verification code',{exact:true}).fill('654321');await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await expect(page.getByLabel('Verification code',{exact:true})).toHaveValue('654321');await page.getByRole('button',{name:'Verify',exact:true}).click();await expect(page.locator('.inventory-card')).toContainText('Verified wrapper');await expect(page.locator('.inventory-card')).not.toContainText('Pending sync');
 });
 
- test('Short catalog choices use button groups with keyboard selection',async({page})=>{
+ test('catalog dropdowns include management actions and support keyboard selection',async({page})=>{
  await fixture(page);await page.getByRole('button',{name:'New material',exact:true}).click();const dialog=page.getByRole('dialog');
- const category=dialog.getByRole('radiogroup',{name:'Category',exact:true});await expect(category.getByRole('radio')).toHaveCount(2);await category.getByRole('radio',{name:'Packaging',exact:true}).click();await expect(category.getByRole('radio',{name:'Packaging',exact:true})).toBeChecked();
- const units=dialog.getByRole('radiogroup',{name:'Base unit',exact:true});await expect(units.getByRole('radio')).toHaveCount(3);await units.getByRole('radio',{name:'Pieces (pcs)',exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(units.getByRole('radio',{name:'Grams (g)',exact:true})).toBeChecked();await page.keyboard.press('End');await expect(units.getByRole('radio',{name:'Millilitres (ml)',exact:true})).toBeFocused();await expect(units.getByRole('radio',{name:'Millilitres (ml)',exact:true})).toBeChecked();await expect(dialog.getByRole('combobox')).toHaveCount(0);expect(await dialog.evaluate(element=>element.scrollWidth<=element.clientWidth)).toBe(true);
+ await dialog.getByRole('combobox',{name:'Category'}).click();await page.getByRole('option',{name:'Packaging',exact:true}).click();
+ await expect(dialog.getByRole('combobox',{name:'Category'})).toContainText('Packaging');
+ await dialog.getByRole('combobox',{name:'Base unit'}).focus();await page.keyboard.press('ArrowDown');await page.getByRole('option',{name:'Millilitres (ml)',exact:true}).click();
+ await expect(dialog.getByRole('combobox',{name:'Base unit'})).toContainText('Millilitres (ml)');expect(await dialog.evaluate(element=>element.scrollWidth<=element.clientWidth)).toBe(true);
  });
 
  test('Inventory Profile shares Admin cards, preferences, photo controls and sign-out',async({page},info)=>{
@@ -106,4 +117,30 @@ test('category filter stays below compact heading and mobile catalog uses rows',
   return Math.abs(category.y-heading.y-heading.height);
  }).toBeLessThan(2);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
+
+test('inline reference creation preserves draft and offline references sync before items',async({page,context})=>{
+ const server=await fixture(page);await expect(page.locator('.ob-sync')).toHaveAttribute('data-state','complete');
+ await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));
+ server.setOnline(false);await context.setOffline(true);
+ const item=await createMaterial(page,'Custom flour');
+ await item.getByRole('combobox',{name:'Category'}).click();await page.getByRole('option',{name:'+ Add new category',exact:true}).click();
+ const category=page.getByRole('dialog',{name:'New category',exact:true});await expect(category.getByRole('switch',{name:'Active'})).toHaveCount(0);
+ await category.getByLabel('Name',{exact:true}).fill('Bakery');await category.getByRole('button',{name:'Create',exact:true}).click();
+ await expect(item.getByLabel('Name',{exact:true})).toHaveValue('Custom flour');await expect(item.getByRole('combobox',{name:'Category'})).toContainText('Bakery');
+ await item.getByRole('combobox',{name:'Base unit'}).click();await page.getByRole('option',{name:'+ Add new base UOM',exact:true}).click();
+ const unit=page.getByRole('dialog',{name:'New base UOM',exact:true});await expect(unit.getByRole('switch',{name:'Active'})).toHaveCount(0);
+ await unit.getByLabel('Name',{exact:true}).fill('Kilograms');await unit.getByLabel('Unit symbol',{exact:true}).fill('kg');await unit.getByRole('button',{name:'Create',exact:true}).click();
+ await expect(item.getByRole('combobox',{name:'Base unit'})).toContainText('Kilograms (kg)');
+ await item.getByLabel('Pack name',{exact:true}).fill('Bag');await item.getByLabel('Quantity per pack',{exact:false}).fill('1.5');await item.getByRole('button',{name:'Create item',exact:true}).click();
+ await page.reload();await expect(page.locator('.inventory-card')).toContainText('Custom flour');
+ await nav(page).getByRole('button',{name:'Changes',exact:true}).click();await expect(page.locator('.inventory-change')).toHaveCount(3);
+ await page.evaluate(()=>window.scrollTo({top:500,behavior:'instant'}));
+ await expect(page.locator('.inventory-messages')).toBeInViewport();
+ server.setOnline(true);await context.setOffline(false);await expect(page.locator('.inventory-change')).toHaveCount(0);expect(server.items()[0].unit).toBe('kg');
+ await nav(page).getByRole('button',{name:'Hub',exact:true}).click();await page.getByRole('button',{name:'Base UOMs',exact:false}).click();
+ const manager=page.getByRole('dialog',{name:'Base UOMs',exact:true});await manager.getByRole('button',{name:/Kilograms/}).click();
+ const edit=page.getByRole('dialog',{name:'Edit base UOM',exact:true});await expect(edit.getByLabel('Unit symbol')).toBeDisabled();
+ await edit.getByRole('switch',{name:'Active'}).click();await page.getByRole('dialog',{name:'Deactivate this record?'}).getByRole('button',{name:'Cancel',exact:true}).click();await expect(edit.getByRole('switch',{name:'Active'})).toBeChecked();
+ await edit.getByRole('switch',{name:'Active'}).click();await page.getByRole('dialog',{name:'Deactivate this record?'}).getByRole('button',{name:'Confirm',exact:true}).click();await edit.getByRole('button',{name:'Save changes',exact:true}).click();await expect(manager.getByRole('button',{name:/Kilograms/})).toContainText('Inactive');
 });

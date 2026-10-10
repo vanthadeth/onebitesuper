@@ -1,0 +1,50 @@
+-- Isolated transactional checks. All fixtures roll back, including sessions and images.
+begin;
+create function pg_temp.assert(ok boolean,message text) returns void language plpgsql as $$ begin if not coalesce(ok,false) then raise exception 'Inventory check failed: %',message;end if;end $$;
+insert into public.onebite_users(id,name,username,role,active) values ('11111111-1111-4111-8111-111111111111','Catalog test Owner','catalog-test-owner','Owner',true),('22222222-2222-4222-8222-222222222222','Catalog test Cashier','catalog-test-cashier','Cashier',true);
+insert into public.onebite_credentials(user_id,pin_hash,must_change) values ('11111111-1111-4111-8111-111111111111','test-only',false),('22222222-2222-4222-8222-222222222222','test-only',false);
+insert into public.onebite_sessions(token_hash,user_id,expires_at,mfa_at) values(repeat('1',64),'11111111-1111-4111-8111-111111111111',now()+interval '1 day',now()),(repeat('2',64),'22222222-2222-4222-8222-222222222222',now()+interval '1 day',null);
+insert into public.onebite_role_permissions(role,permission) values('Cashier','inventory.access') on conflict do nothing;
+
+select pg_temp.assert(not has_table_privilege('anon','public.onebite_catalog_references','select'),'reference data is private');
+select pg_temp.assert((public.onebite_inventory_api('reference.save','{}',repeat('2',64))->>'error')='forbidden','staff cannot manage references');
+select pg_temp.assert(jsonb_array_length(public.onebite_inventory_api('list','{}',repeat('1',64))->'references')>=6,'reference lists are available');
+do $$
+declare p jsonb; r jsonb; item jsonb; saved jsonb;
+begin
+ p=jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('a',64),'reference',jsonb_build_object('id',gen_random_uuid(),'kind','unit','name','Test kilograms','value','test_kg','active',true,'revision',0));
+ r=public.onebite_inventory_api('reference.save',p,repeat('1',64));
+ perform pg_temp.assert(r->'reference'->>'revision'='1','custom unit created');
+ perform pg_temp.assert(public.onebite_inventory_api('reference.save',p,repeat('1',64))=r,'unit retries return same receipt');
+ p=jsonb_set(p,'{id}',to_jsonb(gen_random_uuid()));
+ perform pg_temp.assert(public.onebite_inventory_api('reference.save',p,repeat('1',64))->>'error'='stale_revision','stale reference rejected');
+ p=jsonb_set(p,'{reference}',r->'reference');
+ p=jsonb_set(p,'{reference,value}','"tampered"');
+ perform pg_temp.assert(public.onebite_inventory_api('reference.save',p,repeat('1',64))->>'error'='immutable_reference','unit symbol protected');
+ p=jsonb_set(p,'{reference}',r->'reference');
+ item=jsonb_build_object('id',gen_random_uuid(),'kind','material','name','Reference test flour','nameEn','','category','ingredient','unit','test_kg','priceKhr',null,'packName','Bag','packQuantity',1.5,'description','','active',true,'photoPath',null,'revision',0);
+ saved=public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('b',64),'item',item),repeat('1',64));
+ perform pg_temp.assert(saved->'item'->>'revision'='1','custom UOM accepted for item');
+ p=jsonb_set(p,'{reference,active}','false');
+ perform pg_temp.assert(public.onebite_inventory_api('reference.save',p,repeat('1',64))->>'error'='confirmation_required','reference deactivation needs confirmation');
+ r=public.onebite_inventory_api('reference.save',p||'{"confirmedActive":true}',repeat('1',64));
+ perform pg_temp.assert(r->'reference'->>'active'='false','confirmed reference change saved');
+ item=jsonb_set(jsonb_set(item,'{id}',to_jsonb(gen_random_uuid())),'{name}','"Second flour"');
+ perform pg_temp.assert(public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('c',64),'item',item),repeat('1',64))->>'error'='inactive_reference','inactive UOM cannot be selected for new item');
+ item=saved->'item';
+ saved=public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('d',64),'item',item),repeat('1',64));
+ perform pg_temp.assert(saved->'item'->>'revision'='2','existing inactive UOM retained');
+ item=jsonb_set(saved->'item','{active}','false');
+ perform pg_temp.assert(public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('e',64),'item',item),repeat('1',64))->>'error'='confirmation_required','item deactivation requires confirmation');
+ perform pg_temp.assert(public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('f',64),'item',item,'confirmedActive',true),repeat('1',64))->'item'->>'active'='false','confirmed item deactivation accepted');
+ p=jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('a',64),'reference',jsonb_build_object('id',gen_random_uuid(),'kind','material_category','value','Test bakery','name','Test bakery','active',false,'revision',0));
+ perform pg_temp.assert(public.onebite_inventory_api('reference.save',p,repeat('1',64))->>'error'='invalid_active','new references must be active');
+ p=jsonb_set(p,'{reference,active}','true');r=public.onebite_inventory_api('reference.save',p,repeat('1',64));
+ perform pg_temp.assert(r->'reference'->>'active'='true','new category active by default');
+ p=jsonb_set(jsonb_set(p,'{id}',to_jsonb(gen_random_uuid())),'{reference,id}',to_jsonb(gen_random_uuid()));
+ perform pg_temp.assert(public.onebite_inventory_api('reference.save',p,repeat('1',64))->>'error'='duplicate_reference','duplicate reference rejected');
+end;
+$$;
+update public.onebite_sessions set mfa_at=now()-interval '6 minutes' where token_hash=repeat('1',64);
+select pg_temp.assert(public.onebite_inventory_api('reference.save','{}',repeat('1',64))->>'error'='reauth_required','reference writes need Owner verification');
+rollback;

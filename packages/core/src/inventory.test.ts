@@ -5,7 +5,7 @@ test('material packs preserve explicit units and reject fractional pieces',()=>{
  const item={...newCatalogItem('material'),name:'Wrapper',packName:'Pack',packQuantity:100};
  assert.equal(validateCatalogItem(item).packQuantity,100);
  assert.throws(()=>validateCatalogItem({...item,packQuantity:1.5}));
- assert.throws(()=>validateCatalogItem({...item,unit:'kg'}));
+ assert.equal(validateCatalogItem({...item,unit:'kg',packQuantity:1.5}).unit,'kg');
  assert.throws(()=>validateCatalogItem({...item,packQuantity:null}));
  assert.throws(()=>validateCatalogItem({...item,priceKhr:100}));
 });
@@ -20,4 +20,15 @@ test('pending edits survive refresh projection without erasing other items',()=>
  const updated={...item,name:'Lemon Tea'};
  const projected=projectCatalog([item],[{id:crypto.randomUUID(),item:updated,createdAt:Date.now()}]);
  assert.deepEqual(projected,[updated]);assert.equal(projected[0].revision,2);
+});
+
+test('reference values are validated and pending references survive projection',async()=>{
+ const {newCatalogReference,validateCatalogReference,projectReferences}=await import('./inventory.ts');
+ const reference={...newCatalogReference('unit'),name:' Kilograms ',value:' kg '};
+ assert.equal(validateCatalogReference(reference).value,'kg');
+ assert.equal(validateCatalogReference(reference).name,'Kilograms');
+ assert.throws(()=>validateCatalogReference({...reference,active:false}));
+ assert.throws(()=>validateCatalogReference({...reference,value:'x'.repeat(31)}));
+ const operation={id:crypto.randomUUID(),reference,createdAt:Date.now()};
+ assert.deepEqual(projectReferences([],[operation]),[reference]);
 });

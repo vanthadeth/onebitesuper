@@ -3,7 +3,7 @@
 @media(prefers-reduced-motion:reduce){.inventory-card{transition:none}.inventory-card:hover{transform:none}}
 
 /* Keep category controls below the two measured sticky headers. */
-.inventory-category{position:sticky;top:calc(var(--ob-app-header-height,72px) + var(--ob-page-heading-height,56px));z-index:25;background:var(--background,var(--surface));padding:10px 0;margin-bottom:16px}
+.inventory-category{position:sticky;top:calc(var(--ob-app-header-height,72px) + var(--ob-page-heading-height,56px) + var(--inventory-message-height,0px));z-index:25;background:var(--background,var(--surface));padding:10px 0;margin-bottom:16px}
 @media(max-width:680px){
  .inventory-grid{grid-template-columns:minmax(0,1fr);gap:10px}
  .inventory-card{flex-direction:row;align-items:center;border-radius:16px;padding:12px;gap:14px}
@@ -13,3 +13,8 @@
  .inventory-card-meta{margin-top:5px;gap:6px}
  .inventory-card:hover{transform:none}
 }
+
+.inventory-messages{position:sticky;top:calc(var(--ob-app-header-height,72px) + var(--ob-page-heading-height,56px));z-index:25;background:var(--background,var(--surface))}
+.inventory-messages>div{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;margin:0;border-radius:10px;font-size:13px;line-height:1.5}
+.inventory-messages svg{flex-shrink:0;margin-top:2px}.inventory-messages .inventory-notice{color:var(--ink);background:var(--soft)}.inventory-message-error{color:var(--danger);background:color-mix(in srgb,var(--danger) 8%,var(--surface))}
+.inventory-reference-list{display:grid;gap:8px}.inventory-reference-row{display:flex;align-items:center;gap:12px;min-width:0;width:100%;padding:14px;text-align:left;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink)}.inventory-reference-row>span:first-of-type{flex:1;min-width:0;display:grid;overflow-wrap:anywhere}.inventory-reference-row small{color:var(--muted)}.inventory-reference-row:disabled{opacity:.65}

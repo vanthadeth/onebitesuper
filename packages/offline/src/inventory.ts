@@ -1,6 +1,6 @@
 import type {Database,SqlJsStatic} from 'sql.js';
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
-import type {CatalogOperation} from '@onebite/core/inventory';
+import type {CatalogOperation,ReferenceOperation} from '@onebite/core/inventory';
 const databaseName='onebite-inventory-v1';
 let engine:Promise<SqlJsStatic>|undefined,queue=Promise.resolve();
 function serial<T>(action:()=>Promise<T>):Promise<T>{const next=queue.then(()=>navigator.locks?navigator.locks.request(databaseName,action):action());queue=next.then(()=>{},()=>{});return next;}
@@ -12,6 +12,7 @@ async function database<T>(action:(db:Database,storage:IDBDatabase)=>Promise<T>,
  try{engine??=import('sql.js').then(({default:init})=>init({locateFile:()=>wasmUrl}));db=new (await engine).Database(await get<Uint8Array>(store,'files','sqlite'));
   db.run('CREATE TABLE IF NOT EXISTS cache (scope TEXT PRIMARY KEY, value TEXT NOT NULL)');
   db.run('CREATE TABLE IF NOT EXISTS outbox (actor TEXT NOT NULL, id TEXT NOT NULL, item TEXT NOT NULL, value TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(actor,id), UNIQUE(actor,item))');
+  db.run('CREATE TABLE IF NOT EXISTS reference_outbox (actor TEXT NOT NULL, id TEXT NOT NULL, item TEXT NOT NULL, value TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(actor,id), UNIQUE(actor,item))');
   const result=await action(db,store);if(write)await put(store,'files','sqlite',db.export());return result;
  }finally{db?.close();store.close();}
 }
@@ -32,3 +33,9 @@ export async function inventoryOutbox(actor:string):Promise<CatalogOperation[]>{
 export async function queueCatalogOperation(actor:string,operation:CatalogOperation){return serial(()=>database(async(db,store)=>{const value=await encrypt(operation,await actorKey(store,actor),actor+':'+operation.id);db.run('INSERT INTO outbox VALUES (?,?,?,?,?)',[actor,operation.id,operation.item.id,value,operation.createdAt]);},true));}
 export async function markCatalogOperation(actor:string,operation:CatalogOperation){return serial(()=>database(async(db,store)=>{const value=await encrypt(operation,await actorKey(store,actor),actor+':'+operation.id);db.run('UPDATE outbox SET value=? WHERE actor=? AND id=?',[value,actor,operation.id]);},true));}
 export async function removeCatalogOperation(actor:string,id:string){return serial(()=>database(async db=>{db.run('DELETE FROM outbox WHERE actor=? AND id=?',[actor,id]);},true));}
+
+export async function referenceOutbox(actor:string):Promise<ReferenceOperation[]>{return serial(()=>database(async(db,store)=>{const statement=db.prepare('SELECT id,value FROM reference_outbox WHERE actor=? ORDER BY created_at,id');try{statement.bind([actor]);const result:ReferenceOperation[]=[];while(statement.step()){const row=statement.getAsObject();result.push(await decrypt<ReferenceOperation>(String(row.value),await actorKey(store,actor),actor+':'+row.id));}return result;}finally{statement.free();}},false));}
+/** A queued operation never changes after transmission; one pending edit per item. */
+export async function queueReferenceOperation(actor:string,operation:ReferenceOperation){return serial(()=>database(async(db,store)=>{const value=await encrypt(operation,await actorKey(store,actor),actor+':'+operation.id);db.run('INSERT INTO reference_outbox VALUES (?,?,?,?,?)',[actor,operation.id,operation.reference.id,value,operation.createdAt]);},true));}
+export async function markReferenceOperation(actor:string,operation:ReferenceOperation){return serial(()=>database(async(db,store)=>{const value=await encrypt(operation,await actorKey(store,actor),actor+':'+operation.id);db.run('UPDATE reference_outbox SET value=? WHERE actor=? AND id=?',[value,actor,operation.id]);},true));}
+export async function removeReferenceOperation(actor:string,id:string){return serial(()=>database(async db=>{db.run('DELETE FROM reference_outbox WHERE actor=? AND id=?',[actor,id]);},true));}
