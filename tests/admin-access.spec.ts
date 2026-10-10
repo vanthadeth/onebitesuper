@@ -471,10 +471,11 @@ test('User photos appear in the profile badge and authorized user list with init
 test('Directory controls hide down, return up and filter Users, Sites and Roles',async({page})=>{
  const state=initialAccessState();state.customRoles=[{id:'role_test',name:'Team lead',description:'Custom team access'}];state.grants.role_test=[];await open(page,state);
  for(const name of ['Users','Site','Roles']){
-  await tab(page,name);const tools=page.locator('.ob-directory-tools');await expect(tools).not.toHaveClass(/is-scroll-hidden/);
+  await tab(page,name);const tools=page.locator('.ob-directory-tools');await expect(tools).not.toHaveClass(/is-scroll-hidden/);await expect(tools).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
   await page.locator('.access-main').evaluate(element=>{element.style.minHeight='2500px';});
   await page.evaluate(()=>window.scrollTo({top:400,behavior:'instant'}));await expect(tools).toHaveClass(/is-scroll-hidden/);await expect(tools).toHaveAttribute('inert','');
-  await page.evaluate(()=>window.scrollTo({top:280,behavior:'instant'}));await expect(tools).not.toHaveClass(/is-scroll-hidden/);await expect(tools).not.toHaveAttribute('inert','');
+  const heading=page.locator('.ob-page-heading'),newButton=heading.getByRole('button');await expect(heading).toBeVisible();await expect(newButton).toBeVisible();expect((await heading.boundingBox())!.y).toBeGreaterThanOrEqual(71);expect((await heading.boundingBox())!.y).toBeLessThan(74);
+  await page.evaluate(()=>window.scrollTo({top:280,behavior:'instant'}));await expect(tools).not.toHaveClass(/is-scroll-hidden/);await expect(tools).not.toHaveAttribute('inert','');await expect.poll(async()=>{const box=await tools.boundingBox(),header=await page.locator('.ob-page-heading').boundingBox();return box!.y-header!.y-header!.height;}).toBeGreaterThanOrEqual(-1);
   await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));await expect(tools).not.toHaveClass(/is-scroll-hidden/);
  }
  const roles=page.getByRole('group',{name:'Role type',exact:true});await roles.getByRole('button',{name:'Custom',exact:true}).click();await expect(page.locator('.access-role-row')).toHaveCount(1);await expect(page.locator('.access-role-row')).toContainText('Team lead');await page.getByRole('searchbox',{name:'Search roles',exact:true}).fill('no match');await expect(page.getByText('No matching roles',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Clear filters',exact:true}).click();await expect(page.locator('.access-role-row')).toHaveCount(4);await roles.getByRole('button',{name:'Built-in',exact:true}).click();await expect(page.locator('.access-role-row')).toHaveCount(3);
