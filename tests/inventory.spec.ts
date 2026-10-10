@@ -99,10 +99,17 @@ test('Owner verification completes before catalog access and resumes queued writ
  });
 
 test('category filter stays below compact heading and mobile catalog uses rows',async({page})=>{
- const items=Array.from({length:24},(_,index)=>({...newCatalogItem('material'),name:`Wrapper ${String(index).padStart(2,'0')}`,unit:'pcs',revision:1}));
+ const items=Array.from({length:24},(_,index)=>({...newCatalogItem('material'),name:`Wrapper ${String(index).padStart(2,'0')}`,category:index===23?'packaging':'ingredient',unit:'pcs',revision:1}));
  await fixture(page,{items});
  const filter=page.locator('.inventory-category');
  await expect(filter.locator(':scope > span')).toHaveCount(0);
+ await expect(filter.getByRole('radiogroup')).toHaveCount(0);
+ const categorySelect=filter.getByRole('combobox',{name:'Category',exact:true});
+ await categorySelect.click();await page.getByRole('option',{name:'Packaging',exact:true}).click();
+ await expect(page.locator('.inventory-card')).toHaveCount(1);
+ await expect(categorySelect).toContainText('Packaging');
+ await filter.getByRole('button',{name:'Clear category filter'}).click();
+ await expect(categorySelect).toContainText('All categories');await expect(page.locator('.inventory-card')).toHaveCount(24);
  if(page.viewportSize()!.width<=680){
   const rows=page.locator('.inventory-card');
   const first=(await rows.nth(0).boundingBox())!,second=(await rows.nth(1).boundingBox())!;

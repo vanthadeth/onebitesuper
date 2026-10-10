@@ -8,10 +8,10 @@ import { Check, ChevronDown, ChevronUp, X } from 'lucide-react';
 // Native inputs retain mobile keyboards and password-manager support. Menus,
 // check controls and dialogs use Radix primitives rather than browser widgets.
 type Option = {value:string|number; children:ReactNode; disabled?:boolean};
-export function SelectField({value,onChange,children,className='',placeholder,...props}:{value:string|number;onChange:(event:{target:{value:string}})=>void;children:ReactNode;className?:string;placeholder?:string;disabled?:boolean;'aria-label'?:string;id?:string}) {
+export function SelectField({value,onChange,children,className='',placeholder,presentation='auto',...props}:{value:string|number;onChange:(event:{target:{value:string}})=>void;children:ReactNode;className?:string;placeholder?:string;presentation?:'auto'|'dropdown';disabled?:boolean;'aria-label'?:string;id?:string}) {
  const groupId=useId();
  const options=Children.toArray(children).filter(isValidElement).map(child=>(child as ReactElement<Option>).props);
- if(options.length>0&&options.length<=3){
+ if(presentation==='auto'&&options.length>0&&options.length<=3){
   const selected=options.find(option=>String(option.value)===String(value)&&!option.disabled);
   const tabValue=selected?.value??options.find(option=>!option.disabled)?.value;
   return <div {...props} role="radiogroup" aria-disabled={props.disabled||undefined} className={`ob-choice-field ${className}`}>
