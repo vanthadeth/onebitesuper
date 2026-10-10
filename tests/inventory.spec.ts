@@ -86,3 +86,24 @@ test('Owner verification completes before catalog access and resumes queued writ
  test('Staff Profile keeps personal preferences available and disables photo changes offline',async({page,context})=>{
  const server=await fixture(page,{staff:true});await nav(page).getByRole('button',{name:'Profile',exact:true}).click();await expect(page.locator('.profile-security')).toContainText('Personal PIN sign-in');await expect(page.locator('.profile-access').getByText('Denied',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Reset PIN',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'Switch language',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('lang','km');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.getByRole('button',{name:'ប្ដូរភាសា',exact:true}).click();server.setOnline(false);await context.setOffline(true);await expect(page.getByRole('button',{name:'Add photo',exact:true})).toBeDisabled();await page.getByRole('switch',{name:'Dark mode',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
  });
+
+test('category filter stays below compact heading and mobile catalog uses rows',async({page})=>{
+ const items=Array.from({length:24},(_,index)=>({...newCatalogItem('material'),name:`Wrapper ${String(index).padStart(2,'0')}`,unit:'pcs',revision:1}));
+ await fixture(page,{items});
+ const filter=page.locator('.inventory-category');
+ await expect(filter.locator(':scope > span')).toHaveCount(0);
+ if(page.viewportSize()!.width<=680){
+  const rows=page.locator('.inventory-card');
+  const first=(await rows.nth(0).boundingBox())!,second=(await rows.nth(1).boundingBox())!;
+  expect(first.x).toBe(second.x);expect(second.y).toBeGreaterThanOrEqual(first.y+first.height);
+  await expect(rows.first()).toHaveCSS('flex-direction','row');
+ }
+ await page.evaluate(()=>window.scrollTo({top:600,behavior:'instant'}));
+ await expect(page.locator('.ob-page-heading')).toHaveClass(/is-compact/);
+ await expect(filter).toBeInViewport();
+ await expect.poll(async()=>{
+  const heading=(await page.locator('.ob-page-heading').boundingBox())!,category=(await filter.boundingBox())!;
+  return Math.abs(category.y-heading.y-heading.height);
+ }).toBeLessThan(2);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
