@@ -8,7 +8,7 @@ Import shared components from `@onebite/ui`. They use DaisyUI and the existing O
 | --- | --- | --- |
 | `NewAction` | Responsive New button, icon on mobile and label on larger screens | Sites, Users, Roles page headings |
 | `ActiveStatusBadge` | Localized Active/Inactive badge with optional status dot | Site cards, user list, user details and assigned sites |
-| `DirectoryTools` | Transparent, always-visible sticky controls below `PageHeading` | Sites, Users, Roles |
+| `DirectoryTools` | Transparent search and filter controls that scroll with the page | Sites, Users, Roles |
 | `DirectorySearch` | Search input and clear action | Sites, Users, Roles |
 | `DirectoryStatusFilter` | Localized Active/Inactive/All buttons | Sites, Users |
 | `DirectorySegments` | Generic exclusive filter buttons | Role types; implementation of status filters |
@@ -18,7 +18,7 @@ Import shared components from `@onebite/ui`. They use DaisyUI and the existing O
 | `PinInput` | Masked six-digit entry with app keypad and physical-keyboard support | Sign-in, Owner setup and mandatory PIN change |
 | `GeneratedPinField` | Read-only generated PIN, regenerate, copy and feedback | Account creation and PIN reset |
 | `UserAvatar` | Image cropping and initials fallback, including failed-image fallback | Profile, account menu and account avatars |
-| `PageHeading` | Pinned title/subtitle and action; measures height for directory controls | All Admin pages |
+| `PageHeading` | Pinned title/subtitle and action | All Admin pages |
 | `AppDialog` | Modal/sheet with fixed heading/footer and focus restoration | All editors |
 | `EmptyState` | Illustration, explanation and optional creation/recovery actions | Directories, logs and Hub |
 | `SelectField`, `SwitchField`, `CheckField` | Accessible Radix controls | Forms and permissions |
@@ -40,7 +40,7 @@ const [query, setQuery] = useState('');
 </DirectoryTools>
 ```
 
-Use the language provider to translate labels. Keep the heading and directory under the same page container so the measured heading height reaches the sticky controls. Callers filter only the data they are authorized to view. Roles use All/Built-in/Custom segments because roles do not have an active status.
+Use the language provider to translate labels. Page headings stay pinned; search and filter controls follow normal page scrolling. Callers filter only the data they are authorized to view. Roles use All/Built-in/Custom segments because roles do not have an active status.
 
 ## Actions, cards and feedback
 

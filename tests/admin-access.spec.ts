@@ -494,15 +494,16 @@ test('User photos appear in the profile badge and authorized user list with init
 });
 
 
-test('Directory controls stay visible while scrolling and filter Users, Sites and Roles',async({page})=>{
+test('Directory controls scroll with the page while headings stay pinned and filter Users, Sites and Roles',async({page})=>{
  const state=initialAccessState();state.customRoles=[{id:'role_test',name:'Team lead',description:'Custom team access'}];state.grants.role_test=[];await open(page,state);
  for(const name of ['Users','Site','Roles']){
   await tab(page,name);const tools=page.locator('.ob-directory-tools');await expect(tools).not.toHaveClass(/is-scroll-hidden/);await expect(tools).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
-  await page.locator('.access-main').evaluate(element=>{element.style.minHeight='2500px';});
-  await page.evaluate(()=>window.scrollTo({top:400,behavior:'instant'}));await expect(tools).not.toHaveClass(/is-scroll-hidden/);await expect(tools).not.toHaveAttribute('inert','');await expect(tools.getByRole('searchbox')).toBeInViewport();await expect(tools.getByRole('group').first()).toBeInViewport();
+  await page.locator('.ob-page-heading').evaluate(element=>{element.parentElement!.style.minHeight='2500px';});
+  const initialY=(await tools.boundingBox())!.y;await expect(page.locator('.ob-directory-region')).toHaveCSS('position','static');
+  await page.evaluate(()=>window.scrollTo({top:700,behavior:'instant'}));await expect(tools).not.toHaveClass(/is-scroll-hidden/);await expect(tools).not.toHaveAttribute('inert','');await expect(tools.getByRole('searchbox')).not.toBeInViewport();await expect(tools.getByRole('group').first()).not.toBeInViewport();await expect.poll(async()=>Math.abs(initialY-(await tools.boundingBox())!.y-700)).toBeLessThan(8);
   const heading=page.locator('.ob-page-heading'),newButton=heading.getByRole('button');await expect(heading).toBeVisible();await expect(newButton).toBeVisible();expect((await heading.boundingBox())!.y).toBeGreaterThanOrEqual(71);expect((await heading.boundingBox())!.y).toBeLessThan(74);
-  await page.evaluate(()=>window.scrollTo({top:280,behavior:'instant'}));await expect(tools).not.toHaveClass(/is-scroll-hidden/);await expect(tools).not.toHaveAttribute('inert','');await expect.poll(async()=>{const box=await tools.boundingBox(),header=await page.locator('.ob-page-heading').boundingBox();return box!.y-header!.y-header!.height;}).toBeGreaterThanOrEqual(-1);
-  await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));await expect(tools).not.toHaveClass(/is-scroll-hidden/);
+  await page.evaluate(()=>window.scrollTo({top:280,behavior:'instant'}));await expect(tools).not.toHaveAttribute('inert','');await expect.poll(async()=>Math.abs(initialY-(await tools.boundingBox())!.y-280)).toBeLessThan(8);
+  await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));await expect(tools.getByRole('searchbox')).toBeInViewport();await expect(tools.getByRole('group').first()).toBeInViewport();
  }
  const roles=page.getByRole('group',{name:'Role type',exact:true});await roles.getByRole('button',{name:'Custom',exact:true}).click();await expect(page.locator('.access-role-row')).toHaveCount(1);await expect(page.locator('.access-role-row')).toContainText('Team lead');await page.getByRole('searchbox',{name:'Search roles',exact:true}).fill('no match');await expect(page.getByText('No matching roles',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Clear filters',exact:true}).click();await expect(page.locator('.access-role-row')).toHaveCount(4);await roles.getByRole('button',{name:'Built-in',exact:true}).click();await expect(page.locator('.access-role-row')).toHaveCount(3);
  await tab(page,'Users');await expect(page.getByRole('group',{name:'Filter status',exact:true}).getByRole('button',{name:'Active',exact:true})).toHaveAttribute('aria-pressed','true');await page.getByRole('searchbox',{name:'Search users',exact:true}).fill('sokha');await expect(page.locator('.access-user-row')).toHaveCount(1);
