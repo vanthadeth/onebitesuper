@@ -54,3 +54,14 @@
 .ob-page-heading{transition:padding 180ms ease}.ob-page-heading h1{transition:font-size 180ms ease}.ob-page-heading p{max-height:80px;overflow:hidden;transition:max-height 180ms ease,opacity 180ms ease,margin 180ms ease}.ob-page-heading.is-compact{padding:6px 0}.ob-page-heading.is-compact h1{font-size:20px;letter-spacing:-.3px}.ob-page-heading.is-compact p{max-height:0;opacity:0;margin:0}.ob-page-heading.is-compact .ob-page-heading-action>.access-create-user{width:44px;height:44px;min-width:44px;min-height:44px}.ob-page-heading.is-compact .access-create-user svg{width:20px;height:20px}
 @media(min-width:681px){.ob-page-heading.is-compact .ob-page-heading-action>.access-create-user{width:auto;padding:8px 14px}}
 @media(prefers-reduced-motion:reduce){.ob-page-heading,.ob-page-heading h1,.ob-page-heading p{transition:none}}
+
+/* Short choice lists stay visible, with one keyboard tab stop per group. */
+.ob-choice-field{min-width:0;max-width:100%;width:100%;color:var(--ink,#282825)}
+.ob-choice-placeholder{display:block;margin-bottom:6px;font-size:14px;color:var(--muted,#6b6b70)}
+.ob-choice-buttons{display:flex;width:100%;min-width:0;gap:4px;padding:4px;border:1px solid var(--line,#e4e4e7);border-radius:14px;background:var(--surface,#fff)}
+.ob-choice-buttons .ob-choice-button{flex:1;min-width:0;min-height:44px;height:auto;margin:0;border:0;border-radius:10px;padding:8px 10px;background:transparent;color:var(--muted,#6b6b70);font:inherit;font-size:14px;line-height:1.6;white-space:normal;overflow-wrap:anywhere;box-shadow:none}
+.ob-choice-buttons .ob-choice-button[aria-checked=true]{background:var(--orange,#f57921);color:#fff}
+.ob-choice-buttons .ob-choice-button:hover:not(:disabled):not([aria-checked=true]){background:var(--soft,#fff0e5);color:var(--text-orange,#a94800)}
+.ob-choice-buttons .ob-choice-button:focus-visible{outline:3px solid var(--text-orange,#a94800);outline-offset:1px;z-index:1}
+.ob-choice-buttons .ob-choice-button:disabled{opacity:.5;cursor:not-allowed}
+.site-picker:has(.ob-choice-field){max-width:60vw;min-width:0}.inventory-category>.ob-choice-field{max-width:420px}

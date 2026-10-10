@@ -1,5 +1,6 @@
 import { useAppSettings } from "./app-settings";
 import { EmptyState } from "./empty-state";
+import { SelectField } from "./controls";
 import {
   createContext,
   useContext,
@@ -15,7 +16,6 @@ import {
   ShoppingBag,
   LayoutDashboard,
   Globe2,
-  ChevronDown,
   Check,
   Store,
 } from "lucide-react";
@@ -186,9 +186,9 @@ export function Header({
         {sites && onSite && (
           <label className="site-picker">
             <Store size={16} />
-            <select
+            <SelectField
               aria-label={t("ទីតាំង", "Site")}
-              value={site}
+              value={site??0}
               onChange={(event) => onSite(Number(event.target.value))}
             >
               {sites.map((name, index) => (
@@ -196,8 +196,7 @@ export function Header({
                   {name}
                 </option>
               ))}
-            </select>
-            <ChevronDown size={14} />
+            </SelectField>
           </label>
         )}
         <button
