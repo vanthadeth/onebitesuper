@@ -4,7 +4,7 @@ import { LayoutGrid, RefreshCw, Check, CircleAlert, Moon, Sun, LogOut } from 'lu
 import { useLanguage } from './shared';
 
 export type SyncStatus = 'idle' | 'syncing' | 'complete' | 'failed';
-export function AppTitleBar({icon,title,name,username,syncStatus,pendingCount,disabled,dark,onSync,onProfile,onHub,onLanguage,onTheme,onSignOut}:{icon:string;title:string;name:string;username:string;syncStatus:SyncStatus;pendingCount:number;disabled:boolean;dark:boolean;onSync:()=>void;onProfile:()=>void;onHub?:()=>void;onLanguage:()=>void;onTheme:()=>void;onSignOut:()=>void}) {
+export function AppTitleBar({icon,title,name,username,photo,syncStatus,pendingCount,disabled,dark,onSync,onProfile,onHub,onLanguage,onTheme,onSignOut}:{icon:string;title:string;name:string;username:string;photo?:string;syncStatus:SyncStatus;pendingCount:number;disabled:boolean;dark:boolean;onSync:()=>void;onProfile:()=>void;onHub?:()=>void;onLanguage:()=>void;onTheme:()=>void;onSignOut:()=>void}) {
  const {t,lang}=useLanguage();
  const status=syncStatus==='syncing'?t('កំពុងធ្វើសមកាលកម្ម','Syncing'):syncStatus==='complete'?t('សមកាលកម្មរួចរាល់','Sync complete'):syncStatus==='failed'?t('សមកាលកម្មបរាជ័យ','Sync failed'):t('ធ្វើសមកាលកម្ម','Sync');
  const count=t(`${pendingCount} ការផ្លាស់ប្ដូរត្រូវធ្វើសមកាលកម្ម`,`${pendingCount} changes to sync`);
@@ -15,7 +15,7 @@ export function AppTitleBar({icon,title,name,username,syncStatus,pendingCount,di
     <span className="ob-sync-symbol"><RefreshCw size={28} className="ob-sync-ring"/>{syncStatus==='complete'?<Check className="ob-sync-center" size={12} strokeWidth={3}/>:syncStatus==='failed'?<CircleAlert className="ob-sync-center" size={13}/>:<span className="ob-sync-center ob-sync-count">{pendingCount}</span>}</span>
    </button>
    <span className="ob-sr-only" role="status" aria-live="polite">{status} · {count}</span>
-   <Menu.Root><Menu.Trigger asChild><button className="ob-profile-badge" aria-label={t('ម៉ឺនុយគណនី','Profile menu')}><span className="access-avatar small">{Array.from(name)[0]}</span></button></Menu.Trigger>
+   <Menu.Root><Menu.Trigger asChild><button className="ob-profile-badge" aria-label={t('ម៉ឺនុយគណនី','Profile menu')}><span className="access-avatar small">{photo?<img src={photo} alt=""/>:Array.from(name)[0]}</span></button></Menu.Trigger>
     <Menu.Portal><Menu.Content className="d-menu ob-profile-menu" align="end" sideOffset={10} collisionPadding={12}>
      <Menu.Item className="ob-menu-item ob-profile-label" onSelect={onProfile}><strong>{name}</strong><small>@{username}</small></Menu.Item><Menu.Separator className="ob-menu-separator"/>
      <div className="ob-preference-row"><Menu.Label className="ob-preference-label">{t('ភាសា','Language')}</Menu.Label><Menu.RadioGroup className="ob-menu-segments" aria-label={t('ភាសា','Language')} value={lang} onValueChange={value=>{if(value!==lang)onLanguage();}} onKeyDown={moveSegment}>

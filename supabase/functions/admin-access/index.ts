@@ -1,5 +1,5 @@
 import {boundedBody,encodeBase32,verifyTotp,sanitizeJpeg} from './security.ts';
-const actions=new Set(['bootstrap.status','bootstrap','login','logout','me','pin.change','user.create','user.update','sites.assign','site.create','site.update','site.photo.upload','settings.update','activity.list','permissions.update','role.create','pin.reset','mfa.enroll','mfa.verify']);
+const actions=new Set(['bootstrap.status','bootstrap','login','logout','me','pin.change','user.create','user.update','sites.assign','site.create','site.update','site.photo.upload','profile.photo.upload','profile.photo.update','profile.photo.read','settings.update','activity.list','permissions.update','role.create','pin.reset','mfa.enroll','mfa.verify']);
 const sha256=async(value:string)=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))].map(v=>v.toString(16).padStart(2,'0')).join('');
 const randomHex=(length:number)=>[...crypto.getRandomValues(new Uint8Array(length))].map(v=>v.toString(16).padStart(2,'0')).join('');
 declare const Deno:{env:{get(key:string):string|undefined};serve(handler:(request:Request)=>Promise<Response>):void};
@@ -18,7 +18,7 @@ Deno.serve(async req=>{
   if(!suppliedKey||!allowedPublic.includes(suppliedKey))return respond({error:'invalid_api_key'},401);
   const raw=await boundedBody(req);const {action,payload={}}=JSON.parse(raw);
   if(typeof action!=='string'||!actions.has(action)||!payload||typeof payload!=='object'||Array.isArray(payload))return respond({error:'invalid_action'},400);
-  requestAction=action;if(action!=='site.photo.upload'&&new TextEncoder().encode(raw).length>16000)return respond({error:'payload_too_large'},413);
+  requestAction=action;if(!['site.photo.upload','profile.photo.upload'].includes(action)&&new TextEncoder().encode(raw).length>16000)return respond({error:'payload_too_large'},413);
   const token=req.headers.get('Authorization')?.replace(/^Bearer\s+/i,'')||'';
   if(!['bootstrap.status','bootstrap','login'].includes(action)&&!/^[a-f0-9]{64}$/.test(token))return respond({error:'unauthorized'},401);
   // These fields are accepted only from trusted server code, never client payloads.
@@ -56,16 +56,27 @@ Deno.serve(async req=>{
     data=await api('mfa.confirm',{counter,recovery_hash:/^[a-f0-9]{16}$/.test(payload.code)?await sha256(payload.code):null,recovery_hashes:await Promise.all(recoveryCodes.map(sha256))});
     if(!data.error&&recoveryCodes.length)data.recoveryCodes=recoveryCodes;
    }
-  }else if(action==='site.photo.upload'){
-   const authorization=await api('site.photo.authorize');if(authorization.error)data=authorization;else{
+  }else if(action==='profile.photo.update'){
+   data=await rpc('onebite_profile_photo_api',{p_action:'update',p_payload:payload,p_session_hash:sessionHash});
+  }else if(action==='profile.photo.read'){
+   const authorization=await rpc('onebite_profile_photo_api',{p_action:'read',p_payload:payload,p_session_hash:sessionHash});
+   if(authorization.error)data=authorization;else if(!authorization.photoPath)data={photo:null};else{
+    const response=await fetch(`${Deno.env.get('SUPABASE_URL')}/storage/v1/object/authenticated/profile-photos/${authorization.photoPath}`,{headers,signal:AbortSignal.timeout(15000)});
+    if(!response.ok)return respond({error:'photo_read_failed'},502);
+    const bytes=new Uint8Array(await response.arrayBuffer());if(bytes.length>750000)return respond({error:'invalid_photo'},400);
+    let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);data={photo:`data:image/jpeg;base64,${btoa(binary)}`};
+   }
+  }else if(action==='site.photo.upload'||action==='profile.photo.upload'){
+   const profile=action==='profile.photo.upload',bucket=profile?'profile-photos':'site-photos';
+   const authorization=profile?await rpc('onebite_profile_photo_api',{p_action:'authorize',p_payload:payload,p_session_hash:sessionHash}):await api('site.photo.authorize');if(authorization.error)data=authorization;else{
     if(!/^[a-f0-9-]{36}$/.test(authorization.actor?.id??''))return respond({error:'photo_upload_failed'},502);
     if(typeof payload.image!=='string'||payload.image.length>950000||!payload.image.length||!/^[A-Za-z0-9+/]+={0,2}$/.test(payload.image))return respond({error:'invalid_photo'},400);
     let bytes:Uint8Array;try{bytes=sanitizeJpeg(Uint8Array.from(atob(payload.image),c=>c.charCodeAt(0)));}catch{return respond({error:'invalid_photo'},400);}
     const photoPath=`${authorization.actor.id}/${crypto.randomUUID()}.jpg`;
-    const stored=await fetch(`${Deno.env.get('SUPABASE_URL')}/storage/v1/object/site-photos/${photoPath}`,{method:'POST',headers:{...headers,'Content-Type':'image/jpeg','Cache-Control':'max-age=3600','x-upsert':'false'},body:bytes,signal:AbortSignal.timeout(15000)});
+    const stored=await fetch(`${Deno.env.get('SUPABASE_URL')}/storage/v1/object/${bucket}/${photoPath}`,{method:'POST',headers:{...headers,'Content-Type':'image/jpeg','Cache-Control':'max-age=3600','x-upsert':'false'},body:bytes,signal:AbortSignal.timeout(15000)});
     if(!stored.ok)return respond({error:'photo_upload_failed'},502);data={photoPath};
     // Garbage collection is best effort; a maintenance outage must not lose a successful upload.
-    try{const old=await rpc('onebite_orphan_photos',{p_session_hash:sessionHash});if(Array.isArray(old.paths)&&old.paths.length){const cleaned=await fetch(`${Deno.env.get('SUPABASE_URL')}/storage/v1/object/site-photos`,{method:'DELETE',headers,body:JSON.stringify({prefixes:old.paths}),signal:AbortSignal.timeout(5000)});if(!cleaned.ok)throw new Error('cleanup_failed');}}catch{console.warn(JSON.stringify({event:'photo_cleanup_failed'}));}
+    try{const old=profile?{paths:authorization.orphanPaths}:await rpc('onebite_orphan_photos',{p_session_hash:sessionHash});if(Array.isArray(old.paths)&&old.paths.length){const cleaned=await fetch(`${Deno.env.get('SUPABASE_URL')}/storage/v1/object/${bucket}`,{method:'DELETE',headers,body:JSON.stringify({prefixes:old.paths}),signal:AbortSignal.timeout(5000)});if(!cleaned.ok)throw new Error('cleanup_failed');}}catch{console.warn(JSON.stringify({event:'photo_cleanup_failed'}));}
    }
   }else if(action==='activity.list')data=await rpc('onebite_activity_page',{p_payload:Object.fromEntries(Object.entries(payload).filter(([key])=>key!=='_context')),p_session_hash:sessionHash});
   else data=await api(action,payload);

@@ -63,3 +63,18 @@ test('MFA enrollment secrets and verification counters cannot be injected by the
  globalThis.fetch=async(_url,init)=>{const rpc=JSON.parse(init!.body as string);seen.push(rpc);return Response.json({secret:'A'.repeat(32),username:'staff'});};
  try{const result=await handler(request('mfa.enroll',{secret:'attacker',counter:99,_context:{source_hash:'attacker'}},{Authorization:'Bearer '+'a'.repeat(64)}));assert.equal(result.status,200);const payload=seen[0].p_payload as Record<string,unknown>;assert.match(payload.secret as string,/^[A-Z2-7]{32}$/);assert.notEqual(payload.secret,'attacker');assert.equal(payload.counter,undefined);assert.notEqual((payload._context as Record<string,unknown>).source_hash,'attacker');}finally{globalThis.fetch=previous;}
 });
+
+test('private profile photos use session authorization and sanitized server-only Storage writes',async()=>{
+ const previous=globalThis.fetch,actorId='11111111-1111-4111-8111-111111111111';let storageWrites=0;
+ globalThis.fetch=async(url,init)=>{assert.equal(new Headers(init!.headers).get('apikey'),'sb_secret_server_only');if(String(url).includes('/rpc/')){assert.match(String(url),/onebite_profile_photo_api$/);const body=JSON.parse(init!.body as string);assert.equal(body.p_action,'authorize');assert.match(body.p_session_hash,/^[a-f0-9]{64}$/);return Response.json({actor:{id:actorId},orphanPaths:[]});}storageWrites++;assert.match(String(url),new RegExp('/storage/v1/object/profile-photos/'+actorId+'/[a-f0-9-]{36}\\.jpg$'));assert.equal(new Headers(init!.headers).get('x-upsert'),'false');assert.equal(jpeg.decode(init!.body as Uint8Array).width,1);return Response.json({ok:true});};
+ try{const response=await handler(request('profile.photo.upload',{image:validJpeg},{Authorization:'Bearer '+'a'.repeat(64)}));assert.equal(response.status,200);assert.match((await response.json()).photoPath,new RegExp('^'+actorId+'/'));assert.equal(storageWrites,1);
+ globalThis.fetch=async()=>Response.json({error:'unauthorized'});assert.equal((await handler(request('profile.photo.read',{}, {Authorization:'Bearer '+'a'.repeat(64)}))).status,401);
+ }finally{globalThis.fetch=previous;}
+});
+test('profile reads cannot select arbitrary paths and updates use a dedicated self-service RPC',async()=>{
+ const previous=globalThis.fetch,path='11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222.jpg';
+ globalThis.fetch=async(url,init)=>{if(String(url).includes('/rpc/')){const body=JSON.parse(init!.body as string);assert.equal(body.p_action,'read');return Response.json({photoPath:path});}assert.equal(String(url),'https://example.supabase.co/storage/v1/object/authenticated/profile-photos/'+path);return new Response(Buffer.from(validJpeg,'base64'));};
+ try{const response=await handler(request('profile.photo.read',{photoPath:'attacker/path'},{Authorization:'Bearer '+'a'.repeat(64)}));assert.equal(response.status,200);assert.equal((await response.json()).photo,'data:image/jpeg;base64,'+validJpeg);
+ globalThis.fetch=async(url,init)=>{assert.match(String(url),/onebite_profile_photo_api$/);const body=JSON.parse(init!.body as string);assert.equal(body.p_action,'update');assert.equal(body.p_payload.photoPath,null);assert.equal(body.p_payload.id,'target');return Response.json({error:'forbidden'});};assert.equal((await handler(request('profile.photo.update',{id:'target',photoPath:null,revision:1},{Authorization:'Bearer '+'a'.repeat(64)}))).status,403);
+ }finally{globalThis.fetch=previous;}
+});

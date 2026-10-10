@@ -30,3 +30,5 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010000648_security_hardening.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010025205_seven_day_owner_only_authentication.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/security-hardening.verify.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261010054118_profile_photos.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/profile-photos.verify.sql

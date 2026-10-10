@@ -2,7 +2,7 @@ import {saveSnapshot,loadSnapshot,clearSnapshots} from "@onebite/offline";
 import publicConfig from "../../../config/supabase.public.json";
 import type { Account, AccessState, AccessEvent } from "@onebite/core/access";
 export type Snapshot = AccessState & { revision: number };
-export type AccessReply = { offline?:boolean; cachedAt?:number; cacheUnavailable?:boolean; actor?: Account; state?: Snapshot; session?: string; sessionExpiresAt?: number; mustChangePin?: boolean; ownerCreated?: boolean; ok?: boolean; mfaRequired?:boolean; mfaEnrollment?:boolean; secret?:string; uri?:string; recoveryCodes?:string[]; photoPath?: string; events?: AccessEvent[]; nextCursor?: {time:string;id:string}|null };
+export type AccessReply = { offline?:boolean; cachedAt?:number; cacheUnavailable?:boolean; actor?: Account; state?: Snapshot; session?: string; sessionExpiresAt?: number; mustChangePin?: boolean; ownerCreated?: boolean; ok?: boolean; mfaRequired?:boolean; mfaEnrollment?:boolean; secret?:string; uri?:string; recoveryCodes?:string[]; photoPath?: string; photo?: string|null; events?: AccessEvent[]; nextCursor?: {time:string;id:string}|null };
 const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || publicConfig.url;
 const key = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) || publicConfig.publishableKey;
 export const configured = Boolean(url && key);

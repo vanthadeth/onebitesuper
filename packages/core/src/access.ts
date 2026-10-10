@@ -6,6 +6,7 @@ export type Account = {
   id: string;
   name: string;
   username: string;
+  photoPath?: string | null;
   role: Role;
   sites: number[];
   active: boolean;
