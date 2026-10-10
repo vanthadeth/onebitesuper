@@ -291,3 +291,14 @@ test('MFA gates business data, tokens stay out of storage and failed logout is e
 test('idle Admin sessions lock and remove business data from the interface',async({page})=>{
  const {initialAccessState}=await import('../packages/core/src/access');await page.clock.install();await startLive(page,{...initialAccessState(),revision:0});await page.clock.fastForward(10*60_000+1);await expect(page.getByRole('heading',{name:'Welcome back'})).toBeVisible();await expect(page.locator('.access-user-row')).toHaveCount(0);
 });
+
+test('Reset PIN generates a read-only PIN, regenerates, copies and submits it',async({page})=>{
+ const {initialAccessState,validStaffPin}=await import('../packages/core/src/access');const state={...initialAccessState(),revision:0};let savedPin='';
+ await page.addInitScript(()=>{Object.defineProperty(navigator,'clipboard',{value:{writeText:async(value:string)=>{(window as any).copiedPin=value;}}});});
+ await page.route('**/functions/v1/admin-access',async route=>{const {action,payload}=route.request().postDataJSON();if(action==='pin.reset'){savedPin=payload.pin;expect(payload.id).not.toBe('owner');}return route.fulfill({json:{actor:state.users[0],state}});});
+ await startLive(page,state);await tab(page,'Users');const staff=state.users.find(u=>u.active&&u.role!=='Owner')!;await viewUser(page,staff.name);await page.getByRole('button',{name:'Reset PIN',exact:true}).click();
+ const dialog=page.getByRole('dialog'),pin=dialog.getByLabel('New temporary PIN',{exact:true});const first=await pin.inputValue();expect(validStaffPin(first)).toBe(true);await expect(pin).toHaveAttribute('readonly','');await expect(dialog.getByLabel('Confirm PIN')).toHaveCount(0);
+ await dialog.getByRole('button',{name:'Regenerate PIN',exact:true}).click();const generated=await pin.inputValue();expect(generated).not.toBe(first);expect(validStaffPin(generated)).toBe(true);
+ await dialog.getByRole('button',{name:'Copy PIN',exact:true}).click();await expect(dialog.getByRole('status')).toHaveText('PIN copied');expect(await page.evaluate(()=>(window as any).copiedPin)).toBe(generated);
+ await dialog.getByRole('button',{name:'Reset PIN and revoke sessions',exact:true}).click();await expect(dialog).toHaveCount(0);expect(savedPin).toBe(generated);
+});
