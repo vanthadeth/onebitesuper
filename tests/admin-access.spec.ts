@@ -442,3 +442,21 @@ test('Connection panel distinguishes service loss from offline, keeps cached dat
  unavailable=false;await page.context().setOffline(false);await expect(connection).toHaveAttribute('data-connection','online');await expect(page.locator('.ob-connection-notice')).toHaveCount(0);await expect(page.getByRole('button',{name:'Create new user',exact:true})).toBeEnabled();await expect(toast).toContainText('Back online');
  await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.getByRole('menuitemradio',{name:'Dark mode',exact:true}).click();await page.getByRole('menuitemradio',{name:'ខ្មែរ',exact:true}).click();await page.keyboard.press('Escape');await connection.click();await expect(panel).toContainText('ធ្វើបច្ចុប្បន្នភាពចុងក្រោយ');expect(await panel.evaluate(element=>element.scrollWidth<=element.clientWidth)).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:`artifacts/admin-sync-khmer-dark-${info.project.name}.png`,fullPage:true,animations:'disabled'});
 });
+
+
+test('User photos appear in the profile badge and authorized user list with initials fallback',async({page})=>{
+ const state=initialAccessState();await open(page,state);
+ const image=await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=32;canvas.height=32;canvas.getContext('2d')!.fillRect(0,0,32,32);return canvas.toDataURL('image/jpeg');});
+ state.users.find(u=>u.id==='owner')!.photoPath='owner/photo.jpg';state.users.find(u=>u.id==='sokha')!.photoPath='sokha/photo.jpg';state.users.find(u=>u.id==='supervisor')!.photoPath='supervisor/photo.jpg';
+ const reads:string[]=[];
+ await page.route('**/functions/v1/admin-access',route=>{const {action,payload}=route.request().postDataJSON();if(action!=='profile.photo.read')return route.fallback();const id=payload.id||'owner';reads.push(id);return route.fulfill(id==='supervisor'?{status:403,json:{error:'forbidden'}}:{json:{photo:image}});});
+ await page.locator('.ob-sync').click();
+ await expect(page.locator('.ob-profile-badge img')).toBeVisible();
+ await expect(page.locator('.access-user-row').filter({hasText:'Dara'}).locator('img')).toBeVisible();
+ await expect(page.locator('.access-user-row').filter({hasText:'Sokha'}).locator('img')).toBeVisible();
+ await expect(page.locator('.access-user-row').filter({hasText:'Vannak'}).locator('.access-avatar')).toHaveText('V');
+ expect(reads.filter(id=>id==='owner')).toHaveLength(1);expect(reads).toContain('sokha');
+ await page.locator('.access-user-row').filter({hasText:'Sokha'}).locator('img').evaluate(img=>img.dispatchEvent(new Event('error')));
+ await expect(page.locator('.access-user-row').filter({hasText:'Sokha'}).locator('.access-avatar')).toHaveText('S');
+ state.users.find(u=>u.id==='owner')!.photoPath=null;state.users.find(u=>u.id==='sokha')!.photoPath=null;await page.locator('.ob-sync').click();await expect(page.locator('.ob-profile-badge img')).toHaveCount(0);await expect(page.locator('.access-user-row img')).toHaveCount(0);
+});

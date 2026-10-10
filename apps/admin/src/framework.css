@@ -46,3 +46,5 @@ body{background:#f6f7f9;line-height:1.7;color:var(--ink)}
 .access-new-role-fields{margin-bottom:24px}.access-policy-section.unavailable{background:var(--surface-muted,#f7f7f8)}.access-policy-header h3 small{font-weight:400;font-size:13px;color:var(--muted);margin-top:3px}.access-permission-matrix{overflow-x:auto}.access-matrix-row{grid-template-columns:minmax(150px,1fr) repeat(var(--role-count,3),minmax(70px,1fr))}
 .access-matrix-head>span{overflow-wrap:anywhere}
 .access-permission-groups,.access-permission-module,.access-permission-matrix{min-width:0;max-width:100%}
+
+.access-user-row .access-avatar{overflow:hidden;flex-shrink:0}.access-user-row .access-avatar img{width:100%;height:100%;object-fit:cover;border-radius:inherit}

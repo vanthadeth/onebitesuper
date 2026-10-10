@@ -11,6 +11,12 @@ export function useProfilePhoto(path:string|null|undefined,session:string,online
  return photo&&photo.path===path&&photo.session===session?photo.image:undefined;
 }
 
+export function UserListAvatar({name,role,path,session,online,id,ownPhoto,isSelf}:{name:string;role:string;path?:string|null;session:string;online:boolean;id:string;ownPhoto?:string;isSelf:boolean}){
+ const fetched=useProfilePhoto(path,session,online&&!isSelf,id),photo=isSelf?ownPhoto:fetched;
+ const [failed,setFailed]=useState<string>();
+ return <span className={`access-avatar ${role.toLowerCase()}`} aria-hidden="true">{photo&&failed!==photo?<img src={photo} alt="" loading="lazy" onError={()=>setFailed(photo)}/>:Array.from(name)[0]}</span>;
+}
+
 export function ProfilePhotoEditor({photo,hasPhoto,busy,error,onClose,onSave}:{photo?:string;hasPhoto:boolean;busy:boolean;error:string;onClose:()=>void;onSave:(image:string|null)=>Promise<boolean>}){
  const {t}=useLanguage(),input=useRef<HTMLInputElement>(null);
  const [preview,setPreview]=useState(photo),[draft,setDraft]=useState<string|null|undefined>(),[working,setWorking]=useState(false),[problem,setProblem]=useState('');
