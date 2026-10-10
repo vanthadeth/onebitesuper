@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./profile.css": "./src/profile.css",
     "./styles.css": "./src/styles.css",
     "./controls.css": "./src/controls.css",
     "./daisy.css": "./src/daisy.css",

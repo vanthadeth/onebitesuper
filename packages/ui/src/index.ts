@@ -26,3 +26,6 @@ export { CardHeading } from './card-heading';
 export { PinInput } from './pin-input';
 
 export {useScrollHidden} from "./use-scroll-hidden";
+
+export {ProfilePage} from "./profile";
+export {ProfilePhotoEditor} from "./profile-photo-editor";
