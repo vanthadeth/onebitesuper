@@ -18,7 +18,7 @@ async function closeCart(page:Page){const sheet=page.getByRole('dialog',{name:'Y
 async function navigate(page:Page,name:string){
  if(name!=='Carts')await closeCart(page);
  if(name==='Menu'&&await page.getByRole('button',{name:'Back to menu',exact:true}).isVisible()){await page.getByRole('button',{name:'Back to menu',exact:true}).click();return;}
- if(name==='Carts'&&await page.getByRole('button',{name:'Held carts',exact:true}).isVisible()){await page.getByRole('button',{name:'Held carts',exact:true}).click();return;}
+ if(name==='Carts'&&await page.getByRole('button',{name:'Held carts',exact:true}).isVisible()){await page.getByRole('button',{name:'Held carts',exact:true}).click();await expect(page.getByRole('heading',{name:'Held carts',exact:true})).toBeVisible();return;}
  await page.getByRole('button',{name:'Profile menu',exact:true}).click();await page.getByRole('menuitem',{name:'Hub',exact:true}).click();if(name!=='Hub')await page.locator('.pos-hub-grid').getByRole('button',{name,exact:true}).click();
 }
 async function openCart(page:Page){if(page.viewportSize()!.width<=680&&!await page.getByRole('dialog',{name:'Your cart',exact:true}).isVisible())await page.getByRole('button',{name:/View cart/}).click();await expect(page.locator('.pos-cart')).toBeVisible();return page.locator('.pos-cart');}
@@ -30,7 +30,7 @@ test('POS uses the shared PIN sign-in gate and only exposes effective sellable i
 
 test('held carts preserve totals, require cancellation reasons and never record payments',async({page},info)=>{
  await fixture(page);await addBox(page);let cart=await openCart(page);await expect(cart.locator('.pos-total')).toContainText('5,100');await cart.getByRole('button',{name:'Receive payment',exact:true}).click();await expect(page.getByRole('dialog',{name:'Payments are not enabled yet'})).toContainText('No sale or stock deduction');await page.getByRole('dialog',{name:'Payments are not enabled yet'}).getByRole('button',{name:'Close',exact:true}).click();
- await cart.getByRole('button',{name:'New cart',exact:true}).click();await expect(cart.locator('.pos-cart-empty')).toBeVisible();await closeCart(page);
+ if(page.viewportSize()!.width<=680){await navigate(page,'Carts');await navigate(page,'Menu');cart=await openCart(page);}else await cart.getByRole('button',{name:'New cart',exact:true}).click();await expect(cart.locator('.pos-cart-empty')).toBeVisible();await closeCart(page);
  await addBox(page);await navigate(page,'Carts');await expect(page.locator('.pos-held-card')).toHaveCount(2);await page.locator('.pos-held-card').first().getByRole('button',{name:'Open cart',exact:true}).click();cart=await openCart(page);await cart.getByRole('button',{name:'Delete cart',exact:true}).click();const cancel=page.getByRole('dialog',{name:'Cancel this cart?'});await expect(cancel.getByRole('button',{name:'Cancel cart',exact:true})).toBeDisabled();await cancel.getByLabel('Reason',{exact:true}).fill('Customer changed mind');await cancel.getByRole('button',{name:'Cancel cart',exact:true}).click();await expect(cart.locator('.pos-cart-empty')).toBeVisible();await navigate(page,'Carts');await expect(page.locator('.pos-cancel-history')).toContainText('Customer changed mind');await expect(page.locator('.pos-held-card')).toHaveCount(1);
  await navigate(page,'Menu');await page.screenshot({path:`artifacts/pos-${info.project.name}.png`,fullPage:true});
 });
@@ -52,7 +52,7 @@ test('a stale second tab cannot overwrite a cart saved by the first tab',async({
 });
 
  test('cart rows expand calculations and long press edits persist after reload',async({page})=>{
- await fixture(page);await addBox(page);await openCart(page);const row=page.locator('.pos-cart-lines li').first();const toggle=row.getByRole('button',{name:'Calculation Dumpling box'});
+ await fixture(page);await addBox(page);await openCart(page);if(page.viewportSize()!.width<=680){await expect(page.getByRole('button',{name:'New cart',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Order note',exact:true})).toHaveCount(0);}const row=page.locator('.pos-cart-lines li').first();const toggle=row.getByRole('button',{name:'Calculation Dumpling box'});
  await expect(row.locator('.pos-line-calculation')).toHaveCount(0);await toggle.click();await expect(row.locator('.pos-line-calculation')).toContainText('1 × 5,050៛ = 5,050៛');await toggle.click();
  const box=(await toggle.boundingBox())!;await page.mouse.move(box.x+8,box.y+8);await page.mouse.down();await expect(page.getByRole('dialog',{name:'Edit · Dumpling box'})).toBeVisible();await page.mouse.up();
  const edit=page.getByRole('dialog',{name:'Edit · Dumpling box'});await edit.getByLabel('Quantity',{exact:true}).fill('3');await edit.getByLabel('Item remarks').fill('Pack separately');await edit.getByRole('button',{name:'Save changes'}).click();await expect(edit).toHaveCount(0);await expect(row).toContainText('Pack separately');await expect(page.locator('.pos-total')).toContainText('15,200');await page.reload();await openCart(page);await expect(page.locator('.pos-cart-lines')).toContainText('Pack separately');await expect(page.locator('.pos-line-actions output')).toHaveText('3');
@@ -60,6 +60,6 @@ test('a stale second tab cannot overwrite a cart saved by the first tab',async({
  });
 
  test('menu search scrolls away while categories and cart actions stay pinned',async({page})=>{
- await page.setViewportSize({width:390,height:500});await fixture(page);await addBox(page);const menu=page.locator('.pos-menu-section'),category=page.locator('.ob-category-filter'),actions=page.locator('.pos-cart-dock');const before=(await actions.boundingBox())!;
+ await page.setViewportSize({width:390,height:500});await fixture(page);await addBox(page);const menu=page.locator('.pos-menu-section'),category=page.locator('.ob-category-filter'),actions=page.locator('.pos-cart-dock');const before=(await actions.boundingBox())!;const summary=(await page.locator('.pos-cart-summary').boundingBox())!;expect(Math.round(summary.width)).toBe(page.viewportSize()!.width-32);
  await menu.evaluate(element=>{element.scrollTop=160;});await expect.poll(async()=>Math.round((await category.boundingBox())!.y-(await menu.boundingBox())!.y)).toBe(0);const search=(await page.getByRole('searchbox',{name:'Search menu'}).boundingBox())!;expect(search.y+search.height).toBeLessThanOrEqual((await menu.boundingBox())!.y);expect(Math.round((await actions.boundingBox())!.y)).toBe(Math.round(before.y));expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.setViewportSize({width:390,height:844});await menu.evaluate(element=>{element.scrollTop=0;});await page.screenshot({path:'artifacts/pos-mobile-menu.png'});
  });

@@ -141,3 +141,9 @@
 }
 @media(max-width:680px){.pos-dock-label{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.pos-dock-count,.pos-cart-summary>strong{flex-shrink:0}}
 @media(max-width:350px){.pos-cart-summary>svg{display:none}.pos-dock-count{min-width:24px;height:28px}}
+
+@media(max-width:680px){
+ .pos-new-cart,.pos-remarks-action{display:none}
+ .pos-cart-summary{width:100%;flex:1}
+ .ob-dialog:has(.pos-cart) .pos-cart-actions{grid-template-columns:44px minmax(0,1fr)}
+}
