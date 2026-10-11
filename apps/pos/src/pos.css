@@ -169,16 +169,16 @@
 .pos-item-setting{border:0;padding:0;margin:0;min-width:0}
 .pos-item-setting>legend{padding:0;margin-bottom:8px;font-size:14px;font-weight:600;color:var(--color-base-content)}
 .pos-item-setting-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.pos-item-button-group{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;flex-shrink:0}
-.pos-item-setting-row .pos-item-button-group .d-btn{height:44px;min-height:44px;padding:0 12px;font-size:14px;border:0;border-radius:0;box-shadow:none;margin:0}
+.pos-item-button-group{display:flex;flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.pos-item-setting-row .pos-item-button-group .d-btn{flex:1;min-width:0;height:44px;min-height:44px;padding:0 8px;font-size:14px;border:0;border-radius:0;box-shadow:none;margin:0}
 .pos-item-button-group .d-btn+.d-btn{border-left:1px solid var(--line)!important}
 .pos-item-button-group button[aria-pressed=true]{background:var(--color-primary);color:white}
-.pos-item-number-field{display:grid;gap:4px;text-align:center;flex-shrink:0}
+.pos-item-number-field{display:grid;gap:4px;text-align:center;order:-1;flex:0 0 40%;min-width:0}
 .pos-item-number-field>small{font-size:12px;line-height:1.3;color:var(--muted)}
 .pos-item-stepper{display:flex;align-items:stretch;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--color-base-100)}
 .pos-item-stepper:focus-within{outline:2px solid var(--color-primary);outline-offset:2px}
-.pos-item-stepper .d-btn-square{width:40px;height:44px;min-height:44px;border:0;border-radius:0;padding:0;box-shadow:none;margin:0}
-.pos-item-stepper .d-input{width:64px;text-align:center;height:44px;min-height:44px;padding:4px;font-weight:700;font-size:18px;appearance:textfield;border:0;border-radius:0;border-left:1px solid var(--line);border-right:1px solid var(--line);box-shadow:none;outline:none;background:transparent}
+.pos-item-stepper .d-btn-square{flex:0 0 32px;width:32px;height:44px;min-height:44px;border:0;border-radius:0;padding:0;box-shadow:none;margin:0}
+.pos-item-stepper .d-input{flex:1;min-width:0;width:0;text-align:center;height:44px;min-height:44px;padding:4px;font-weight:700;font-size:18px;appearance:textfield;border:0;border-radius:0;border-left:1px solid var(--line);border-right:1px solid var(--line);box-shadow:none;outline:none;background:transparent}
 .pos-item-stepper input::-webkit-inner-spin-button,.pos-item-stepper input::-webkit-outer-spin-button{appearance:none;margin:0}
 .pos-item-discount-notice{margin:0;font-size:13px;line-height:1.5;color:var(--muted)}
 .pos-item-calculation{padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--color-base-200)}
@@ -191,4 +191,4 @@
 .pos-item-settings-actions{display:grid;grid-template-columns:auto 1fr;gap:10px;width:100%}
 .pos-item-settings-actions .d-btn{min-height:48px}
 .pos-item-error{margin:0;color:var(--danger);font-size:14px}
-@media(max-width:380px){.pos-item-setting-row .pos-item-button-group .d-btn{padding:0 8px;font-size:13px}.pos-item-stepper .d-btn-square{width:34px}.pos-item-setting-row{gap:8px}}
+@media(max-width:380px){.pos-item-setting-row .pos-item-button-group .d-btn{padding:0 8px;font-size:13px}.pos-item-stepper .d-btn-square{flex-basis:30px;width:30px}.pos-item-setting-row{gap:8px}}
