@@ -2,12 +2,15 @@ import {useState} from 'react';
 import {Plus,Pause,Trash2,ShoppingBag,LockKeyhole,MessageSquareText} from 'lucide-react';
 import {useLanguage,AppDialog} from '@onebite/ui';
 import {CartLine} from './CartLine';
-import {draftAmounts,type PosDraft} from '@onebite/core/pos';
+import {HeldCarts} from './HeldCarts';
+import {draftAmounts,type PosDraft,type CancelledDraft} from '@onebite/core/pos';
 
-type CartProps={draft:PosDraft;rate:number;busy:boolean;canEdit:boolean;canCancel:boolean;photos?:Record<string,string>;heldCount:number;onHeld:()=>void;onEdit:(id:string,quantity:number,note:string)=>Promise<void>;onQuantity:(id:string,qty:number)=>void;onRemove:(id:string)=>void;onNote:(value:string)=>void;onHold:()=>void;onCancel:()=>void;onCheckout:()=>void};
-export function CartPanel({draft,rate,busy,canEdit,canCancel,photos,heldCount,onHeld,onEdit,onQuantity,onRemove,onNote,onHold,onCancel,onCheckout}:CartProps){
+type CartProps={draft:PosDraft;rate:number;busy:boolean;canEdit:boolean;canCancel:boolean;photos?:Record<string,string>;held:PosDraft[];cancelled:CancelledDraft[];heldOpen:boolean;onBack:()=>void;onOpenHeld:(id:string)=>void;onCancelHeld:(id:string)=>void;onHeld:()=>void;onEdit:(id:string,quantity:number,note:string)=>Promise<void>;onQuantity:(id:string,qty:number)=>void;onRemove:(id:string)=>void;onNote:(value:string)=>void;onHold:()=>void;onCancel:()=>void;onCheckout:()=>void};
+export function CartPanel({draft,rate,busy,canEdit,canCancel,photos,held,cancelled,heldOpen,onBack,onOpenHeld,onCancelHeld,onHeld,onEdit,onQuantity,onRemove,onNote,onHold,onCancel,onCheckout}:CartProps){
  const {t,lang}=useLanguage(),amounts=draftAmounts(draft);
  const [noteOpen,setNoteOpen]=useState(false),[edit,setEdit]=useState<{id:string;name:string;quantity:number;note:string}|null>(null),[editError,setEditError]=useState('');
+ if(heldOpen)return <HeldCarts held={held} cancelled={cancelled} busy={busy} canEdit={canEdit} canCancel={canCancel} onBack={onBack} onOpen={onOpenHeld} onCancel={onCancelHeld}/>;
+ const heldCount=held.length;
  const hasItems=draft.lines.length>0;
  const count=draft.lines.reduce((sum,line)=>sum+line.quantity,0);
  return <section className="d-card pos-cart" aria-label={t('កន្ត្រកបច្ចុប្បន្ន','Current cart')}>
