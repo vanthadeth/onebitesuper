@@ -166,13 +166,15 @@
 .pos-item-settings-intro h2{font-size:20px;line-height:1.35;margin:0 0 6px}
 .pos-item-settings-intro p{font-size:14px;line-height:1.5;margin:0 0 6px;color:var(--muted);overflow-wrap:anywhere}
 .pos-item-settings-intro small{font-size:14px;font-weight:600}
-.pos-item-setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pos-item-setting{border:0;padding:0;margin:0;min-width:0}
+.pos-item-setting>legend{padding:0;margin-bottom:8px;font-size:14px;font-weight:600;color:var(--color-base-content)}
+.pos-item-setting-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .pos-item-button-group{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;flex-shrink:0}
 .pos-item-setting-row .pos-item-button-group .d-btn{height:44px;min-height:44px;padding:0 12px;font-size:14px;border:0;border-radius:0;box-shadow:none;margin:0}
 .pos-item-button-group .d-btn+.d-btn{border-left:1px solid var(--line)!important}
 .pos-item-button-group button[aria-pressed=true]{background:var(--color-primary);color:white}
 .pos-item-number-field{display:grid;gap:4px;text-align:center;flex-shrink:0}
-.pos-item-number-field>label,.pos-item-number-field>small{font-size:12px;line-height:1.3;color:var(--muted)}
+.pos-item-number-field>small{font-size:12px;line-height:1.3;color:var(--muted)}
 .pos-item-stepper{display:flex;align-items:stretch;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--color-base-100)}
 .pos-item-stepper:focus-within{outline:2px solid var(--color-primary);outline-offset:2px}
 .pos-item-stepper .d-btn-square{width:40px;height:44px;min-height:44px;border:0;border-radius:0;padding:0;box-shadow:none;margin:0}
