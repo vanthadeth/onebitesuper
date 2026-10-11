@@ -11,7 +11,7 @@ The previous app is a browser-local prototype. Its layout and interactions are u
 | Previous flow | Adaptation |
 |---|---|
 | Site menu, search, categories | Real unified Inventory catalog, effective versions, shared horizontal category labels |
-| Basket and quantity controls | Mobile cart dialog and desktop cart panel, durable SQLite writes |
+| Basket and quantity controls | Mobile bottom cart bar and sheet, desktop cart panel, durable SQLite writes |
 | New/held/open cart | Start blank; hold nonblank; opening Carts holds the current nonblank draft first |
 | Item price/recipe references | Immutable snapshots at first item; held carts keep those prices and recipes |
 | Held-order cancellation | Required reason, retained locally with the cancelled draft |
@@ -30,7 +30,7 @@ The previous app is a browser-local prototype. Its layout and interactions are u
 - Encrypted SQLite backed by IndexedDB persists current, held and cancelled drafts atomically, separately for each account and site. Actor-bound encryption keys let a user recover drafts after session renewal.
 - Revision checks reject stale writes from another tab instead of overwriting saved carts.
 - Cached menu/authorization can be used for 24 hours offline, within the fixed session expiry. Online permission denial never falls back to cached authorization. Access expiry blocks further draft use but retains saved drafts.
-- Current shared app bar, toast section, profile, Hub, five-item mobile navigation, native keyboard support, haptics and reduced-motion behavior.
+- Current shared app bar, toast section, profile, Hub in the profile menu, mobile bottom cart bar and sheet, native keyboard support, haptics and reduced-motion behavior.
 
 **Operational boundary:** drafts stay on the creating account/device. They are not uploaded or transferred between staff yet. Refresh synchronizes the menu, not draft transactions. No invoice, shift, payment, cash movement, free allowance or stock movement is posted. The UI labels this stage and gates checkout. It must not be used to record live sales yet. No mock items were added to Supabase.
 
