@@ -105,12 +105,14 @@ test('category filter stays below compact heading and mobile catalog uses rows',
  const filter=page.locator('.inventory-category');
  await expect(filter.locator(':scope > span')).toHaveCount(0);
  await expect(filter.getByRole('radiogroup')).toHaveCount(0);
- const categorySelect=filter.getByRole('combobox',{name:'Category',exact:true});
- await categorySelect.click();await page.getByRole('option',{name:'Packaging',exact:true}).click();
+ const packaging=filter.getByRole('button',{name:'Packaging',exact:true});
+ await packaging.click();
  await expect(page.locator('.inventory-card')).toHaveCount(1);
- await expect(categorySelect).toContainText('Packaging');
- await filter.getByRole('button',{name:'Clear category filter'}).click();
- await expect(categorySelect).toContainText('All categories');await expect(page.locator('.inventory-card')).toHaveCount(24);
+ await expect(packaging).toHaveAttribute('aria-pressed','true');
+ const all=filter.getByRole('button',{name:'All categories',exact:true});
+ await all.click();
+ await expect(all).toHaveAttribute('aria-pressed','true');await expect(page.locator('.inventory-card')).toHaveCount(24);
+ await expect(filter).toHaveCSS('overflow-x','auto');
  if(page.viewportSize()!.width<=680){
   const rows=page.locator('.inventory-card');
   const first=(await rows.nth(0).boundingBox())!,second=(await rows.nth(1).boundingBox())!;
