@@ -1,15 +1,18 @@
+import {mkdtemp,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import publicConfig from "../config/supabase.public.json" with { type: "json" };
-import {test,expect} from '@playwright/test';
+import {test,expect,chromium} from '@playwright/test';
 const base=process.env.PAGES_TEST_BASE_URL||'http://127.0.0.1:5185/onebitesuper/';
 test('repository-hosted apps have separate install scopes and clean offline shells',async({page,context})=>{
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));await page.route('**/functions/v1/admin-access',route=>route.abort());
- await page.goto(base);await page.getByRole('link',{name:/OneBite POS/}).click();await expect(page.getByRole('heading',{name:'OneBite - POS'})).toBeVisible();await expect(page.locator('.product-card')).toHaveCount(0);
- const pos=await page.evaluate(async()=>{const link=document.querySelector<HTMLLinkElement>('link[rel="manifest"]')!;return(await fetch(link.href)).json();});expect(pos.scope).toBe('/onebitesuper/pos/');expect(pos.start_url).toBe(pos.scope);
- await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));await context.setOffline(true);await page.reload();await expect(page.getByRole('heading',{name:'OneBite - POS'})).toBeVisible();await context.setOffline(false);
+ await page.goto(base);const popup=page.waitForEvent('popup');await page.getByRole('link',{name:/OneBite POS/}).click();const posPage=await popup;posPage.on('pageerror',error=>errors.push(error.message));await expect(posPage.getByRole('heading',{name:'OneBite - POS'})).toBeVisible();await expect(posPage.locator('.product-card')).toHaveCount(0);
+ const pos=await posPage.evaluate(async()=>{const link=document.querySelector<HTMLLinkElement>('link[rel="manifest"]')!;return(await fetch(link.href)).json();});expect(pos.scope).toBe('/onebitesuper/pos/');expect(pos.start_url).toBe(pos.scope);expect(pos.name).toBe('1B - POS');expect(pos.short_name).toBe(pos.name);
+ await posPage.evaluate(async()=>{await navigator.serviceWorker.ready;});await posPage.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));await context.setOffline(true);await posPage.reload();await expect(posPage.getByRole('heading',{name:'OneBite - POS'})).toBeVisible();await context.setOffline(false);
  await page.goto(base+'admin/');await expect(page.getByRole('button',{name:'ព្យាយាមភ្ជាប់ម្តងទៀត',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'បើកសាកល្បងក្នុងឧបករណ៍',exact:true})).toHaveCount(0);await expect(page.locator('.access-user-row')).toHaveCount(0);
- const admin=await page.evaluate(async()=>{const link=document.querySelector<HTMLLinkElement>('link[rel="manifest"]')!;return(await fetch(link.href)).json();});expect(admin.scope).toBe('/onebitesuper/admin/');expect(admin.id).not.toBe(pos.id);
+ const admin=await page.evaluate(async()=>{const link=document.querySelector<HTMLLinkElement>('link[rel="manifest"]')!;return(await fetch(link.href)).json();});expect(admin.name).toBe('1B - Admin');expect(admin.short_name).toBe(admin.name);await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content',admin.name);expect(admin.scope).toBe('/onebitesuper/admin/');expect(admin.id).not.toBe(pos.id);
  await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));const scopes=await page.evaluate(async()=>(await navigator.serviceWorker.getRegistrations()).map(r=>new URL(r.scope).pathname));expect(scopes.sort()).toEqual(['/onebitesuper/admin/','/onebitesuper/pos/']);
- await page.goto(base+'inventory/');await expect(page.getByRole('heading',{name:'សូមស្វាគមន៍',exact:true})).toBeVisible();const inventory=await page.evaluate(async()=>{const link=document.querySelector<HTMLLinkElement>('link[rel="manifest"]')!;return(await fetch(link.href)).json();});expect(inventory.scope).toBe('/onebitesuper/inventory/');expect(inventory.id).not.toBe(admin.id);await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));await context.setOffline(true);await page.reload();await expect(page.getByRole('heading',{name:'សូមស្វាគមន៍',exact:true})).toBeVisible();await context.setOffline(false);expect(errors).toEqual([]);
+ await page.goto(base+'inventory/');await expect(page.getByRole('heading',{name:'សូមស្វាគមន៍',exact:true})).toBeVisible();const inventory=await page.evaluate(async()=>{const link=document.querySelector<HTMLLinkElement>('link[rel="manifest"]')!;return(await fetch(link.href)).json();});expect(inventory.name).toBe('1B - Inventory');expect(inventory.short_name).toBe(inventory.name);expect(inventory.scope).toBe('/onebitesuper/inventory/');expect(inventory.id).not.toBe(admin.id);await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));await context.setOffline(true);await page.reload();await expect(page.getByRole('heading',{name:'សូមស្វាគមន៍',exact:true})).toBeVisible();await context.setOffline(false);expect(errors).toEqual([]);
 });
 
 test('hosted Admin connects to Supabase and rejects unauthorized account requests',async({page,request})=>{
@@ -67,4 +70,28 @@ test('app hub preserves language and explains installation for each device', asy
  await page.reload();
  await expect(page.locator('html')).toHaveAttribute('lang','en');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
+
+test('Admin, Inventory and POS can all install in the same browser profile',async({},info)=>{
+ test.skip(info.project.name!=='desktop','Real installations use an isolated desktop Chromium profile.');
+ const profile=await mkdtemp(join(tmpdir(),'onebite-install-'));
+ const context=await chromium.launchPersistentContext(profile,{...info.project.use.launchOptions,headless:true});
+ const installed:string[]=[];
+ const page=context.pages()[0],cdp=await context.newCDPSession(page);
+ try{
+  for(const app of ['admin','inventory','pos']){
+   const url=new URL(app+'/',base).href;
+   await page.goto(url);await page.evaluate(async()=>{await navigator.serviceWorker.ready;});
+   const manifest=await page.evaluate(async()=>{const link=document.querySelector<HTMLLinkElement>('link[rel="manifest"]')!;return(await fetch(link.href)).json();});
+   const manifestId=new URL(manifest.id,url).href;
+   expect(installed).not.toContain(manifestId);
+   expect((await cdp.send('Page.getInstallabilityErrors')).installabilityErrors).toEqual([]);
+   await cdp.send('PWA.install',{manifestId,installUrl:url});installed.push(manifestId);
+  }
+  // Installing another module must leave each earlier installation registered.
+  for(const manifestId of installed)await cdp.send('PWA.getOsAppState',{manifestId});
+ }finally{
+  for(const manifestId of installed)await cdp.send('PWA.uninstall',{manifestId}).catch(()=>{});
+  await context.close();await rm(profile,{recursive:true,force:true});
+ }
 });

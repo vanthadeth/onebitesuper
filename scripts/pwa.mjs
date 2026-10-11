@@ -1,8 +1,9 @@
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
+import { appNames } from "./app-names.mjs";
 const app = process.argv[2];
-if (!["pos", "admin", "inventory"].includes(app)) throw new Error("Expected pos or admin");
+if (!Object.hasOwn(appNames, app)) throw new Error("Unknown OneBite app");
 const base = process.env.ONEBITE_BASE_PATH || "/";
 if (!/^\/(?:[a-zA-Z0-9_.-]+\/)*$/.test(base)) throw new Error("Invalid app base path");
 const dir = resolve(import.meta.dirname, `../apps/${app}/dist`);
@@ -19,6 +20,8 @@ async function files(path, prefix = "") {
 }
 const manifestPath = resolve(dir, "manifest.webmanifest");
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+manifest.name = manifest.short_name = appNames[app];
+// Preserve stable IDs while keeping every start URL and scope app-specific.
 manifest.id = `${base}onebite-${app}`;
 manifest.start_url = base;
 manifest.scope = base;

@@ -19,7 +19,7 @@ export function AdminHub({menus,activeUsers,activeSites,roleCount,onOpen,invento
  };
  const format=new Intl.NumberFormat(lang==='km'?'km-KH':'en');
  return <div className="access-hub-grid" aria-label={t('ម៉ឺនុយគ្រប់គ្រង','Admin menus')}>
-  {inventoryHref&&<a className="d-card access-hub-card access-hub-inventory" href={inventoryHref}><span className="access-hub-card-top"><span className="access-hub-symbol"><Boxes size={24}/></span><ArrowUpRight className="access-hub-arrow" size={20}/></span><span className="access-hub-copy"><strong>{t("ស្តុក","Inventory")}</strong><span className="access-hub-description">{t("សម្ភារៈ និងមុខទំនិញលក់។","Materials and sellable items.")}</span></span></a>}
+  {inventoryHref&&<a className="d-card access-hub-card access-hub-inventory" href={inventoryHref} target="_blank" rel="noopener noreferrer"><span className="access-hub-card-top"><span className="access-hub-symbol"><Boxes size={24}/></span><ArrowUpRight className="access-hub-arrow" size={20}/></span><span className="access-hub-copy"><strong>{t("ស្តុក","Inventory")}</strong><span className="access-hub-description">{t("សម្ភារៈ និងមុខទំនិញលក់។","Materials and sellable items.")}</span></span></a>}
   {menus.map(({id,label,icon:Icon})=>{const stat=stats[id];return <button key={id} type="button" aria-label={label} className={`d-card access-hub-card access-hub-${id}`} onClick={()=>onOpen(id)}>
    <span className="access-hub-card-top"><span className="access-hub-symbol"><Icon size={24} aria-hidden="true"/></span><ArrowUpRight className="access-hub-arrow" size={20} aria-hidden="true"/></span>
    {id==='users'&&<Icon className="access-hub-watermark" size={156} strokeWidth={1} aria-hidden="true"/>}

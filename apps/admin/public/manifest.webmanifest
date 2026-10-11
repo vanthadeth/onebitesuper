@@ -1,22 +1,22 @@
 {
-  "id": "/onebite-admin",
-  "name": "OneBite Admin",
-  "short_name": "OneBite ADMIN",
-  "start_url": "/",
-  "scope": "/",
+  "id": "./onebite-admin",
+  "name": "1B - Admin",
+  "short_name": "1B - Admin",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#faf9f6",
   "theme_color": "#282A2E",
   "lang": "km",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
