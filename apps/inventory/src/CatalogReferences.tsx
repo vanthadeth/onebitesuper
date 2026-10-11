@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {Check,Plus,Pencil,Tags,Ruler} from 'lucide-react';
-import {AppDialog,SelectField,SwitchField,InlineError,ActiveStatusBadge,EmptyState,useLanguage} from '@onebite/ui';
+import {AppDialog,SelectField,SwitchField,InlineError,ActiveStatusBadge,EmptyState,DirectoryTools,DirectorySearch,DirectoryStatusFilter,type DirectoryStatus,useLanguage} from '@onebite/ui';
 import {newCatalogReference,validateCatalogReference,type CatalogReference,type ReferenceKind,type ReferenceOperation} from '@onebite/core/inventory';
 export function referenceLabel(reference:CatalogReference,t:(km:string,en:string)=>string){
  const defaults:Record<string,[string,string]>={ingredient:['គ្រឿងផ្សំ','Ingredient'],packaging:['សម្ភារៈវេចខ្ចប់','Packaging'],pcs:['ចំនួន','Pieces'],g:['ក្រាម','Grams'],ml:['មីលីលីត្រ','Millilitres'],box:['ប្រអប់','Box']};
@@ -35,8 +35,11 @@ export function ReferenceSelect({kind,value,references,disabled,onChange,onCreat
  </SelectField>;
 }
 export function ReferenceManager({kind,references,pending,onClose,onEdit}:{kind:ReferenceKind;references:CatalogReference[];pending:ReferenceOperation[];onClose:()=>void;onEdit:(reference:CatalogReference)=>void}){
- const {t}=useLanguage(),unit=kind==='unit',rows=references.filter(reference=>reference.kind===kind).sort((a,b)=>a.name.localeCompare(b.name));
+ const {t}=useLanguage(),unit=kind==='unit',[search,setSearch]=useState(''),[status,setStatus]=useState<DirectoryStatus>('active');
+ const all=references.filter(reference=>reference.kind===kind),query=search.normalize('NFKC').trim().toLocaleLowerCase();
+ const rows=all.filter(reference=>(status==='all'||reference.active===(status==='active'))&&`${referenceLabel(reference,t)} ${reference.name} ${reference.value}`.normalize('NFKC').toLocaleLowerCase().includes(query)).sort((a,b)=>a.name.localeCompare(b.name));
  return <AppDialog title={unit?t('ឯកតាមូលដ្ឋាន','Base UOMs'):kind==='material_category'?t('ប្រភេទសម្ភារៈ','Material categories'):t('ប្រភេទមុខទំនិញ','Item categories')} onClose={onClose} footer={<button className="d-btn d-btn-primary" onClick={()=>onEdit(newCatalogReference(kind))}><Plus size={18}/>{unit?t('ឯកតាថ្មី','New base UOM'):t('ប្រភេទថ្មី','New category')}</button>}>
- {rows.length?<div className="inventory-reference-list">{rows.map(reference=><button key={reference.id} className="inventory-reference-row" onClick={()=>onEdit(reference)} disabled={pending.some(operation=>operation.reference.id===reference.id)}>{unit?<Ruler size={22}/>:<Tags size={22}/>}<span><strong>{referenceLabel(reference,t)}</strong>{unit&&<small>{reference.value}</small>}{pending.some(operation=>operation.reference.id===reference.id)&&<small>{t('រង់ចាំសមកាលកម្ម','Pending sync')}</small>}</span><ActiveStatusBadge active={reference.active}/><Pencil size={16}/></button>)}</div>:<EmptyState icon={<Tags size={28}/>} title={t('មិនទាន់មានប្រភេទ','No categories yet')} body={t('បន្ថែមប្រភេទដំបូងរបស់អ្នក។','Add your first category.')}/>}
+ <DirectoryTools><DirectorySearch label={unit?t('ស្វែងរកឯកតា','Search base UOMs'):t('ស្វែងរកប្រភេទ','Search categories')} placeholder={t('ស្វែងរកឈ្មោះ…','Search name…')} value={search} onChange={setSearch}/><DirectoryStatusFilter label={t('ស្ថានភាព','Status')} value={status} onChange={setStatus}/></DirectoryTools>
+ {rows.length?<div className="inventory-reference-list">{rows.map(reference=><button key={reference.id} className="inventory-reference-row" onClick={()=>onEdit(reference)} disabled={pending.some(operation=>operation.reference.id===reference.id)}>{unit?<Ruler size={22}/>:<Tags size={22}/>}<span><strong>{referenceLabel(reference,t)}</strong>{unit&&<small>{reference.value}</small>}{pending.some(operation=>operation.reference.id===reference.id)&&<small>{t('រង់ចាំសមកាលកម្ម','Pending sync')}</small>}</span><ActiveStatusBadge active={reference.active}/><Pencil size={16}/></button>)}</div>:all.length?<EmptyState icon={<Tags size={28}/>} title={t('មិនមានលទ្ធផល','No matching records')} body={t('សាកល្បងស្វែងរក ឬជ្រើសតម្រងផ្សេង។','Try another search or filter.')} action={{label:t('សម្អាតតម្រង','Clear filters'),onClick:()=>{setSearch('');setStatus('all');}}}/>:<EmptyState icon={<Tags size={28}/>} title={t('មិនទាន់មានប្រភេទ','No categories yet')} body={t('បន្ថែមប្រភេទដំបូងរបស់អ្នក។','Add your first category.')}/>}
  </AppDialog>;
 }

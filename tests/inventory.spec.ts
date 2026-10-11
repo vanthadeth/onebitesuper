@@ -154,10 +154,10 @@ test('inline reference creation preserves draft and offline references sync befo
  await expect(page.locator('.ob-app-messages .d-alert-warning')).toBeInViewport();
  server.setOnline(true);await context.setOffline(false);await expect(page.locator('.inventory-change')).toHaveCount(0);expect(server.items()[0].unit).toBe('kg');
  await nav(page).getByRole('button',{name:'Hub',exact:true}).click();await page.getByRole('button',{name:'Base UOMs',exact:false}).click();
- const manager=page.getByRole('dialog',{name:'Base UOMs',exact:true});await manager.getByRole('button',{name:/Kilograms/}).click();
+ const manager=page.getByRole('dialog',{name:'Base UOMs',exact:true});await manager.getByRole('searchbox',{name:'Search base UOMs'}).fill('Kilograms');await expect(manager.locator('.inventory-reference-row')).toHaveCount(1);await manager.getByRole('button',{name:/Kilograms/}).click();
  const edit=page.getByRole('dialog',{name:'Edit base UOM',exact:true});await expect(edit.getByLabel('Unit symbol')).toBeDisabled();
  await edit.getByRole('switch',{name:'Active'}).click();await page.getByRole('dialog',{name:'Deactivate this record?'}).getByRole('button',{name:'Cancel',exact:true}).click();await expect(edit.getByRole('switch',{name:'Active'})).toBeChecked();
- await edit.getByRole('switch',{name:'Active'}).click();await page.getByRole('dialog',{name:'Deactivate this record?'}).getByRole('button',{name:'Confirm',exact:true}).click();await edit.getByRole('button',{name:'Save changes',exact:true}).click();await expect(manager.getByRole('button',{name:/Kilograms/})).toContainText('Inactive');
+ await edit.getByRole('switch',{name:'Active'}).click();await page.getByRole('dialog',{name:'Deactivate this record?'}).getByRole('button',{name:'Confirm',exact:true}).click();await edit.getByRole('button',{name:'Save changes',exact:true}).click();await manager.getByRole('button',{name:'Status',exact:true}).click();await page.getByRole('menuitemradio',{name:'Inactive',exact:true}).click();await expect(manager.getByRole('button',{name:/Kilograms/})).toContainText('Inactive');
 });
 
 test('Owner builds a finished-product recipe and adds it to a sellable box',async({page})=>{
