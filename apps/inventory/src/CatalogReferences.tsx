@@ -3,7 +3,7 @@ import {Check,Plus,Pencil,Tags,Ruler} from 'lucide-react';
 import {AppDialog,SelectField,SwitchField,InlineError,ActiveStatusBadge,EmptyState,DirectoryTools,DirectorySearch,DirectoryStatusFilter,type DirectoryStatus,useLanguage} from '@onebite/ui';
 import {newCatalogReference,validateCatalogReference,type CatalogReference,type ReferenceKind,type ReferenceOperation} from '@onebite/core/inventory';
 export function referenceLabel(reference:CatalogReference,t:(km:string,en:string)=>string){
- const defaults:Record<string,[string,string]>={ingredient:['គ្រឿងផ្សំ','Ingredient'],packaging:['សម្ភារៈវេចខ្ចប់','Packaging'],pcs:['ចំនួន','Pieces'],g:['ក្រាម','Grams'],ml:['មីលីលីត្រ','Millilitres'],box:['ប្រអប់','Box']};
+ const defaults:Record<string,[string,string]>={ingredient:['គ្រឿងផ្សំ','Ingredient'],packaging:['សម្ភារៈវេចខ្ចប់','Packaging'],pcs:['ចំនួន','Pieces'],g:['ក្រាម','Grams'],ml:['មីលីលីត្រ','Millilitres'],box:['ប្រអប់','Box'],main:['មុខម្ហូបចម្បង','Main'],side:['មុខម្ហូបបន្ថែម','Side'],ready_to_cook:['រួចរាល់សម្រាប់ចម្អិន','Ready to cook'],drinks:['ភេសជ្ជៈ','Drinks']};
  const label=defaults[reference.value];return label&&reference.name===label[1]?t(...label):reference.name;
 }
 export function ActiveConfirmation({active,onConfirm,onClose}:{active:boolean;onConfirm:()=>void;onClose:()=>void}){
@@ -28,6 +28,7 @@ export function ReferenceEditor({reference,references,onClose,onSave}:{reference
 export function ReferenceSelect({kind,value,references,disabled,onChange,onCreate,onManage}:{kind:ReferenceKind;value:string;references:CatalogReference[];disabled?:boolean;onChange:(value:string)=>void;onCreate:(kind:ReferenceKind)=>void;onManage:(kind:ReferenceKind)=>void}){
  const {t}=useLanguage(),unit=kind==='unit',options=references.filter(reference=>reference.kind===kind&&(reference.active||reference.value===value)).sort((a,b)=>a.name.localeCompare(b.name));
  return <SelectField aria-label={unit?t('ឯកតាមូលដ្ឋាន','Base unit'):t('ប្រភេទ','Category')} placeholder={t('ជ្រើសរើស','Select')} value={value} disabled={disabled} onChange={event=>{const selected=event.target.value;if(selected==='__create__')onCreate(kind);else if(selected==='__manage__')onManage(kind);else onChange(selected);}}>
+ {!unit&&<option value="">{t('មិនមានប្រភេទ','No category')}</option>}
  {value&&!options.some(option=>option.value===value)&&<option value={value}>{value}</option>}
  {options.map(option=><option key={option.id} value={option.value} disabled={!option.active&&option.value!==value}>{unit?`${referenceLabel(option,t)} (${option.value})`:referenceLabel(option,t)}</option>)}
  <option value="__create__">{unit?t('+ ឯកតាថ្មី','+ Add new base UOM'):t('+ ប្រភេទថ្មី','+ Add new category')}</option>

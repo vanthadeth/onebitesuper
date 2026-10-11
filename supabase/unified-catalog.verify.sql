@@ -1,0 +1,51 @@
+-- Isolated transactional checks. All fixtures roll back, including sessions and images.
+begin;
+create function pg_temp.assert(ok boolean,message text) returns void language plpgsql as $$ begin if not coalesce(ok,false) then raise exception 'Inventory check failed: %',message;end if;end $$;
+insert into public.onebite_users(id,name,username,role,active) values ('11111111-1111-4111-8111-111111111111','Catalog test Owner','catalog-test-owner','Owner',true),('22222222-2222-4222-8222-222222222222','Catalog test Cashier','catalog-test-cashier','Cashier',true);
+insert into public.onebite_credentials(user_id,pin_hash,must_change) values ('11111111-1111-4111-8111-111111111111','test-only',false),('22222222-2222-4222-8222-222222222222','test-only',false);
+insert into public.onebite_sessions(token_hash,user_id,expires_at,mfa_at) values(repeat('1',64),'11111111-1111-4111-8111-111111111111',now()+interval '1 day',now()),(repeat('2',64),'22222222-2222-4222-8222-222222222222',now()+interval '1 day',null);
+insert into public.onebite_role_permissions(role,permission) values('Cashier','inventory.access') on conflict do nothing;
+
+select pg_temp.assert(not has_table_privilege('anon','public.onebite_catalog_references','select'),'reference data is private');
+select pg_temp.assert(not has_table_privilege('anon','public.onebite_item_versions','select'),'versions are private');
+select pg_temp.assert(not has_table_privilege('service_role','public.onebite_item_versions','update'),'published snapshots cannot be edited by API role');
+select pg_temp.assert(not has_table_privilege('service_role','public.onebite_item_versions','delete'),'published snapshots cannot be deleted by API role');
+set local role service_role;
+do $$
+declare raw jsonb; component jsonb; box jsonb; definition jsonb; p jsonb; r jsonb; first_receipt jsonb; bad jsonb; raw_id uuid; component_id uuid; box_id uuid;
+begin
+ raw_id=gen_random_uuid();component_id=gen_random_uuid();box_id=gen_random_uuid();
+ definition=jsonb_build_object('schema',1,'type','raw_material','canSell',false,'batchYield',1,'effectiveAt',to_jsonb(now()),'lines','[]'::jsonb,'conversions',jsonb_build_array(jsonb_build_object('unit','kg','factor',1000)));
+ raw=jsonb_build_object('id',raw_id,'kind','material','name','Unified test filling','nameEn','','category','','unit','g','priceKhr',null,'packName','','packQuantity',null,'description','','active',true,'photoPath',null,'revision',0,'definition',definition);
+ p=jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('a',64),'item',raw);
+ r=public.onebite_inventory_api('save',p,repeat('1',64));
+ perform pg_temp.assert(r->'item'->>'revision'='1','non-sellable raw material can have no category');raw=r->'item';
+ perform pg_temp.assert(public.onebite_inventory_api('save',p,repeat('1',64))=r,'retry is idempotent');
+ perform pg_temp.assert(public.onebite_inventory_api('save',p||jsonb_build_object('fingerprint',repeat('b',64)),repeat('1',64))->>'error'='operation_conflict','operation IDs cannot be reused with different payloads');
+ perform pg_temp.assert(public.onebite_inventory_api('save',p,repeat('2',64))->>'error'='forbidden','Cashier cannot edit definitions');
+ definition=definition||jsonb_build_object('type','component','batchYield',10,'conversions','[]'::jsonb,'lines',jsonb_build_array(jsonb_build_object('itemId',raw_id,'quantity',.03,'unit','kg','section','ingredients')));
+ component=raw||jsonb_build_object('id',component_id,'name','Unified test dumpling','unit','pcs','revision',0,'definition',definition);
+ r=public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('c',64),'item',component),repeat('1',64));
+ perform pg_temp.assert(r->'item'->>'revision'='1','batch component accepts item conversion');component=r->'item';
+ definition=definition||jsonb_build_object('type','finished_good','canSell',true,'batchYield',1,'lines',jsonb_build_array(jsonb_build_object('itemId',component_id,'quantity',5,'unit','pcs','section','contents'),jsonb_build_object('itemId',raw_id,'quantity',1,'unit','g','section','packaging')));
+ box=raw||jsonb_build_object('id',box_id,'name','Unified test box','unit','box','category','main','priceKhr',5000,'revision',0,'definition',definition);
+ r=public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('d',64),'item',box),repeat('1',64));
+ perform pg_temp.assert(r->'item'->>'revision'='1','finished good saves content and packaging together');box=r->'item';first_receipt=r;
+ bad=jsonb_set(box,'{definition,lines,0,quantity}','0');
+ perform pg_temp.assert(public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('e',64),'item',bad),repeat('1',64))->>'error'='invalid_item','zero quantity blocked');
+ bad=jsonb_set(box,'{definition,lines,0,unit}','"ml"');
+ perform pg_temp.assert(public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('e',64),'item',bad),repeat('1',64))->>'error'='invalid_recipe','unconfigured cross-dimension conversions blocked');
+ bad=jsonb_set(component,'{definition,lines}',jsonb_build_array(jsonb_build_object('itemId',box_id,'quantity',1,'unit','box','section','contents')));
+ perform pg_temp.assert(public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('e',64),'item',bad),repeat('1',64))->>'error'='invalid_recipe','indirect recipe cycles blocked');
+ bad=jsonb_set(box,'{active}','false');
+ perform pg_temp.assert(public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('e',64),'item',bad),repeat('1',64))->>'error'='confirmation_required','active changes require confirmation');
+ bad=jsonb_set(box,'{definition,effectiveAt}',to_jsonb(now()+interval '1 day'));
+ r=public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('f',64),'item',bad),repeat('1',64));
+ perform pg_temp.assert(r->'item'->>'revision'='2','scheduled update creates a revision');
+ perform pg_temp.assert((select count(*) from public.onebite_item_versions where item_id=box_id)=2,'both versions retained');
+ perform pg_temp.assert((select item from public.onebite_item_versions where item_id=box_id and revision=1)=first_receipt->'item','original version unchanged');
+ perform pg_temp.assert(public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('a',64),'item',box),repeat('1',64))->>'error'='stale_revision','stale offline edit blocked');
+ perform pg_temp.assert(public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('a',64),'item',box-'definition'),repeat('1',64))->>'error'='client_update_required','old clients cannot destroy unified metadata');
+ perform pg_temp.assert(jsonb_array_length(public.onebite_inventory_api('list','{}',repeat('1',64))->'versions')>=4,'authorized versions included in offline cache reply');
+end;$$;
+rollback;

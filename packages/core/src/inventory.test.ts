@@ -52,3 +52,35 @@ test('finished products expand into raw materials when composed into a sellable 
  assert.throws(()=>validateRecipe({...dumpling,recipe:[]},catalog));
  assert.throws(()=>validateRecipe({...small,recipe:[{itemId:filling.id,quantity:0.0001}]},catalog));
 });
+
+// Unified catalog: IDs stay independent of type and sale eligibility.
+const unified=await import('./inventory.ts');
+const raw={...unified.newUnifiedItem(),name:'Wrapper'};
+const filler={...unified.newUnifiedItem(),name:'Filling',unit:'g'};
+const sauce={...unified.newUnifiedItem(),name:'Sauce',unit:'ml'};sauce.definition!.conversions=[{unit:'g',factor:.8}];
+const napkin={...unified.newUnifiedItem(),name:'Napkin'};napkin.definition!.type='supplies';
+const dumpling={...unified.newUnifiedItem(),name:'Fried dumpling'};
+dumpling.definition={...dumpling.definition!,type:'component',batchYield:10,lines:[{itemId:raw.id,quantity:10,unit:'pcs',section:'ingredients'},{itemId:filler.id,quantity:30,unit:'g',section:'ingredients'}]};
+const box={...unified.newUnifiedItem(),name:'Small box',category:'main',unit:'box',priceKhr:5000};
+box.definition={...box.definition!,type:'finished_good',canSell:true,lines:[{itemId:dumpling.id,quantity:5,unit:'pcs',section:'contents'},{itemId:sauce.id,quantity:3,unit:'g',section:'contents'},{itemId:napkin.id,quantity:2,unit:'pcs',section:'packaging'}]};
+const allUnified=[raw,filler,sauce,napkin,dumpling,box];
+assert.equal(unified.validateCatalogItem(raw).category,'');
+assert.equal(unified.validateRecipe(box,allUnified).id,box.id);
+assert.deepEqual(unified.recipeMaterials(box,allUnified),[{itemId:raw.id,quantity:5},{itemId:filler.id,quantity:15},{itemId:sauce.id,quantity:2.4},{itemId:napkin.id,quantity:2}]);
+assert.equal(unified.convertItemQuantity(filler,3,'kg'),3000);
+assert.throws(()=>unified.convertItemQuantity(filler,3,'ml'),/invalid_conversion/);
+const cycle=structuredClone(dumpling);cycle.definition!.lines=[{itemId:box.id,quantity:1,unit:'box',section:'contents'}];
+assert.throws(()=>unified.validateRecipe(box,[...allUnified.filter(i=>i.id!==dumpling.id),cycle]),/invalid_recipe/);
+const old='2026-10-01T00:00:00.000Z',future='2026-10-12T00:00:00.000Z';
+const versions=allUnified.map(item=>({item:{...item,revision:1},publishedAt:old,effectiveAt:old}));
+const updated=structuredClone(dumpling);updated.revision=2;updated.definition!.lines[1].quantity=40;
+versions.push({item:updated,publishedAt:old,effectiveAt:future});
+const held=unified.snapshotItemForOrder(box.id,'2026-10-11T00:00:00.000Z',versions);
+assert.equal(held.materials.find(line=>line.itemId===filler.id)?.quantity,15);
+assert.equal(unified.snapshotItemForOrder(box.id,'2026-10-13T00:00:00.000Z',versions).materials.find(line=>line.itemId===filler.id)?.quantity,20);
+updated.definition!.lines[1].quantity=99;
+assert.equal(held.materials.find(line=>line.itemId===filler.id)?.quantity,15);
+assert.equal(unified.fromCambodiaDateTime('2026-10-12T09:30'),'2026-10-12T02:30:00.000Z');
+assert.equal(unified.cambodiaDateTime('2026-10-12T02:30:00.000Z'),'2026-10-12T09:30');
+const ops=[box,dumpling,raw,filler,sauce,napkin].map(item=>({id:crypto.randomUUID(),item,createdAt:Date.now()}));
+const sorted=unified.sortCatalogOperations(ops);assert.ok(sorted.findIndex(op=>op.item.id===raw.id)<sorted.findIndex(op=>op.item.id===dumpling.id));assert.ok(sorted.findIndex(op=>op.item.id===dumpling.id)<sorted.findIndex(op=>op.item.id===box.id));

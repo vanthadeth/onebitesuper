@@ -1,5 +1,7 @@
 # Inventory catalog — milestone 1
 
+This historical milestone is extended by [Unified item catalog](unified-item-catalog.md), which replaces separate catalog identities with independent type, category and sale eligibility.
+
 Inventory is a separately installable app at `/onebitesuper/inventory/`. Run locally with `npm run dev:inventory` (port 5175). Root build, Pages build, preview and browser checks include it.
 
 ## Included

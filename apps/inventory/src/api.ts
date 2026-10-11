@@ -1,8 +1,8 @@
 import config from '../../../config/supabase.public.json';
 import {ApiError} from '@onebite/accounts';
 import type {Account} from '@onebite/core/access';
-import type {CatalogItem,CatalogOperation,CatalogReference,ReferenceOperation} from '@onebite/core/inventory';
-export type CatalogReply={actor:Account;canEdit:boolean;items:CatalogItem[];references?:CatalogReference[];photos?:Record<string,string>;profilePhoto?:string};
+import type {ItemVersion,CatalogItem,CatalogOperation,CatalogReference,ReferenceOperation} from '@onebite/core/inventory';
+export type CatalogReply={actor:Account;canEdit:boolean;items:CatalogItem[];versions?:ItemVersion[];references?:CatalogReference[];photos?:Record<string,string>;profilePhoto?:string};
 export async function inventoryApi<T>(action:string,payload:Record<string,unknown>,token:string):Promise<T>{
  let response:Response;
  try{response=await fetch(`${import.meta.env.VITE_SUPABASE_URL||config.url}/functions/v1/inventory-access`,{method:'POST',headers:{'Content-Type':'application/json',apikey:import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY||config.publishableKey,Authorization:`Bearer ${token}`},body:JSON.stringify({action,payload}),cache:'no-store',signal:AbortSignal.timeout(20000)});}catch{throw new ApiError('network_failed',503);}

@@ -1,13 +1,13 @@
 import {test,expect,type Page} from '@playwright/test';
 import jpeg from 'jpeg-js';
-import {newCatalogItem,type CatalogItem,type CatalogReference} from '../packages/core/src/inventory';
+import {newCatalogItem,newUnifiedItem,itemDefinition,type CatalogItem,type CatalogReference} from '../packages/core/src/inventory';
 import {defaultAppSettings} from '../packages/core/src/app-settings';
 const token='b'.repeat(64),actor={id:'11111111-1111-4111-8111-111111111111',name:'Inventory Owner',username:'inventory-owner',role:'Owner',sites:[],active:true};
 async function fixture(page:Page,options:{staff?:boolean;items?:CatalogItem[];signin?:boolean}={}){
  let items=options.items||[],online=true,failSave='',saveCalls=0;const receipts=new Map<string,unknown>(),photos=new Map<string,string>();
  const identity:typeof actor&{photoPath?:string|null}=options.staff?{...actor,id:'22222222-2222-4222-8222-222222222222',role:'Cashier',name:'Inventory Cashier'}:actor;
  await page.addInitScript(({token,signin})=>{localStorage.setItem('onebite-language','en');if(!signin)localStorage.setItem('onebite-admin-session',JSON.stringify({token,expiresAt:Date.now()+3600000}));},{token,signin:options.signin});
- let references:CatalogReference[]=[['material_category','ingredient','Ingredient'],['material_category','packaging','Packaging'],['sellable_category','Dumplings','Dumplings'],['unit','pcs','Pieces'],['unit','g','Grams'],['unit','ml','Millilitres'],['unit','box','Box']].map(([kind,value,name])=>({id:crypto.randomUUID(),kind:kind as CatalogReference['kind'],value,name,active:true,revision:1}));
+ let references:CatalogReference[]=[['material_category','ingredient','Ingredient'],['material_category','packaging','Packaging'],['sellable_category','Dumplings','Dumplings'],['sellable_category','ingredient','Ingredient'],['sellable_category','packaging','Packaging'],['unit','pcs','Pieces'],['unit','g','Grams'],['unit','ml','Millilitres'],['unit','box','Box']].map(([kind,value,name])=>({id:crypto.randomUUID(),kind:kind as CatalogReference['kind'],value,name,active:true,revision:1}));
  let profilePhoto:string|null=null;
  await page.route('**/functions/v1/admin-access',route=>{const {action,payload}=route.request().postDataJSON();
   if(action==='profile.photo.upload'){profilePhoto='data:image/jpeg;base64,'+payload.image;return route.fulfill({json:{photoPath:identity.id+'/11111111-1111-4111-8111-111111111111.jpg'}});}
@@ -28,7 +28,7 @@ async function fixture(page:Page,options:{staff?:boolean;items?:CatalogItem[];si
   if(action==='save'){
    saveCalls++;if(options.staff)return route.fulfill({status:403,json:{error:'forbidden'}});if(failSave)return route.fulfill({status:409,json:{error:failSave}});
    if(receipts.has(payload.id))return route.fulfill({json:receipts.get(payload.id)});
-   if((payload.item.recipe??[]).some((line:{itemId:string})=>!items.some(item=>item.id===line.itemId)))return route.fulfill({status:409,json:{error:'invalid_recipe'}});
+   if((payload.item.definition?.lines??payload.item.recipe??[]).some((line:{itemId:string})=>!items.some(item=>item.id===line.itemId)))return route.fulfill({status:409,json:{error:'invalid_recipe'}});
    const current=items.find(item=>item.id===payload.item.id);
    if((current?.revision||0)!==payload.item.revision)return route.fulfill({status:409,json:{error:'stale_revision'}});
    const item={...payload.item,revision:payload.item.revision+1};if(payload.image){item.photoPath=identity.id+'/'+payload.id+'.jpg';photos.set(item.photoPath,payload.image);}items=[...items.filter(value=>value.id!==item.id),item];const receipt={item};receipts.set(payload.id,receipt);return route.fulfill({json:receipt});
@@ -37,12 +37,12 @@ async function fixture(page:Page,options:{staff?:boolean;items?:CatalogItem[];si
   return route.fulfill({status:400,json:{error:'invalid_action'}});
  });
  await page.goto('http://127.0.0.1:5175');
- if(!options.signin)await expect(page.getByRole('heading',{name:'Materials',exact:true})).toBeVisible();
+ if(!options.signin)await expect(page.getByRole('heading',{name:'Items',exact:true})).toBeVisible();
  return {setOnline:(value:boolean)=>{online=value;},setFailure:(value:string)=>{failSave=value;},items:()=>items,calls:()=>saveCalls};
 }
 function nav(page:Page){return page.locator(page.viewportSize()!.width<680?'.access-bottom-nav':'.access-sidebar nav');}
 async function createMaterial(page:Page,name='Wrapper'){
- await page.getByRole('button',{name:'New material',exact:true}).click();const dialog=page.getByRole('dialog');await dialog.getByLabel('Name',{exact:true}).fill(name);await dialog.getByLabel('Pack name',{exact:true}).fill('Pack');await dialog.getByLabel('Quantity per pack').fill('100');return dialog;
+ await page.getByRole('button',{name:'New item',exact:true}).click();const dialog=page.getByRole('dialog');await dialog.getByLabel('Name',{exact:true}).fill(name);await dialog.getByLabel('Pack name',{exact:true}).fill('Pack');await dialog.getByLabel('Quantity per pack').fill('100');return dialog;
 }
 test('Owner creates real catalog records, edits and filters without sample data',async({page})=>{
  const server=await fixture(page);await expect(page.locator('.inventory-card')).toHaveCount(0);
@@ -52,7 +52,7 @@ test('Owner creates real catalog records, edits and filters without sample data'
  await toast.getByRole('button',{name:'Dismiss message'}).click();await expect(toast).toHaveCount(0);
  await expect(page.locator('.inventory-card')).toContainText('Wrapper');await expect(page.locator('.inventory-card')).not.toContainText('Pending sync');expect(server.items()[0].packQuantity).toBe(100);
  await page.getByRole('button',{name:'Wrapper',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'Edit',exact:true}).click();await expect(page.getByRole('dialog').getByRole('combobox',{name:'Base unit'})).toBeDisabled();await page.getByRole('switch',{name:'Active',exact:true}).click();await page.getByRole('dialog',{name:'Deactivate this record?'}).getByRole('button',{name:'Confirm',exact:true}).click();await page.getByRole('button',{name:'Save changes',exact:true}).click();await expect(page.locator('.inventory-card')).toHaveCount(0);await page.getByRole('button',{name:'Status',exact:true}).click();await page.getByRole('menuitemradio',{name:'Inactive',exact:true}).click();await expect(page.locator('.inventory-card')).toContainText('Wrapper');
- await nav(page).getByRole('button',{name:'Items',exact:true}).click();await page.getByRole('button',{name:'New sellable item',exact:true}).click();await page.getByLabel('Name',{exact:true}).fill('Small dumpling box');await page.getByRole('dialog').getByRole('radiogroup',{name:'Category'}).getByRole('radio',{name:'Dumplings',exact:true}).click();await page.getByLabel('Master price (KHR)',{exact:true}).fill('5000');await page.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.locator('.inventory-card')).toContainText('5,000 KHR');await page.getByRole('searchbox').fill('Tea');await expect(page.locator('.inventory-card')).toHaveCount(0);await page.getByRole('button',{name:'Reset filters'}).click();await expect(page.locator('.inventory-card')).toHaveCount(1);expect(server.items()).toHaveLength(2);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await nav(page).getByRole('button',{name:'Items',exact:true}).click();await page.getByRole('button',{name:'New item',exact:true}).click();await page.getByLabel('Name',{exact:true}).fill('Small dumpling box');await page.getByRole('switch',{name:'Can sell',exact:true}).click();await page.getByRole('combobox',{name:'Category',exact:true}).click();await page.getByRole('option',{name:'Dumplings',exact:true}).click();await page.getByLabel('Master price (KHR)',{exact:true}).fill('5000');await page.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.locator('.inventory-card')).toContainText('5,000 KHR');await page.getByRole('searchbox').fill('Tea');await expect(page.locator('.inventory-card')).toHaveCount(0);await page.getByRole('button',{name:'Reset filters'}).click();await expect(page.locator('.inventory-card')).toHaveCount(1);expect(server.items()).toHaveLength(2);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 test('SQLite keeps offline edits through reload and publishes once after reconnect',async({page,context})=>{
  const server=await fixture(page);await expect(page.locator('.ob-sync')).toHaveAttribute('data-state','complete');await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));
@@ -64,10 +64,10 @@ test('stale changes stay visible for review and never overwrite the server',asyn
  const server=await fixture(page);server.setFailure('stale_revision');const dialog=await createMaterial(page,'Conflicting wrapper');await dialog.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.locator('.inventory-card')).toContainText('Needs review');expect(server.items()).toHaveLength(0);await nav(page).getByRole('button',{name:'Changes',exact:true}).click();await expect(page.locator('.inventory-change')).toContainText('changed on another device');await page.getByRole('button',{name:'Review saved copy'}).click();await expect(page.getByRole('dialog')).toContainText('Pack · 100 pcs');await expect(page.getByRole('dialog').getByRole('button',{name:'Edit',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'Close',exact:true}).click();await page.getByRole('button',{name:'Discard change',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'Discard change',exact:true}).click();await expect(page.getByText('No pending changes',{exact:true})).toBeVisible();
 });
 test('staff view the catalog without catalog authoring controls',async({page})=>{
- const item={...newCatalogItem('material'),name:'Cucumber',unit:'g',revision:1};await fixture(page,{staff:true,items:[item]});await expect(page.getByRole('button',{name:'New material',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'Cucumber',exact:true}).click();await expect(page.getByRole('dialog').getByRole('button',{name:'Edit',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'Close',exact:true}).click();await nav(page).getByRole('button',{name:'Hub',exact:true}).click();await expect(page.locator('.inventory-bento')).toBeVisible();await expect(page.getByRole('link',{name:/Admin/})).toBeVisible();
+ const item={...newCatalogItem('material'),name:'Cucumber',unit:'g',revision:1};await fixture(page,{staff:true,items:[item]});await expect(page.getByRole('button',{name:'New item',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'Cucumber',exact:true}).click();await expect(page.getByRole('dialog').getByRole('button',{name:'Edit',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'Close',exact:true}).click();await nav(page).getByRole('button',{name:'Hub',exact:true}).click();await expect(page.locator('.inventory-bento')).toBeVisible();await expect(page.getByRole('link',{name:/Admin/})).toBeVisible();
 });
 test('Inventory signs in with the shared app keypad and physical keyboard',async({page})=>{
- await fixture(page,{signin:true,staff:true});await expect(page.getByRole('heading',{name:'Welcome back'})).toBeVisible();await page.getByLabel('Username',{exact:true}).fill('cashier');await page.getByRole('textbox',{name:'6-digit PIN',exact:true}).focus();await page.keyboard.type('483927');await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Materials',exact:true})).toBeVisible();expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('onebite-admin-session')!).token)).toBe(token);
+ await fixture(page,{signin:true,staff:true});await expect(page.getByRole('heading',{name:'Welcome back'})).toBeVisible();await page.getByLabel('Username',{exact:true}).fill('cashier');await page.getByRole('textbox',{name:'6-digit PIN',exact:true}).focus();await page.keyboard.type('483927');await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Items',exact:true})).toBeVisible();expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('onebite-admin-session')!).token)).toBe(token);
 });
 
 test('catalog photos persist with offline changes and remain visible after publishing',async({page,context})=>{
@@ -80,12 +80,12 @@ test('Owner verification completes before catalog access and resumes queued writ
  await fixture(page,{signin:true});let verified=false,requireVerification=false;
  await page.route('**/functions/v1/admin-access',async route=>{const {action}=route.request().postDataJSON();if(action==='login')return route.fulfill({json:{actor,session:token,sessionExpiresAt:Date.now()+3600000,mfaRequired:true,mfaEnrollment:false}});if(action==='mfa.verify'){verified=true;requireVerification=false;return route.fulfill({json:{actor}});}return route.fallback();});
  await page.route('**/functions/v1/inventory-access',async route=>{const {action}=route.request().postDataJSON();if(!verified)return route.fulfill({status:400,json:{error:'mfa_required'}});if(action==='save'&&requireVerification)return route.fulfill({status:400,json:{error:'reauth_required'}});return route.fallback();});
- await page.getByLabel('Username',{exact:true}).fill('owner');await page.getByLabel('6-digit PIN',{exact:true}).fill('483927');await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Verify your identity',exact:true})).toBeVisible();await expect(page.locator('.inventory-card')).toHaveCount(0);await page.getByLabel('Verification code',{exact:true}).fill('123456');await page.getByRole('button',{name:'Verify',exact:true}).click();await expect(page.getByRole('heading',{name:'Materials',exact:true})).toBeVisible();await expect(page.locator('.ob-sync')).toHaveAttribute('data-state','complete');
+ await page.getByLabel('Username',{exact:true}).fill('owner');await page.getByLabel('6-digit PIN',{exact:true}).fill('483927');await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('heading',{name:'Verify your identity',exact:true})).toBeVisible();await expect(page.locator('.inventory-card')).toHaveCount(0);await page.getByLabel('Verification code',{exact:true}).fill('123456');await page.getByRole('button',{name:'Verify',exact:true}).click();await expect(page.getByRole('heading',{name:'Items',exact:true})).toBeVisible();await expect(page.locator('.ob-sync')).toHaveAttribute('data-state','complete');
  requireVerification=true;const dialog=await createMaterial(page,'Verified wrapper');await dialog.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.getByRole('heading',{name:'Verify your identity',exact:true})).toBeVisible();await page.getByLabel('Verification code',{exact:true}).fill('654321');await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await expect(page.getByLabel('Verification code',{exact:true})).toHaveValue('654321');await page.getByRole('button',{name:'Verify',exact:true}).click();await expect(page.locator('.inventory-card')).toContainText('Verified wrapper');await expect(page.locator('.inventory-card')).not.toContainText('Pending sync');
 });
 
  test('catalog dropdowns include management actions and support keyboard selection',async({page})=>{
- await fixture(page);await page.getByRole('button',{name:'New material',exact:true}).click();const dialog=page.getByRole('dialog');
+ await fixture(page);await page.getByRole('button',{name:'New item',exact:true}).click();const dialog=page.getByRole('dialog');
  await dialog.getByRole('combobox',{name:'Category'}).click();await page.getByRole('option',{name:'Packaging',exact:true}).click();
  await expect(dialog.getByRole('combobox',{name:'Category'})).toContainText('Packaging');
  await dialog.getByRole('combobox',{name:'Base unit'}).focus();await page.keyboard.press('ArrowDown');await page.getByRole('option',{name:'Millilitres (ml)',exact:true}).click();
@@ -160,53 +160,35 @@ test('inline reference creation preserves draft and offline references sync befo
  await edit.getByRole('switch',{name:'Active'}).click();await page.getByRole('dialog',{name:'Deactivate this record?'}).getByRole('button',{name:'Confirm',exact:true}).click();await edit.getByRole('button',{name:'Save changes',exact:true}).click();await manager.getByRole('button',{name:'Status',exact:true}).click();await page.getByRole('menuitemradio',{name:'Inactive',exact:true}).click();await expect(manager.getByRole('button',{name:/Kilograms/})).toContainText('Inactive');
 });
 
-test('Owner builds a finished-product recipe and adds it to a sellable box',async({page})=>{
+async function selectType(page:Page,type:string){await page.getByRole('combobox',{name:'Item type',exact:true}).click();await page.getByRole('option',{name:type,exact:true}).click();}
+async function chooseCategory(page:Page){await page.getByRole('combobox',{name:'Category',exact:true}).click();await page.getByRole('option',{name:'Dumplings',exact:true}).click();}
+async function selectRecipeItem(page:Page,section:string,index:number,name:string){await page.getByRole('combobox',{name:`${section} item ${index}`,exact:true}).click();await page.getByRole('option',{name,exact:true}).click();}
+test('Owner builds a batch component and combines ingredients, contents and packaging',async({page},info)=>{
  const wrapper={...newCatalogItem('material'),name:'Wrapper',revision:1};
  const filling={...newCatalogItem('material'),name:'Filling',unit:'g',revision:1};
- const server=await fixture(page,{items:[wrapper,filling]});
- await nav(page).getByRole('button',{name:'Hub',exact:true}).click();
- await page.locator('.inventory-bento').getByRole('button',{name:/Finished products/}).click();
- await page.getByRole('button',{name:'New finished product',exact:true}).click();
- const dialog=page.getByRole('dialog');await dialog.getByLabel('Name',{exact:true}).fill('Fried dumpling');
- await dialog.getByRole('radiogroup',{name:'Category'}).getByRole('radio',{name:'Dumplings',exact:true}).click();
- await dialog.getByRole('button',{name:'Add ingredient',exact:true}).click();
- await dialog.getByRole('button',{name:'Add ingredient',exact:true}).click();
- await dialog.getByRole('combobox',{name:'Component 1',exact:true}).click();await page.getByRole('option',{name:'Filling · g',exact:true}).click();
- await dialog.getByLabel('Quantity 1',{exact:true}).fill('3');
- await expect(dialog.getByRole('switch',{name:'Active',exact:true})).toHaveCount(0);
- await expect(dialog.getByLabel('Master price (KHR)',{exact:true})).toHaveCount(0);
- await dialog.getByRole('button',{name:'Create item',exact:true}).click();
- await expect(page.getByRole('dialog')).toHaveCount(0);await expect(page.locator('.inventory-card')).not.toContainText('Pending sync');
- const finished=server.items().find(item=>item.kind==='finished')!;expect(finished.recipe).toHaveLength(2);
- await page.getByRole('button',{name:'Fried dumpling',exact:true}).click();
- await page.getByRole('dialog').getByRole('button',{name:'Create sellable item',exact:true}).click();
- await dialog.getByLabel('Name',{exact:true}).fill('Small dumpling box');
- await dialog.getByLabel('Master price (KHR)',{exact:true}).fill('5000');
- await dialog.getByLabel('Quantity 1',{exact:true}).fill('5');
- await expect(dialog.locator('.inventory-recipe-summary')).toContainText('15 g');
- await expect(dialog.locator('.inventory-recipe-summary')).toContainText('5 pcs');
- await dialog.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);
- await nav(page).getByRole('button',{name:'Items',exact:true}).click();await expect(page.locator('.inventory-card')).toContainText('Small dumpling box');await expect(page.locator('.inventory-card')).not.toContainText('Pending sync');
- expect(server.items().find(item=>item.kind==='sellable')?.recipe).toEqual([{itemId:finished.id,quantity:5}]);
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ const napkin={...newUnifiedItem(),name:'Napkin',revision:1};napkin.definition!.type='supplies';
+ const server=await fixture(page,{items:[wrapper,filling,napkin]});
+ await page.getByRole('button',{name:'New item',exact:true}).click();let dialog=page.getByRole('dialog');
+ await dialog.getByLabel('Name',{exact:true}).fill('Fried dumpling');await selectType(page,'Component');
+ await dialog.getByLabel('Recipe batch output',{exact:true}).fill('10');
+ await dialog.getByRole('button',{name:'Add · Ingredients',exact:true}).click();await selectRecipeItem(page,'Ingredients',1,'Wrapper');await dialog.getByLabel('Ingredients quantity 1',{exact:true}).fill('10');
+ await dialog.getByRole('button',{name:'Add · Ingredients',exact:true}).click();await selectRecipeItem(page,'Ingredients',2,'Filling');await dialog.getByLabel('Ingredients quantity 2',{exact:true}).fill('30');
+ await expect(dialog.getByRole('switch',{name:'Active',exact:true})).toHaveCount(0);await expect(dialog.getByLabel('Master price (KHR)',{exact:true})).toHaveCount(0);
+ await dialog.getByRole('button',{name:'Create item',exact:true}).click();await expect(dialog).toHaveCount(0);await expect(page.locator('.inventory-grid')).not.toContainText('Pending sync');
+ const finished=server.items().find(item=>itemDefinition(item).type==='component')!;expect(finished.definition?.lines).toHaveLength(2);
+ await page.getByRole('button',{name:'New item',exact:true}).click();dialog=page.getByRole('dialog');await dialog.getByLabel('Name',{exact:true}).fill('Small dumpling box');await selectType(page,'Finished good');await dialog.getByRole('switch',{name:'Can sell',exact:true}).click();await chooseCategory(page);await dialog.getByLabel('Master price (KHR)',{exact:true}).fill('5000');
+ await dialog.getByRole('button',{name:'Add · Items in the box',exact:true}).click();await selectRecipeItem(page,'Items in the box',1,'Fried dumpling');await dialog.getByLabel('Items in the box quantity 1',{exact:true}).fill('5');
+ await dialog.getByRole('button',{name:'Add · Packaging used',exact:true}).click();await selectRecipeItem(page,'Packaging used',1,'Napkin');await dialog.getByLabel('Packaging used quantity 1',{exact:true}).fill('2');
+ await expect(dialog.locator('.inventory-recipe-summary')).toContainText('15 g');await expect(dialog.locator('.inventory-recipe-summary')).toContainText('5 pcs');await expect(dialog.locator('.inventory-recipe-summary')).toContainText('2 pcs');
+ await dialog.getByLabel('Effective from (Cambodia time)',{exact:true}).fill('2026-10-15T09:00');
+ await page.screenshot({path:`artifacts/unified-recipe-${info.project.name}.png`,fullPage:true,animations:'disabled'});
+ await dialog.getByRole('button',{name:'Create item',exact:true}).click();await expect(dialog).toHaveCount(0);await expect(page.locator('.inventory-grid')).not.toContainText('Pending sync');
+ const box=server.items().find(item=>itemDefinition(item).type==='finished_good')!;expect(box.definition?.effectiveAt).toBe('2026-10-15T02:00:00.000Z');expect(box.definition?.lines[0]).toMatchObject({itemId:finished.id,quantity:5,section:'contents'});expect(box.definition?.lines[1].section).toBe('packaging');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
-
-test('offline finished and sellable recipes survive reload and sync in dependency order',async({page,context})=>{
- const wrapper={...newCatalogItem('material'),name:'Wrapper',revision:1};
- const server=await fixture(page,{items:[wrapper]});await expect(page.locator('.ob-sync')).toHaveAttribute('data-state','complete');
- await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));
- server.setOnline(false);await context.setOffline(true);
- await nav(page).getByRole('button',{name:'Hub',exact:true}).click();await page.locator('.inventory-bento').getByRole('button',{name:/Finished products/}).click();
- await page.getByRole('button',{name:'New finished product',exact:true}).click();let dialog=page.getByRole('dialog');
- await dialog.getByLabel('Name',{exact:true}).fill('Offline dumpling');await dialog.getByRole('radiogroup',{name:'Category'}).getByRole('radio',{name:'Dumplings',exact:true}).click();
- await dialog.getByRole('button',{name:'Add ingredient',exact:true}).click();await dialog.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);await expect(page.locator('.inventory-card')).toContainText('Pending sync');
- await nav(page).getByRole('button',{name:'Items',exact:true}).click();await page.getByRole('button',{name:'New sellable item',exact:true}).click();dialog=page.getByRole('dialog');
- await dialog.getByLabel('Name',{exact:true}).fill('Offline box');await dialog.getByRole('radiogroup',{name:'Category'}).getByRole('radio',{name:'Dumplings',exact:true}).click();
- await dialog.getByRole('button',{name:'Add component',exact:true}).click();await dialog.getByLabel('Quantity 1',{exact:true}).fill('5');
- await dialog.getByRole('button',{name:'Create item',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);await expect(page.locator('.inventory-card')).toContainText('Pending sync');
- await page.reload();await expect(page.getByRole('heading',{name:'Materials',exact:true})).toBeVisible();
- await nav(page).getByRole('button',{name:'Changes',exact:true}).click();await expect(page.locator('.inventory-change')).toHaveCount(2);
- server.setOnline(true);await context.setOffline(false);await expect(page.getByText('No pending changes',{exact:true})).toBeVisible();
- const finished=server.items().find(item=>item.kind==='finished')!;const sellable=server.items().find(item=>item.kind==='sellable')!;
- expect(finished.recipe).toEqual([{itemId:wrapper.id,quantity:1}]);expect(sellable.recipe).toEqual([{itemId:finished.id,quantity:5}]);expect(server.calls()).toBe(2);
+test('offline component and box recipes survive reload and sync in dependency order',async({page,context})=>{
+ const wrapper={...newCatalogItem('material'),name:'Wrapper',revision:1};const server=await fixture(page,{items:[wrapper]});await expect(page.locator('.ob-sync')).toHaveAttribute('data-state','complete');await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));server.setOnline(false);await context.setOffline(true);
+ await page.getByRole('button',{name:'New item',exact:true}).click();let dialog=page.getByRole('dialog');await dialog.getByLabel('Name',{exact:true}).fill('Offline dumpling');await selectType(page,'Component');await dialog.getByRole('button',{name:'Add · Ingredients',exact:true}).click();await dialog.getByRole('button',{name:'Create item',exact:true}).click();await expect(dialog).toHaveCount(0);
+ await page.getByRole('button',{name:'New item',exact:true}).click();dialog=page.getByRole('dialog');await dialog.getByLabel('Name',{exact:true}).fill('Offline box');await selectType(page,'Finished good');await dialog.getByRole('switch',{name:'Can sell',exact:true}).click();await chooseCategory(page);await dialog.getByRole('button',{name:'Add · Items in the box',exact:true}).click();await selectRecipeItem(page,'Items in the box',1,'Offline dumpling');await dialog.getByLabel('Items in the box quantity 1',{exact:true}).fill('5');await dialog.getByRole('button',{name:'Create item',exact:true}).click();await expect(dialog).toHaveCount(0);
+ await page.reload();await expect(page.getByRole('button',{name:'Offline box',exact:true})).toBeVisible();await nav(page).getByRole('button',{name:'Changes',exact:true}).click();await expect(page.locator('.inventory-change')).toHaveCount(2);server.setOnline(true);await context.setOffline(false);await expect(page.getByText('No pending changes',{exact:true})).toBeVisible();
+ const finished=server.items().find(item=>itemDefinition(item).type==='component')!;const box=server.items().find(item=>itemDefinition(item).type==='finished_good')!;expect(finished.definition?.lines[0].itemId).toBe(wrapper.id);expect(box.definition?.lines[0]).toMatchObject({itemId:finished.id,quantity:5});expect(server.calls()).toBe(2);
 });

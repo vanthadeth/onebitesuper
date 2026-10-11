@@ -1,7 +1,7 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {accessApi,ApiError,readSession,setSession,sessionExpiry,rememberedSessionKey,type AccessReply} from '@onebite/accounts';
 import {loadCatalogCache,saveCatalogCache,inventoryOutbox,queueCatalogOperation,removeCatalogOperation,markCatalogOperation,referenceOutbox,queueReferenceOperation,removeReferenceOperation,markReferenceOperation} from '@onebite/offline/inventory';
-import {validateCatalogItem,validateRecipe,projectCatalog,validateCatalogReference,type CatalogReference,type ReferenceOperation,type CatalogItem,type CatalogOperation} from '@onebite/core/inventory';
+import {sortCatalogOperations,validateCatalogItem,validateRecipe,projectCatalog,validateCatalogReference,type CatalogReference,type ReferenceOperation,type CatalogItem,type CatalogOperation} from '@onebite/core/inventory';
 import {inventoryApi,publishCatalogOperation,publishReferenceOperation,type CatalogReply} from './api';
 import type {SyncStatus} from '@onebite/ui';
 export type CatalogPhase='connecting'|'login'|'change-pin'|'mfa'|'ready'|'unavailable'|'denied';
@@ -37,7 +37,7 @@ export function useCatalog(){
     }
    }
    referenceOperations=await referenceOutbox(reply.actor.id);if(current())setReferencePending(referenceOperations);
-   let operations=(await inventoryOutbox(reply.actor.id)).sort((a,b)=>['material','finished','sellable'].indexOf(a.item.kind)-['material','finished','sellable'].indexOf(b.item.kind));setData(reply);setPending(operations);setPhase('ready');setOffline(false);
+   let operations=sortCatalogOperations(await inventoryOutbox(reply.actor.id));setData(reply);setPending(operations);setPhase('ready');setOffline(false);
    for(const operation of operations){
     if(!current())return;
     if(operation.error)continue;
