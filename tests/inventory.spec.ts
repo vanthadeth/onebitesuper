@@ -88,6 +88,8 @@ test('Owner verification completes before catalog access and resumes queued writ
  await fixture(page);await page.getByRole('button',{name:'New item',exact:true}).click();const dialog=page.getByRole('dialog');
  await dialog.getByRole('combobox',{name:'Category'}).click();await page.getByRole('option',{name:'Packaging',exact:true}).click();
  await expect(dialog.getByRole('combobox',{name:'Category'})).toContainText('Packaging');
+ // Radix restores focus after closing. Finish that transition before moving to the next field.
+ await expect(dialog.getByRole('combobox',{name:'Category'})).toBeFocused();
  await dialog.getByRole('combobox',{name:'Base unit'}).focus();await page.keyboard.press('ArrowDown');await page.getByRole('option',{name:'Millilitres (ml)',exact:true}).click();
  await expect(dialog.getByRole('combobox',{name:'Base unit'})).toContainText('Millilitres (ml)');expect(await dialog.evaluate(element=>element.scrollWidth<=element.clientWidth)).toBe(true);
  });
