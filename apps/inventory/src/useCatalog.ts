@@ -1,7 +1,7 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {accessApi,ApiError,readSession,setSession,sessionExpiry,rememberedSessionKey,type AccessReply} from '@onebite/accounts';
 import {loadCatalogCache,saveCatalogCache,inventoryOutbox,queueCatalogOperation,removeCatalogOperation,markCatalogOperation,referenceOutbox,queueReferenceOperation,removeReferenceOperation,markReferenceOperation} from '@onebite/offline/inventory';
-import {validateCatalogItem,validateCatalogReference,type CatalogReference,type ReferenceOperation,type CatalogItem,type CatalogOperation} from '@onebite/core/inventory';
+import {validateCatalogItem,validateRecipe,projectCatalog,validateCatalogReference,type CatalogReference,type ReferenceOperation,type CatalogItem,type CatalogOperation} from '@onebite/core/inventory';
 import {inventoryApi,publishCatalogOperation,publishReferenceOperation,type CatalogReply} from './api';
 import type {SyncStatus} from '@onebite/ui';
 export type CatalogPhase='connecting'|'login'|'change-pin'|'mfa'|'ready'|'unavailable'|'denied';
@@ -37,7 +37,7 @@ export function useCatalog(){
     }
    }
    referenceOperations=await referenceOutbox(reply.actor.id);if(current())setReferencePending(referenceOperations);
-   let operations=await inventoryOutbox(reply.actor.id);setData(reply);setPending(operations);setPhase('ready');setOffline(false);
+   let operations=(await inventoryOutbox(reply.actor.id)).sort((a,b)=>['material','finished','sellable'].indexOf(a.item.kind)-['material','finished','sellable'].indexOf(b.item.kind));setData(reply);setPending(operations);setPhase('ready');setOffline(false);
    for(const operation of operations){
     if(!current())return;
     if(operation.error)continue;
@@ -87,7 +87,7 @@ export function useCatalog(){
  async function authenticate(payload:Record<string,unknown>){setBusy(true);setError('');try{const reply=await accessApi(phase==='change-pin'?'pin.change':'login',payload,readSession());if(await receiveAuth(reply))await sync();}catch(e){setError(e instanceof ApiError?e.code:'request_failed');}finally{setBusy(false);}}
  async function save(item:CatalogItem,image?:string|null,confirmedActive=false){
   if(!data?.canEdit||data.actor.role!=='Owner'||readSession()!==token||!readSession()||sessionExpiry()<=Date.now()||offline&&Date.now()-verifiedAt>=24*60*60_000)throw new Error('forbidden');
-  const normalized=validateCatalogItem(item);
+  const normalized=validateRecipe(validateCatalogItem(item),projectCatalog(data.items,pending));
   await queueCatalogOperation(data.actor.id,{id:crypto.randomUUID(),item:normalized,confirmedActive,...(image!==undefined?{image}:{}),createdAt:Date.now()});
   setPending(await inventoryOutbox(data.actor.id));if(navigator.onLine)void sync();
  }

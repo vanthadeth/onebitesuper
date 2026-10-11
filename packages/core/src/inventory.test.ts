@@ -32,3 +32,23 @@ test('reference values are validated and pending references survive projection',
  const operation={id:crypto.randomUUID(),reference,createdAt:Date.now()};
  assert.deepEqual(projectReferences([],[operation]),[reference]);
 });
+
+test('finished products expand into raw materials when composed into a sellable box',async()=>{
+ const {validateRecipe,recipeMaterials}=await import('./inventory.ts');
+ const wrapper={...newCatalogItem('material'),name:'Wrapper'};
+ const filling={...newCatalogItem('material'),name:'Filling',unit:'g'};
+ const box={...newCatalogItem('material'),name:'Paper box',category:'packaging'};
+ const dumpling={...newCatalogItem('finished'),name:'Fried dumpling',category:'Dumplings',recipe:[{itemId:wrapper.id,quantity:1},{itemId:filling.id,quantity:3}]};
+ const small={...newCatalogItem('sellable'),name:'Small box',category:'Dumplings',priceKhr:5000,recipe:[{itemId:dumpling.id,quantity:5},{itemId:box.id,quantity:1},{itemId:filling.id,quantity:2}]};
+ const catalog=[wrapper,filling,box,dumpling,small];
+ assert.equal(validateCatalogItem(dumpling).priceKhr,null);
+ assert.deepEqual(recipeMaterials(small,catalog),[{itemId:wrapper.id,quantity:5},{itemId:filling.id,quantity:17},{itemId:box.id,quantity:1}]);
+ assert.throws(()=>validateRecipe({...dumpling,recipe:[{itemId:wrapper.id,quantity:0.5}]},catalog));
+ assert.throws(()=>validateRecipe({...dumpling,recipe:[{itemId:small.id,quantity:1}]},catalog));
+ assert.throws(()=>validateRecipe({...dumpling,recipe:[{itemId:dumpling.id,quantity:1}]},catalog));
+ assert.throws(()=>validateRecipe({...small,recipe:[{itemId:box.id,quantity:1},{itemId:box.id,quantity:2}]},catalog));
+ assert.throws(()=>validateRecipe(small,catalog.map(item=>item.id===dumpling.id?{...item,active:false}:item)));
+ assert.throws(()=>validateRecipe(small,catalog.map(item=>item.id===filling.id?{...item,active:false}:item)));
+ assert.throws(()=>validateRecipe({...dumpling,recipe:[]},catalog));
+ assert.throws(()=>validateRecipe({...small,recipe:[{itemId:filling.id,quantity:0.0001}]},catalog));
+});
