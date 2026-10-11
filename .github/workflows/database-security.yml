@@ -41,5 +41,5 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f supabase/inventory-recipes.verify.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261011022212_seven_day_owner_verification.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/seven-day-verification.verify.sql
-      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261011041019_unified_item_catalog.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261011042516_unified_item_catalog.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/unified-catalog.verify.sql
