@@ -1,12 +1,12 @@
 import { UserAvatar } from './user-avatar';
-import { useLayoutEffect, useRef, type KeyboardEvent } from 'react';
+import { useLayoutEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import * as Menu from '@radix-ui/react-dropdown-menu';
 import { LayoutGrid, Moon, Sun, LogOut } from 'lucide-react';
 import { useLanguage } from './shared';
 import { SyncControl, type SyncStatus, type ConnectionStatus, type SyncTask } from './sync-status';
 export type { SyncStatus } from './sync-status';
 
-export function AppTitleBar({icon,title,name,username,photo,syncStatus,pendingCount,connection='online',syncTask='refresh',lastSyncedAt,disabled,dark,offlineWrites=false,onSync,onProfile,onHub,onLanguage,onTheme,onSignOut}:{icon:string;title:string;name:string;username:string;photo?:string;syncStatus:SyncStatus;pendingCount:number;connection?:ConnectionStatus;syncTask?:SyncTask;lastSyncedAt?:number;disabled:boolean;dark:boolean;offlineWrites?:boolean;onSync:()=>void;onProfile:()=>void;onHub?:()=>void;onLanguage:()=>void;onTheme:()=>void;onSignOut:()=>void}) {
+export function AppTitleBar({message,icon,title,name,username,photo,syncStatus,pendingCount,connection='online',syncTask='refresh',lastSyncedAt,disabled,dark,offlineWrites=false,onSync,onProfile,onHub,onLanguage,onTheme,onSignOut}:{message?:ReactNode;icon:string;title:string;name:string;username:string;photo?:string;syncStatus:SyncStatus;pendingCount:number;connection?:ConnectionStatus;syncTask?:SyncTask;lastSyncedAt?:number;disabled:boolean;dark:boolean;offlineWrites?:boolean;onSync:()=>void;onProfile:()=>void;onHub?:()=>void;onLanguage:()=>void;onTheme:()=>void;onSignOut:()=>void}) {
  const {t,lang}=useLanguage(),header=useRef<HTMLElement>(null);
  useLayoutEffect(()=>{
   const element=header.current,parent=element?.parentElement;if(!element||!parent)return;
@@ -15,7 +15,7 @@ export function AppTitleBar({icon,title,name,username,photo,syncStatus,pendingCo
   return()=>{observer.disconnect();parent.style.removeProperty('--ob-app-header-height');};
  },[]);
  return <header ref={header} className="access-header ob-app-header">
-  <div className="ob-app-identity"><img src={icon} alt="OneBite"/><div><strong>{title}</strong></div></div>
+  <div className="ob-app-header-row"><div className="ob-app-identity"><img src={icon} alt="OneBite"/><div><strong>{title}</strong></div></div>
   <div className="access-header-actions">
    <SyncControl offlineWrites={offlineWrites} status={syncStatus} pendingCount={pendingCount} connection={connection} task={syncTask} lastSyncedAt={lastSyncedAt} disabled={disabled} onSync={onSync}/>
    <Menu.Root><Menu.Trigger asChild><button className="ob-profile-badge" aria-label={t('ម៉ឺនុយគណនី','Profile menu')}><UserAvatar name={name} photo={photo} className="access-avatar small"/></button></Menu.Trigger>
@@ -34,6 +34,7 @@ export function AppTitleBar({icon,title,name,username,photo,syncStatus,pendingCo
     </Menu.Content></Menu.Portal>
    </Menu.Root>
   </div>
+ </div>{message&&<div className="ob-app-messages">{message}</div>}
  </header>;
 }
 

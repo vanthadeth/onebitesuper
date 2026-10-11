@@ -45,6 +45,6 @@ begin
  perform pg_temp.assert(public.onebite_inventory_api('reference.save',p,repeat('1',64))->>'error'='duplicate_reference','duplicate reference rejected');
 end;
 $$;
-update public.onebite_sessions set mfa_at=now()-interval '6 minutes' where token_hash=repeat('1',64);
+update public.onebite_sessions set mfa_at=now()-interval '7 days' where token_hash=repeat('1',64);
 select pg_temp.assert(public.onebite_inventory_api('reference.save','{}',repeat('1',64))->>'error'='reauth_required','reference writes need Owner verification');
 rollback;

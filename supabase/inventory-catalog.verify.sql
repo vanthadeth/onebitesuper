@@ -25,6 +25,6 @@ select pg_temp.assert((public.onebite_inventory_api('save',(select value from pa
 select pg_temp.assert((public.onebite_inventory_api('photo.read','{"photoPath":"11111111-1111-4111-8111-111111111111/33333333-3333-4333-8333-333333333333.jpg"}',repeat('2',64))->>'error')='not_found','unattached photos unreadable');
 delete from public.onebite_role_permissions where role='Cashier' and permission='inventory.access';
 select pg_temp.assert((public.onebite_inventory_api('list','{}',repeat('2',64))->>'error')='forbidden','revoked grant takes effect');
-update public.onebite_sessions set mfa_at=now()-interval '6 minutes' where token_hash=repeat('1',64);
+update public.onebite_sessions set mfa_at=now()-interval '7 days' where token_hash=repeat('1',64);
 select pg_temp.assert((public.onebite_inventory_api('save',(select value from payload),repeat('1',64))->>'error')='reauth_required','Owner writes require recent verification');
 rollback;

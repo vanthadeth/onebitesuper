@@ -12,7 +12,7 @@ Inventory is a separately installable app at `/onebitesuper/inventory/`. Run loc
 
 ## Server boundaries
 
-`20261010122414_inventory_catalog.sql` installs the catalog, immutable operation receipts and guarded `onebite_inventory_api`. Public and Supabase authenticated clients have neither table nor RPC privileges. RLS is enabled with no client policies intentionally: the custom-session Edge Function is the only route. Every request checks the existing session guard and current module grants. Authoring checks both the real Owner role and the catalog action; recent Owner MFA is required for writes.
+`20261010122414_inventory_catalog.sql` installs the catalog, immutable operation receipts and guarded `onebite_inventory_api`. Public and Supabase authenticated clients have neither table nor RPC privileges. RLS is enabled with no client policies intentionally: the custom-session Edge Function is the only route. Every request checks the existing session guard and current module grants. Authoring checks both the real Owner role and the catalog action; Owner MFA remains valid for seven days within the fixed session lifetime.
 
 `inventory-access` validates the publishable key, opaque token, body limit and allowed origin. It generates operation fingerprints itself. Catalog photos are in the private `catalog-photos` bucket; photo reads must refer to an attached, authorized catalog record. Uploads decode/re-encode JPEG server-side. An operation's photo cannot be overwritten by a changed retry. The function uses `verify_jwt=false` because internal opaque sessions are verified explicitly rather than using Supabase Auth JWTs.
 

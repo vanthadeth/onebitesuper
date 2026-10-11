@@ -39,5 +39,5 @@ export function ConnectionNotice({connection,busy,onReconnect}:{connection:Conne
 }
 
 export function SyncToast({message,tone='success',onDismiss}:{message:string;tone?:'success'|'info';onDismiss:()=>void}){
- const {t}=useLanguage();return <div className="d-toast d-toast-bottom d-toast-center ob-feedback-toast"><div className={tone==='success'?'d-alert d-alert-success d-alert-soft ob-feedback-message':'d-alert d-alert-info d-alert-soft ob-feedback-message'} role="status"><span className="ob-feedback-icon">{tone==='success'?<Check size={19}/>:<CircleAlert size={19}/>}</span><span>{message}</span><button type="button" className="d-btn d-btn-ghost d-btn-square" aria-label={t('បិទសារ','Dismiss message')} onClick={onDismiss}><X size={17}/></button></div></div>;
+ const {t}=useLanguage();return <div className="ob-feedback-toast"><div className={tone==='success'?'d-alert d-alert-success d-alert-soft ob-feedback-message':'d-alert d-alert-info d-alert-soft ob-feedback-message'} role="status"><span className="ob-feedback-icon">{tone==='success'?<Check size={19}/>:<CircleAlert size={19}/>}</span><span>{message}</span><button type="button" className="d-btn d-btn-ghost d-btn-square" aria-label={t('បិទសារ','Dismiss message')} onClick={onDismiss}><X size={17}/></button></div></div>;
 }

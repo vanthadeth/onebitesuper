@@ -1,0 +1,34 @@
+-- Isolated transactional checks. All fixtures roll back, including sessions and images.
+begin;
+create function pg_temp.assert(ok boolean,message text) returns void language plpgsql as $$ begin if not coalesce(ok,false) then raise exception 'Inventory check failed: %',message;end if;end $$;
+insert into public.onebite_users(id,name,username,role,active) values ('11111111-1111-4111-8111-111111111111','Catalog test Owner','catalog-test-owner','Owner',true),('22222222-2222-4222-8222-222222222222','Catalog test Cashier','catalog-test-cashier','Cashier',true);
+insert into public.onebite_credentials(user_id,pin_hash,must_change) values ('11111111-1111-4111-8111-111111111111','test-only',false),('22222222-2222-4222-8222-222222222222','test-only',false);
+insert into public.onebite_sessions(token_hash,user_id,expires_at,mfa_at) values(repeat('1',64),'11111111-1111-4111-8111-111111111111',now()+interval '1 day',now()),(repeat('2',64),'22222222-2222-4222-8222-222222222222',now()+interval '1 day',null);
+insert into public.onebite_role_permissions(role,permission) values('Cashier','inventory.access') on conflict do nothing;
+
+set local role service_role;
+select pg_temp.assert(not public.onebite_session_guard(repeat('1',64),true) ? 'error','verified Owner is authorized');
+reset role;
+update public.onebite_sessions set mfa_at=now()-interval '6 minutes' where token_hash=repeat('1',64);
+set local role service_role;
+select pg_temp.assert(not public.onebite_session_guard(repeat('1',64),true) ? 'error','verification does not expire after five minutes');
+reset role;
+update public.onebite_sessions set mfa_at=now()-interval '6 days 23 hours' where token_hash=repeat('1',64);
+set local role service_role;
+select pg_temp.assert(not public.onebite_session_guard(repeat('1',64),true) ? 'error','verification remains valid throughout seven-day window');
+select pg_temp.assert(not public.onebite_session_guard(repeat('2',64),true) ? 'error','staff still use PIN only');
+reset role;
+update public.onebite_sessions set mfa_at=now()-interval '7 days' where token_hash=repeat('1',64);
+set local role service_role;
+select pg_temp.assert(public.onebite_session_guard(repeat('1',64),true)->>'error'='reauth_required','verification expires at seven days');
+select pg_temp.assert(public.onebite_session_guard(repeat('1',64),false)->>'error'='reauth_required','expired verification cannot read protected data');
+reset role;
+update public.onebite_sessions set mfa_at=null where token_hash=repeat('1',64);
+set local role service_role;
+select pg_temp.assert(public.onebite_session_guard(repeat('1',64),true)->>'error'='mfa_required','first Owner verification still required');
+reset role;
+update public.onebite_sessions set mfa_at=now(),expires_at=now()-interval '1 second' where token_hash=repeat('1',64);
+set local role service_role;
+select pg_temp.assert(public.onebite_session_guard(repeat('1',64),true)->>'error'='unauthorized','expired sessions stay expired');
+select pg_temp.assert(public.onebite_session_guard(repeat('1',64),false)->>'error'='unauthorized','expired token is removed');
+rollback;

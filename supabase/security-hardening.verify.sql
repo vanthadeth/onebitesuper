@@ -33,11 +33,11 @@ select pg_temp.assert_true(public.onebite_activity_page('{}',repeat('1',64))->>'
 select pg_temp.assert_true(public.onebite_access_api('mfa.confirm','{"counter":1}',repeat('1',64)) ? 'state','verified MFA opens session');
 select pg_temp.assert_true(public.onebite_access_api('mfa.confirm','{"counter":1}',repeat('1',64))->>'error'='invalid_mfa','MFA replay rejected');
 reset role;
-update public.onebite_sessions set mfa_at=now()-interval '6 minutes' where token_hash=repeat('1',64);
+update public.onebite_sessions set mfa_at=now()-interval '7 days' where token_hash=repeat('1',64);
 set local role service_role;
 select pg_temp.assert_true(public.onebite_access_api('settings.update','{"revision":0}',repeat('1',64))->>'error'='reauth_required','sensitive operation needs recent MFA');
 reset role;
-update public.onebite_sessions set created_at=now()-interval '6 days',last_seen=now()-interval '6 days',expires_at=now()+interval '1 day' where token_hash=repeat('1',64);
+update public.onebite_sessions set mfa_at=now(),created_at=now()-interval '6 days',last_seen=now()-interval '6 days',expires_at=now()+interval '1 day' where token_hash=repeat('1',64);
 select public.onebite_security_maintenance();
 select pg_temp.assert_true(exists(select 1 from public.onebite_sessions where token_hash=repeat('1',64)),'maintenance retains valid idle sessions');
 set local role service_role;
