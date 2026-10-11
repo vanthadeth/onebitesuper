@@ -71,3 +71,5 @@
 .ob-directory-filter.d-btn:hover,.ob-directory-filter[data-state=open]{background:var(--soft)}
 .ob-directory-filter-menu{min-width:180px}.ob-directory-filter-option>span:first-of-type{flex:1}.ob-directory-filter-check{display:grid;place-items:center;color:var(--text-orange)}
 .ob-directory-filter-option[data-state=checked]{color:var(--text-orange);background:var(--soft)}
+
+.ob-dropdown-backdrop{position:fixed;inset:0;z-index:200;pointer-events:auto;background:transparent;touch-action:manipulation}

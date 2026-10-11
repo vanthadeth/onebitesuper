@@ -1,3 +1,4 @@
+import {DropdownRoot,DropdownContent} from './dropdown-menu';
 import type { ReactNode } from 'react';
 import * as Menu from '@radix-ui/react-dropdown-menu';
 import { Search, X, Eye, EyeOff, Asterisk, ListFilter, Check } from 'lucide-react';
@@ -13,10 +14,10 @@ export function DirectorySearch({label,placeholder,value,onChange}:{label:string
 type FilterOption={value:string;label:string;icon?:ReactNode};
 function DirectoryFilter({label,value,options,onChange}:{label:string;value:string;options:FilterOption[];onChange:(value:string)=>void}){
  const selected=options.find(option=>option.value===value);
- return <Menu.Root><Menu.Trigger asChild><button type="button" className="d-btn d-btn-ghost d-btn-square ob-directory-filter" aria-label={label} title={`${label}: ${selected?.label??''}`} data-value={value}>{selected?.icon??<ListFilter size={20}/>}<span className="ob-sr-only">{selected?.label}</span></button></Menu.Trigger>
- <Menu.Portal><Menu.Content className="ob-directory-filter-menu ob-profile-menu" align="end" sideOffset={8} collisionPadding={12} aria-label={label}>
+ return <DropdownRoot><Menu.Trigger asChild><button type="button" className="d-btn d-btn-ghost d-btn-square ob-directory-filter" aria-label={label} title={`${label}: ${selected?.label??''}`} data-value={value}>{selected?.icon??<ListFilter size={20}/>}<span className="ob-sr-only">{selected?.label}</span></button></Menu.Trigger>
+ <DropdownContent className="ob-directory-filter-menu ob-profile-menu" align="end" sideOffset={8} collisionPadding={12} aria-label={label}>
  <Menu.RadioGroup value={value} onValueChange={onChange}>{options.map(option=><Menu.RadioItem key={option.value} value={option.value} className="ob-menu-item ob-directory-filter-option">{option.icon??<ListFilter size={19}/>}<span>{option.label}</span><Menu.ItemIndicator className="ob-directory-filter-check"><Check size={17}/></Menu.ItemIndicator></Menu.RadioItem>)}</Menu.RadioGroup>
- </Menu.Content></Menu.Portal></Menu.Root>;
+ </DropdownContent></DropdownRoot>;
 }
 export function DirectorySegments({label,value,options,onChange}:{label:string;value:string;options:{value:string;label:string}[];onChange:(value:string)=>void}){
  return <DirectoryFilter label={label} value={value} options={options} onChange={onChange}/>;

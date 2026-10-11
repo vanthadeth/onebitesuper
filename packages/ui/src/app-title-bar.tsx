@@ -1,3 +1,4 @@
+import {DropdownRoot,DropdownContent} from './dropdown-menu';
 import { UserAvatar } from './user-avatar';
 import { useLayoutEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import * as Menu from '@radix-ui/react-dropdown-menu';
@@ -18,8 +19,8 @@ export function AppTitleBar({message,icon,title,name,username,photo,syncStatus,p
   <div className="ob-app-header-row"><div className="ob-app-identity"><img src={icon} alt="OneBite"/><div><strong>{title}</strong></div></div>
   <div className="access-header-actions">
    <SyncControl offlineWrites={offlineWrites} status={syncStatus} pendingCount={pendingCount} connection={connection} task={syncTask} lastSyncedAt={lastSyncedAt} disabled={disabled} onSync={onSync}/>
-   <Menu.Root><Menu.Trigger asChild><button className="ob-profile-badge" aria-label={t('ម៉ឺនុយគណនី','Profile menu')}><UserAvatar name={name} photo={photo} className="access-avatar small"/></button></Menu.Trigger>
-    <Menu.Portal><Menu.Content className="d-menu ob-profile-menu" align="end" sideOffset={10} collisionPadding={12}>
+   <DropdownRoot><Menu.Trigger asChild><button className="ob-profile-badge" aria-label={t('ម៉ឺនុយគណនី','Profile menu')}><UserAvatar name={name} photo={photo} className="access-avatar small"/></button></Menu.Trigger>
+    <DropdownContent className="d-menu ob-profile-menu" align="end" sideOffset={10} collisionPadding={12}>
      <Menu.Item className="ob-menu-item ob-profile-label" onSelect={onProfile}><span className="ob-menu-account"><UserAvatar name={name} photo={photo}/><span><strong>{name}</strong><small>@{username}</small></span></span></Menu.Item><Menu.Separator className="ob-menu-separator"/>
      <div className="ob-preference-row"><Menu.Label className="ob-preference-label">{t('ភាសា','Language')}</Menu.Label><Menu.RadioGroup className="ob-menu-segments" aria-label={t('ភាសា','Language')} value={lang} onValueChange={value=>{if(value!==lang)onLanguage();}} onKeyDown={moveSegment}>
       <Menu.RadioItem value="en" className="ob-menu-segment" aria-label="English" onSelect={event=>event.preventDefault()}>EN</Menu.RadioItem>
@@ -31,8 +32,8 @@ export function AppTitleBar({message,icon,title,name,username,photo,syncStatus,p
      </Menu.RadioGroup></div>
      {onHub&&<Menu.Item className="ob-menu-item" onSelect={onHub}><LayoutGrid size={18}/>{t('មជ្ឈមណ្ឌល','Hub')}</Menu.Item>}
      <Menu.Separator className="ob-menu-separator"/><Menu.Item disabled={disabled} className="ob-menu-item ob-menu-danger" onSelect={onSignOut}><LogOut size={18}/>{t('ចាកចេញ','Sign out')}</Menu.Item>
-    </Menu.Content></Menu.Portal>
-   </Menu.Root>
+    </DropdownContent>
+   </DropdownRoot>
   </div>
  </div>{message&&<div className="ob-app-messages">{message}</div>}
  </header>;

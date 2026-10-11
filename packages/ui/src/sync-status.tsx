@@ -1,3 +1,4 @@
+import {DropdownRoot,DropdownContent} from './dropdown-menu';
 import * as Menu from '@radix-ui/react-dropdown-menu';
 import { Cloud, CloudCheck, CloudAlert, CloudOff, RefreshCw, Wifi, WifiOff, Check, CircleAlert, Clock3, X } from 'lucide-react';
 import { useLanguage } from './shared';
@@ -16,16 +17,16 @@ export function SyncControl({status,pendingCount,connection,task,lastSyncedAt,di
  const tone=paused?'paused':status;
  const timestamp=lastSyncedAt?new Intl.DateTimeFormat(lang==='km'?'km-KH':'en',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'Asia/Phnom_Penh'}).format(lastSyncedAt):t('មិនទាន់មាន','Not yet');
  return <div className="ob-sync-controls">
-  <Menu.Root><Menu.Trigger asChild><button type="button" className="d-btn d-btn-ghost ob-connection" data-connection={connection} aria-label={`${t('ស្ថានភាពការតភ្ជាប់','Connection status')}: ${connectionLabel}`} title={connectionLabel}><span className="ob-connection-icon">{connection==='offline'?<WifiOff size={19}/>:<Wifi size={19}/>}<span className="d-status ob-network-dot"/></span><span className="ob-connection-label">{connectionLabel}</span></button></Menu.Trigger>
-   <Menu.Portal><Menu.Content className="d-card ob-sync-popover" align="end" sideOffset={12} collisionPadding={16} aria-label={t('ការតភ្ជាប់ និងសមកាលកម្ម','Connection and sync')}>
+  <DropdownRoot><Menu.Trigger asChild><button type="button" className="d-btn d-btn-ghost ob-connection" data-connection={connection} aria-label={`${t('ស្ថានភាពការតភ្ជាប់','Connection status')}: ${connectionLabel}`} title={connectionLabel}><span className="ob-connection-icon">{connection==='offline'?<WifiOff size={19}/>:<Wifi size={19}/>}<span className="d-status ob-network-dot"/></span><span className="ob-connection-label">{connectionLabel}</span></button></Menu.Trigger>
+   <DropdownContent className="d-card ob-sync-popover" align="end" sideOffset={12} collisionPadding={16} aria-label={t('ការតភ្ជាប់ និងសមកាលកម្ម','Connection and sync')}>
     <Menu.Label className="ob-sync-popover-heading"><span className={`ob-sync-state-icon ${tone}`}><Icon size={24}/></span><span><strong>{label}</strong><span className={`d-badge d-badge-soft ob-network-badge ${connection}`}>{connectionLabel}</span></span></Menu.Label>
     <p className="ob-sync-description">{detail}</p>
     {status==='syncing'&&<progress className="d-progress d-progress-primary ob-sync-progress" aria-label={t('កំពុងធ្វើសមកាលកម្ម','Sync in progress')}/>}
     <dl className="ob-sync-facts"><div><dt><Clock3 size={16}/>{t('ធ្វើបច្ចុប្បន្នភាពចុងក្រោយ','Last updated')}</dt><dd>{timestamp}</dd></div><div><dt>{t('ការផ្លាស់ប្ដូរកំពុងរក្សាទុក','Changes being saved')}</dt><dd>{pendingCount}</dd></div></dl>
     <Menu.Separator className="ob-menu-separator"/>
     <Menu.Item className="d-btn d-btn-primary ob-sync-now" disabled={disabled||status==='syncing'} onSelect={onSync}><RefreshCw size={17}/>{paused?t('ភ្ជាប់ឡើងវិញ','Reconnect'):t('ធ្វើសមកាលកម្មឥឡូវ','Sync now')}</Menu.Item>
-   </Menu.Content></Menu.Portal>
-  </Menu.Root>
+   </DropdownContent>
+  </DropdownRoot>
   <button type="button" className="d-btn d-btn-ghost ob-sync" data-state={status} data-tone={tone} aria-label={`${label} · ${pendingCount} ${t('ការផ្លាស់ប្ដូរកំពុងរក្សាទុក','changes being saved')}`} title={detail} aria-busy={status==='syncing'} disabled={disabled||status==='syncing'} onClick={onSync}>
    <span className="ob-sync-symbol">{status==='syncing'?<span className="d-loading d-loading-spinner ob-sync-spinner"/>:<Icon size={25}/>}</span><span className="ob-sync-label">{label}</span>{pendingCount>0&&<span className="d-badge d-badge-primary ob-sync-count">{pendingCount}</span>}
   </button>

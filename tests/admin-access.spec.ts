@@ -510,3 +510,16 @@ test('Directory controls scroll with the page while headings stay pinned and fil
  const roles=page.getByRole('button',{name:'Role type',exact:true});await roles.click();await page.getByRole('menuitemradio',{name:'Custom',exact:true}).click();await expect(page.locator('.access-role-row')).toHaveCount(1);await expect(page.locator('.access-role-row')).toContainText('Team lead');await page.getByRole('searchbox',{name:'Search roles',exact:true}).fill('no match');await expect(page.getByText('No matching roles',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Clear filters',exact:true}).click();await expect(page.locator('.access-role-row')).toHaveCount(4);await roles.click();await page.getByRole('menuitemradio',{name:'Built-in',exact:true}).click();await expect(page.locator('.access-role-row')).toHaveCount(3);
  await tab(page,'Users');await expect(page.getByRole('button',{name:'Filter status',exact:true})).toHaveAttribute('data-value','active');await page.getByRole('searchbox',{name:'Search users',exact:true}).fill('sokha');await expect(page.locator('.access-user-row')).toHaveCount(1);
 });
+
+test('outside dropdown gestures dismiss without activating controls underneath',async({page})=>{
+ await open(page);
+ const create=page.getByRole('button',{name:'Create new user',exact:true});
+ for(const selector of ['.ob-directory-filter','.ob-profile-badge','.ob-connection']){
+  const trigger=page.locator(selector);await trigger.click();await expect(page.getByRole('menu')).toBeVisible();
+  const target=(await page.locator('.access-user-row').first().boundingBox())!;
+  const point={x:selector==='.ob-connection'?target.x+target.width-8:target.x+8,y:target.y+target.height/2};
+  if(page.viewportSize()!.width<680)await page.touchscreen.tap(point.x,point.y);else await page.mouse.click(point.x,point.y);
+  await expect(page.getByRole('menu')).toHaveCount(0);await expect(page.getByRole('dialog')).toHaveCount(0);await expect(trigger).toBeFocused();
+ }
+ await create.click();await expect(page.getByRole('dialog')).toBeVisible();
+});
