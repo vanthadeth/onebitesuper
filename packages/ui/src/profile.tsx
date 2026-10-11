@@ -11,7 +11,7 @@ type Props = {
  account: Account; state?: AccessState; roleName: string; dark: boolean; live: boolean; busy: boolean;
  onLanguage: () => void; onTheme: () => void; onSignOut: () => void;
  photo?: string; onPhoto?: () => void;
- app?: 'Admin'|'Inventory'; canEditCatalog?: boolean; accountUrl?: string;
+ app?: 'Admin'|'Inventory'|'POS'; canEditCatalog?: boolean; accountUrl?: string;
  onEdit?: () => void; onResetPin?: () => void;
 };
 export function ProfilePage({account,state,roleName,dark,live,busy,onLanguage,onTheme,onSignOut,onEdit,onResetPin,photo,onPhoto,app='Admin',canEditCatalog=false,accountUrl}:Props){

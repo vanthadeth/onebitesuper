@@ -7,6 +7,7 @@
     ".": "./src/domain.ts",
     "./access": "./src/access.ts",
     "./app-settings": "./src/app-settings.ts",
-    "./inventory": "./src/inventory.ts"
+    "./inventory": "./src/inventory.ts",
+    "./pos": "./src/pos.ts"
   }
 }

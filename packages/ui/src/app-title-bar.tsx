@@ -7,7 +7,7 @@ import { useLanguage } from './shared';
 import { SyncControl, type SyncStatus, type ConnectionStatus, type SyncTask } from './sync-status';
 export type { SyncStatus } from './sync-status';
 
-export function AppTitleBar({message,icon,title,name,username,photo,syncStatus,pendingCount,connection='online',syncTask='refresh',lastSyncedAt,disabled,dark,offlineWrites=false,onSync,onProfile,onHub,onLanguage,onTheme,onSignOut}:{message?:ReactNode;icon:string;title:string;name:string;username:string;photo?:string;syncStatus:SyncStatus;pendingCount:number;connection?:ConnectionStatus;syncTask?:SyncTask;lastSyncedAt?:number;disabled:boolean;dark:boolean;offlineWrites?:boolean;onSync:()=>void;onProfile:()=>void;onHub?:()=>void;onLanguage:()=>void;onTheme:()=>void;onSignOut:()=>void}) {
+export function AppTitleBar({message,icon,title,name,username,photo,syncStatus,pendingCount,connection='online',syncTask='refresh',lastSyncedAt,disabled,dark,offlineWrites=false,localDrafts=false,onSync,onProfile,onHub,onLanguage,onTheme,onSignOut}:{message?:ReactNode;icon:string;title:string;name:string;username:string;photo?:string;syncStatus:SyncStatus;pendingCount:number;connection?:ConnectionStatus;syncTask?:SyncTask;lastSyncedAt?:number;disabled:boolean;dark:boolean;offlineWrites?:boolean;localDrafts?:boolean;onSync:()=>void;onProfile:()=>void;onHub?:()=>void;onLanguage:()=>void;onTheme:()=>void;onSignOut:()=>void}) {
  const {t,lang}=useLanguage(),header=useRef<HTMLElement>(null);
  useLayoutEffect(()=>{
   const element=header.current,parent=element?.parentElement;if(!element||!parent)return;
@@ -18,7 +18,7 @@ export function AppTitleBar({message,icon,title,name,username,photo,syncStatus,p
  return <header ref={header} className="access-header ob-app-header">
   <div className="ob-app-header-row"><div className="ob-app-identity"><img src={icon} alt="OneBite"/><div><strong>{title}</strong></div></div>
   <div className="access-header-actions">
-   <SyncControl offlineWrites={offlineWrites} status={syncStatus} pendingCount={pendingCount} connection={connection} task={syncTask} lastSyncedAt={lastSyncedAt} disabled={disabled} onSync={onSync}/>
+   <SyncControl localDrafts={localDrafts} offlineWrites={offlineWrites} status={syncStatus} pendingCount={pendingCount} connection={connection} task={syncTask} lastSyncedAt={lastSyncedAt} disabled={disabled} onSync={onSync}/>
    <DropdownRoot><Menu.Trigger asChild><button className="ob-profile-badge" aria-label={t('ម៉ឺនុយគណនី','Profile menu')}><UserAvatar name={name} photo={photo} className="access-avatar small"/></button></Menu.Trigger>
     <DropdownContent className="d-menu ob-profile-menu" align="end" sideOffset={10} collisionPadding={12}>
      <Menu.Item className="ob-menu-item ob-profile-label" onSelect={onProfile}><span className="ob-menu-account"><UserAvatar name={name} photo={photo}/><span><strong>{name}</strong><small>@{username}</small></span></span></Menu.Item><Menu.Separator className="ob-menu-separator"/>

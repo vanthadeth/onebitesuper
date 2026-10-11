@@ -1,6 +1,6 @@
 # OneBite operations system — planning draft
 
-Updated: 2026-10-09. Application coding resumed at the user’s request. The first Admin step implements Users, Roles and Permissions with a clearly labelled local preview. Supabase schema and internal-session API are deployed. App-to-API checks are blocked by the cloud network policy. Supabase work is paused while the app is built and committed to GitHub. Production login and shared operations remain unverified. See `admin-access.md` for the current milestone.
+Updated: 2026-10-11. Admin and Inventory catalog are connected to Supabase. POS has an authenticated menu and local SQLite draft workspace; live shift, payment and stock posting follow next. See `pos-build.md` for the implementation stages and `unified-item-catalog.md` for the current item model. The confirmed operating rules below remain the target.
 
 ## 1. Product scope
 

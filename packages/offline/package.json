@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./cleanup": "./src/cleanup.ts",
-    "./inventory": "./src/inventory.ts"
+    "./inventory": "./src/inventory.ts",
+    "./pos": "./src/pos.ts"
   },
   "dependencies": {
     "@onebite/core": "0.1.0"

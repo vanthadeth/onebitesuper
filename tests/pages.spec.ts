@@ -6,9 +6,9 @@ import {test,expect,chromium} from '@playwright/test';
 const base=process.env.PAGES_TEST_BASE_URL||'http://127.0.0.1:5185/onebitesuper/';
 test('repository-hosted apps have separate install scopes and clean offline shells',async({page,context})=>{
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));await page.route('**/functions/v1/admin-access',route=>route.abort());
- await page.goto(base);const popup=page.waitForEvent('popup');await page.getByRole('link',{name:/OneBite POS/}).click();const posPage=await popup;posPage.on('pageerror',error=>errors.push(error.message));await expect(posPage.getByRole('heading',{name:'OneBite - POS'})).toBeVisible();await expect(posPage.locator('.product-card')).toHaveCount(0);
+ await page.goto(base);const popup=page.waitForEvent('popup');await page.getByRole('link',{name:/OneBite POS/}).click();const posPage=await popup;posPage.on('pageerror',error=>errors.push(error.message));await expect(posPage.getByRole('heading',{name:'សូមស្វាគមន៍'})).toBeVisible();await expect(posPage.locator('.product-card')).toHaveCount(0);
  const pos=await posPage.evaluate(async()=>{const link=document.querySelector<HTMLLinkElement>('link[rel="manifest"]')!;return(await fetch(link.href)).json();});expect(pos.scope).toBe('/onebitesuper/pos/');expect(pos.start_url).toBe(pos.scope);expect(pos.name).toBe('1B - POS');expect(pos.short_name).toBe(pos.name);
- await posPage.evaluate(async()=>{await navigator.serviceWorker.ready;});await posPage.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));await context.setOffline(true);await posPage.reload();await expect(posPage.getByRole('heading',{name:'OneBite - POS'})).toBeVisible();await context.setOffline(false);
+ await posPage.evaluate(async()=>{await navigator.serviceWorker.ready;});await posPage.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));await context.setOffline(true);await posPage.reload();await expect(posPage.getByRole('heading',{name:'សូមស្វាគមន៍'})).toBeVisible();await context.setOffline(false);
  await page.goto(base+'admin/');await expect(page.getByRole('button',{name:'ព្យាយាមភ្ជាប់ម្តងទៀត',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'បើកសាកល្បងក្នុងឧបករណ៍',exact:true})).toHaveCount(0);await expect(page.locator('.access-user-row')).toHaveCount(0);
  const admin=await page.evaluate(async()=>{const link=document.querySelector<HTMLLinkElement>('link[rel="manifest"]')!;return(await fetch(link.href)).json();});expect(admin.name).toBe('1B - Admin');expect(admin.short_name).toBe(admin.name);await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content',admin.name);expect(admin.scope).toBe('/onebitesuper/admin/');expect(admin.id).not.toBe(pos.id);
  await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));const scopes=await page.evaluate(async()=>(await navigator.serviceWorker.getRegistrations()).map(r=>new URL(r.scope).pathname));expect(scopes.sort()).toEqual(['/onebitesuper/admin/','/onebitesuper/pos/']);
@@ -50,6 +50,14 @@ test('hosted Inventory rejects unauthenticated catalog and private photo request
  const revoked=await request.post(endpoint,{headers:{...headers,Authorization:'Bearer '+'0'.repeat(64)},data:{action:'list',payload:{}}});expect(revoked.status()).toBe(401);expect(await revoked.json()).toEqual({error:'unauthorized'});
  const direct=await request.post(publicConfig.url+'/rest/v1/rpc/onebite_inventory_api',{headers,data:{p_action:'list',p_payload:{},p_session_hash:'0'.repeat(64)}});expect([401,403]).toContain(direct.status());
  const read=await request.get(publicConfig.url+'/rest/v1/onebite_catalog?select=id',{headers});expect([401,403]).toContain(read.status());
+});
+
+test('hosted POS guards menu access, photos and its internal RPC',async({request})=>{
+ test.skip(!process.env.PAGES_TEST_BASE_URL,'Live API checks run from hosted verification.');
+ const endpoint=publicConfig.url+'/functions/v1/pos-access',headers={apikey:publicConfig.publishableKey};
+ for(const action of ['bootstrap','photo.read']){const response=await request.post(endpoint,{headers,data:{action,payload:{}}});expect(response.status()).toBe(401);expect(await response.json()).toEqual({error:'unauthorized'});}
+ const revoked=await request.post(endpoint,{headers:{...headers,Authorization:'Bearer '+'0'.repeat(64)},data:{action:'bootstrap',payload:{}}});expect(revoked.status()).toBe(401);expect(await revoked.json()).toEqual({error:'unauthorized'});
+ const direct=await request.post(publicConfig.url+'/rest/v1/rpc/onebite_pos_api',{headers,data:{p_action:'bootstrap',p_payload:{},p_session_hash:'0'.repeat(64)}});expect([401,403]).toContain(direct.status());
 });
 
 test('app hub preserves language and explains installation for each device', async ({page}) => {

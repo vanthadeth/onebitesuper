@@ -1,6 +1,6 @@
 # OneBite
 
-Four planned mobile-first business apps: POS, Admin, Attendance and Inventory. The first milestone provides independently installable **POS and Admin UI previews**, using shared React/TypeScript components and Khmer/English language support.
+Four mobile-first business apps share React/TypeScript components, Khmer/English, Supabase identity and an encrypted SQLite offline store. Admin and the Inventory catalog are connected; POS now has an authenticated menu and draft-cart workspace. Attendance is planned.
 
 ## Run locally
 
@@ -13,6 +13,7 @@ npm run dev
 
 - POS: http://localhost:5173
 - Admin: http://localhost:5174
+- Inventory: http://localhost:5175
 
 To run production builds with generated service workers:
 
@@ -25,21 +26,20 @@ Serve each app on its own HTTPS origin for installation outside localhost. Produ
 
 ## Current scope
 
-Interactive sample POS includes menu modifiers, per-quantity discounts, hard item limits, complimentary base-unit allowances, held carts, Cash/QR/optional split payment review, invoice-level rounding and a cash calculator. Sample withdrawal controls demonstrate two-party confirmation.
+**POS:** real sellable menu, site selection, effective recipe versions, held carts, quantity/note editing, cancellation reasons, KHR 100 rounding and a KHR/USD calculator. Drafts persist locally through offline reloads; prices and recipes lock at the first item. Payments and stock posting remain gated until device activation and shifts are implemented. See [POS adaptation and stages](docs/pos-build.md).
 
-Admin now focuses on Users, Roles and Permissions: account editing, status and site assignments, permission limits, last-Owner protection and an activity history. Khmer is the default language, with English available, original OneBite logos and Google Sans. Choose **Open local preview** to explore sample accounts and switch preview roles.
+**Admin:** users, custom roles, module/action permissions, sites, photos, preferences and activity history backed by Supabase. Username/PIN sessions last seven days; only Owners need authenticator verification. Saved Admin data is read-only offline.
 
-The Supabase schema and internal username/PIN Edge Function are deployed. Database permission and hosted app-to-API checks passed. The Admin app connects to Supabase and is ready for first-Owner setup. No real accounts have been created; complete live sign-in and account-mutation checks remain pending until the Owner provisions their account. The earlier menu/site configuration UI remains in source for subsequent steps and is not the current Admin entry point.
+**Inventory:** one catalog with item types, categories, sellability, conversions and dated recipes for ingredients, box contents and packaging. Owner edits queue in SQLite and publish through guarded, idempotent APIs. See [unified item catalog](docs/unified-item-catalog.md).
 
-Browser-local preview records are scoped to each app origin; Admin changes do not update POS. POS identity, two-party cash verification, device exclusivity and cross-device synchronization remain preview behavior. Do not use these previews for real business records.
-
-App shells can load offline after successful production service-worker installation. Sample records persist locally, but reliable IndexedDB synchronization and operational offline guarantees belong to the later offline milestone.
+No sample accounts, menu or transactions are seeded into the live database. POS draft carts are private to their account/site/device and do not yet synchronize between staff or become business transactions. Real POS sales must wait for the remaining shift, payment and stock-ledger stages.
 
 ## Workspace
 
 ```text
 apps/pos/          POS entry, screens, manifest and icons
 apps/admin/        Admin entry, screens, manifest and icons
+apps/inventory/    Unified catalog, recipes and offline publishing
 packages/ui/       Shared components, translations, styles and PWA registration
 packages/core/     Catalog fixtures, invoice calculations and allowance rules
 scripts/           Multi-app runner and service-worker generation
@@ -75,4 +75,4 @@ Read [the product plan](docs/product-plan.md), [menu decisions](docs/menu-plan.m
 
 ## GitHub hosting preview
 
-The GitHub Pages workflow publishes POS and Admin under separate repository paths and runs browser checks before and after deployment. See [GitHub Pages setup](docs/github-pages.md) for preview behavior, scoped offline shells and local checks.
+The GitHub Pages workflow publishes POS, Admin and Inventory under separate repository paths and runs browser checks before and after deployment. See [GitHub Pages setup](docs/github-pages.md) for preview behavior, scoped offline shells and local checks.
