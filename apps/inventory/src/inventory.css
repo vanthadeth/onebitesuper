@@ -14,9 +14,6 @@
  .inventory-card:hover{transform:none}
 }
 
-.inventory-messages{position:sticky;top:calc(var(--ob-app-header-height,72px) + var(--ob-page-heading-height,56px));z-index:25;background:var(--background,var(--surface))}
-.inventory-messages>div{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;margin:0;border-radius:10px;font-size:13px;line-height:1.5}
-.inventory-messages svg{flex-shrink:0;margin-top:2px}.inventory-messages .inventory-notice{color:var(--ink);background:var(--soft)}.inventory-message-error{color:var(--danger);background:color-mix(in srgb,var(--danger) 8%,var(--surface))}
 .inventory-reference-list{display:grid;gap:8px}.inventory-reference-row{display:flex;align-items:center;gap:12px;min-width:0;width:100%;padding:14px;text-align:left;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink)}.inventory-reference-row>span:first-of-type{flex:1;min-width:0;display:grid;overflow-wrap:anywhere}.inventory-reference-row small{color:var(--muted)}.inventory-reference-row:disabled{opacity:.65}
 
 .inventory-category{justify-content:flex-start;gap:24px;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:0;margin-bottom:16px;border-bottom:1px solid var(--line)}
@@ -31,5 +28,3 @@
 .inventory-recipe-line{display:grid;grid-template-columns:minmax(0,1fr) 7rem auto;gap:.5rem;align-items:end}.inventory-recipe-line label{min-width:0;font-size:.9rem}.inventory-recipe-line .d-input{width:100%}
 .inventory-recipe-summary{padding:.9rem;border-radius:.75rem;background:var(--color-base-100)}.inventory-recipe-summary dl{margin:.7rem 0 0}.inventory-recipe-summary dl>div{display:flex;justify-content:space-between;gap:1rem;padding:.4rem 0;border-bottom:1px solid var(--color-base-300)}.inventory-recipe-summary dd{margin:0;font-weight:600;white-space:nowrap}
 @media(max-width:480px){.inventory-recipe-line{grid-template-columns:minmax(0,1fr) auto}.inventory-recipe-line label:first-child{grid-column:1/-1}}
-
-.ob-app-messages .inventory-messages{position:static;top:auto;margin:0;padding:0;border-radius:0;box-shadow:none}

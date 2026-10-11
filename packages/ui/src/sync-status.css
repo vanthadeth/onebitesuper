@@ -24,3 +24,6 @@
 @media(max-width:680px){.ob-app-header-row{height:68px;padding:0 16px;gap:8px}}
 
 .ob-app-messages .access-error .access-text{min-height:28px;padding:2px 8px;margin-left:auto;flex-shrink:0}
+
+.d-alert-warning .ob-feedback-icon{color:var(--warning,#ac6500);background:color-mix(in srgb,var(--warning,#ac6500) 12%,var(--surface))}
+.d-alert-error .ob-feedback-icon{color:var(--danger);background:color-mix(in srgb,var(--danger) 12%,var(--surface))}
