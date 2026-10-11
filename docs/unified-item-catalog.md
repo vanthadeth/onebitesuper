@@ -6,9 +6,9 @@ Owner manages items and categories/UOM. Staff with Inventory access can view. Ac
 
 ## Recipe definitions
 
-A component/finished good contains Ingredients, Items in the box and Packaging used, simultaneously. Each line specifies an item, quantity and unit for the recipe's batch output. Expansion calculates raw material/supply quantities per output unit. Reusable components expand automatically. Cycles, missing/inactive children, invalid quantities and unconfigured conversions are rejected. Each item can define `1 other unit = factor base units`; these take precedence over standard kg/g and L/ml conversion. No prepared-product stock is created.
+Any item can contain Ingredients, Items in the box and Packaging used, simultaneously. Each line specifies an item, quantity and unit for the recipe's batch output. Expansion calculates raw material/supply quantities per output unit. Reusable components expand automatically. Cycles, missing/inactive children, invalid quantities and unconfigured conversions are rejected. Each item can define `1 other unit = factor base units`; these take precedence over standard kg/g and L/ml conversion. No prepared-product stock is created.
 
-Raw materials and supplies have no manufacturing recipe. They can be sold directly, independently of type. Sellable items require a category and whole-KHR master price. Categories are optional for other items.
+Raw materials and supplies without a recipe are direct stock inputs. With a recipe, they expand into underlying inputs like other recipe items. Items can be sold directly, independently of type. Sellable items require a category and whole-KHR master price. Categories are optional for other items.
 
 ## Versioning
 

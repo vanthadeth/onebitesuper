@@ -109,7 +109,6 @@ export function validateUnifiedItem(item:CatalogItem):CatalogItem{
  for(const c of d.conversions){if(!c.unit||c.unit.length>30||c.unit===item.unit||seen.has(c.unit)||!positive(c.factor))throw new Error('invalid_conversion');seen.add(c.unit);}
  const lines=new Set<string>();
  for(const line of d.lines){const key=line.section+':'+line.itemId;if(!recipeSections.includes(line.section)||!/^[a-f0-9-]{36}$/.test(line.itemId)||!positive(line.quantity)||!line.unit||line.unit.length>30||lines.has(key)||line.itemId===item.id)throw new Error('invalid_recipe');lines.add(key);}
- if((d.type==='raw_material'||d.type==='supplies')&&d.lines.length)throw new Error('invalid_recipe');
  return item;
 }
 export function convertItemQuantity(item:CatalogItem,quantity:number,unit:string):number{
@@ -132,7 +131,7 @@ export function unifiedMaterials(item:CatalogItem,catalog:CatalogItem[]):RecipeL
  function expand(current:CatalogItem,quantity:number,path:Set<string>){
   if(path.has(current.id)||path.size>=20)throw new Error('invalid_recipe');
   const d=itemDefinition(current);
-  if(d.type==='raw_material'||d.type==='supplies'){totals.set(current.id,(totals.get(current.id)??0)+quantity);return;}
+  if(!d.lines.length&&(d.type==='raw_material'||d.type==='supplies')){totals.set(current.id,(totals.get(current.id)??0)+quantity);return;}
   if(!d.lines.length)throw new Error('invalid_recipe');
   const next=new Set(path).add(current.id);
   for(const line of d.lines){const child=values.get(line.itemId);if(!child||!child.active)throw new Error('invalid_recipe');const amount=convertItemQuantity(child,line.quantity,line.unit||child.unit);if(child.unit==='pcs'&&!Number.isInteger(amount))throw new Error('invalid_recipe');expand(child,quantity*amount/d.batchYield,next);}

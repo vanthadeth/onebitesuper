@@ -84,3 +84,9 @@ assert.equal(unified.fromCambodiaDateTime('2026-10-12T09:30'),'2026-10-12T02:30:
 assert.equal(unified.cambodiaDateTime('2026-10-12T02:30:00.000Z'),'2026-10-12T09:30');
 const ops=[box,dumpling,raw,filler,sauce,napkin].map(item=>({id:crypto.randomUUID(),item,createdAt:Date.now()}));
 const sorted=unified.sortCatalogOperations(ops);assert.ok(sorted.findIndex(op=>op.item.id===raw.id)<sorted.findIndex(op=>op.item.id===dumpling.id));assert.ok(sorted.findIndex(op=>op.item.id===dumpling.id)<sorted.findIndex(op=>op.item.id===box.id));
+const rawRecipe={...unified.newUnifiedItem(),name:'Seasoned filling',unit:'g'};
+rawRecipe.definition={...rawRecipe.definition!,batchYield:100,lines:[{itemId:filler.id,quantity:80,unit:'g',section:'ingredients'},{itemId:sauce.id,quantity:20,unit:'ml',section:'ingredients'}]};
+assert.equal(unified.validateCatalogItem(rawRecipe).definition?.type,'raw_material');
+assert.deepEqual(unified.recipeMaterials(rawRecipe,[...allUnified,rawRecipe]),[{itemId:filler.id,quantity:.8},{itemId:sauce.id,quantity:.2}]);
+const supplyRecipe={...rawRecipe,definition:{...rawRecipe.definition,type:'supplies' as const}};
+assert.deepEqual(unified.recipeMaterials(supplyRecipe,[...allUnified,supplyRecipe]),[{itemId:filler.id,quantity:.8},{itemId:sauce.id,quantity:.2}]);

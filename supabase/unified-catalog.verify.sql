@@ -27,6 +27,9 @@ begin
  component=raw||jsonb_build_object('id',component_id,'name','Unified test dumpling','unit','pcs','revision',0,'definition',definition);
  r=public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('c',64),'item',component),repeat('1',64));
  perform pg_temp.assert(r->'item'->>'revision'='1','batch component accepts item conversion');component=r->'item';
+ bad=component||jsonb_build_object('id',gen_random_uuid(),'name','Unified recipe raw material','revision',0,'definition',definition||jsonb_build_object('type','raw_material'));
+ r=public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('c',64),'item',bad),repeat('1',64));
+ perform pg_temp.assert(r->'item'->>'revision'='1','raw materials can also have recipe sections');
  definition=definition||jsonb_build_object('type','finished_good','canSell',true,'batchYield',1,'lines',jsonb_build_array(jsonb_build_object('itemId',component_id,'quantity',5,'unit','pcs','section','contents'),jsonb_build_object('itemId',raw_id,'quantity',1,'unit','g','section','packaging')));
  box=raw||jsonb_build_object('id',box_id,'name','Unified test box','unit','box','category','main','priceKhr',5000,'revision',0,'definition',definition);
  r=public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('d',64),'item',box),repeat('1',64));
