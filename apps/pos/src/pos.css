@@ -48,3 +48,33 @@
 .ob-dialog:has(.pos-cart) .pos-cart{flex:1;border:0;border-radius:0}
 @media(max-width:680px){.ob-dialog:has(.pos-cart){transform:none;border-radius:0}.pos-expanded-logo{display:none}}
 @media(prefers-reduced-motion:reduce){.pos-app .pos-sidebar{transition:none}}
+
+/* Selling surface adapted from the previous OneBite POS. */
+.pos-product-grid{display:block}
+.pos-product-group{margin-bottom:28px}
+.pos-group-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px}
+.pos-group-heading h2{font-size:1.3rem;font-weight:650;text-transform:capitalize}
+.pos-group-heading small{font-size:.85rem;color:var(--pos-muted)}
+.pos-category-products{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
+.pos-product{border-radius:14px;display:flex;flex-direction:column;height:100%;gap:0}
+.pos-product-image{height:auto;aspect-ratio:3/2;flex-shrink:0}
+.pos-product-copy{flex:1;padding:14px;gap:8px}
+.pos-product-copy>strong{font-size:1.05rem;line-height:1.5}
+.pos-product-description{font-size:.88rem;line-height:1.55;color:var(--pos-muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pos-product-contents{font-size:.82rem;line-height:1.6;color:var(--pos-muted);padding-left:16px;margin:0}
+.pos-product-price{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:6px;font-size:1.05rem;font-weight:750;color:var(--color-primary)}
+.pos-product-plus{position:static;border-radius:9px;width:34px;height:34px;background:color-mix(in srgb,var(--color-primary) 12%,var(--color-base-100));color:var(--color-primary)}
+.pos-cart{padding:0;background:var(--color-base-100);border-radius:16px}
+.pos-cart-heading{padding:18px;margin:0;border-bottom:1px solid var(--color-base-300);gap:8px}
+.pos-cart-heading>div:first-child{min-width:0}.pos-cart-heading strong{font-size:1.15rem;font-weight:650}.pos-cart-heading small{font-size:.82rem;color:var(--pos-muted)}
+.pos-cart-title-actions{display:flex;gap:6px;align-items:center}.pos-cart-title-actions button{position:relative;width:38px;height:38px;min-height:38px;color:var(--color-primary);background:color-mix(in srgb,var(--color-primary) 8%,var(--color-base-100))}
+.pos-held-count{position:absolute;right:-2px;top:-4px;min-width:17px;border-radius:20px;background:var(--color-primary);color:white;font-size:.7rem;line-height:17px;text-align:center}
+.pos-cart-body{padding:0 18px;display:flex;flex-direction:column}.pos-cart-empty{min-height:160px}
+.pos-cart-lines li{display:flex;gap:12px;padding:16px 0}
+.pos-line-photo{width:48px;height:48px;border-radius:9px;background:var(--color-base-200);color:var(--pos-muted);display:grid;place-items:center;flex-shrink:0;overflow:hidden}.pos-line-photo img{width:100%;height:100%;object-fit:cover}
+.pos-line-details{flex:1;min-width:0}.pos-line-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;font-size:.9rem;line-height:1.6}.pos-line-heading>strong:first-child{overflow-wrap:anywhere}.pos-line-number{color:var(--pos-muted);font-size:.78rem;font-weight:500}.pos-line-total{white-space:nowrap;flex-shrink:0}
+.pos-line-calculation{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:.82rem;color:var(--pos-muted)}.pos-line-calculation output{display:grid;place-items:center;min-width:24px;padding:0 5px;background:var(--color-primary);color:white;border-radius:5px;font-weight:700}
+.pos-line-actions{display:flex;align-items:center;justify-content:space-between;margin-top:10px}.pos-line-remove{border:1px solid var(--color-base-300);border-radius:8px;padding:0;width:36px;height:36px}.pos-quantity{gap:0;border:1px solid var(--color-base-300);border-radius:8px;overflow:hidden}.pos-quantity button{border-radius:0;background:var(--color-base-200)}.pos-quantity button+button{border-left:1px solid var(--color-base-300)}
+.pos-cart-footer{padding:14px 18px 18px;background:var(--color-base-100)}.pos-totals{margin:0 0 12px}.pos-totals .pos-total{font-size:1.3rem}.pos-cart-actions{display:grid;grid-template-columns:42px 42px minmax(0,1fr);gap:8px}.pos-cart-actions button{min-height:48px;width:100%;padding:8px}.pos-payment{margin-top:0;font-size:.85rem}.pos-cart-meta{margin-top:10px;font-size:.75rem;align-items:center}.pos-cart-meta svg{margin:0}
+.pos-mobile-cart{min-height:62px;border-radius:13px}.pos-mobile-cart>strong{margin-left:auto;font-size:1.1rem}
+@media(max-width:599px){.pos-category-products{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.pos-product-copy{padding:11px}.pos-product-copy>strong{font-size:1rem}.pos-product-price{font-size:1rem}.pos-product-plus{width:31px;height:31px}.pos-group-heading{margin-bottom:12px}.pos-group-heading h2{font-size:1.2rem}.pos-cart-heading{padding:16px}.pos-cart-body{padding:0 16px}.pos-cart-footer{padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px))}.pos-cart{padding:0}}
