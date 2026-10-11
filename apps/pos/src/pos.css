@@ -155,3 +155,36 @@
 .pos-held-panel .pos-held-card p{font-size:.88rem}.pos-held-panel .pos-held-card>div:last-child{display:flex;gap:8px;align-items:center}
 .pos-held-panel .pos-held-card .d-btn-primary{flex:1;color:var(--color-primary-content,#fff)}
 .pos-held-panel .pos-cancel-history{margin:12px 0 20px}.pos-held-panel .pos-cancel-history h3{font-size:.95rem}
+
+/* Shared menu/cart item settings; dialog header and actions stay pinned. */
+.pos-product{touch-action:pan-y;user-select:none;-webkit-touch-callout:none}
+.pos-product img{-webkit-user-drag:none;pointer-events:none}
+.pos-item-settings{display:grid;gap:18px}
+.pos-item-settings-intro{display:flex;align-items:center;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.pos-item-settings-photo{width:88px;height:88px;flex-shrink:0;border-radius:16px;background:var(--color-base-200);display:grid;place-items:center;overflow:hidden;color:var(--muted)}
+.pos-item-settings-photo img{width:100%;height:100%;object-fit:cover}
+.pos-item-settings-intro h2{font-size:20px;line-height:1.35;margin:0 0 6px}
+.pos-item-settings-intro p{font-size:14px;line-height:1.5;margin:0 0 6px;color:var(--muted);overflow-wrap:anywhere}
+.pos-item-settings-intro small{font-size:14px;font-weight:600}
+.pos-item-setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pos-item-setting-row .d-join{display:flex}
+.pos-item-setting-row .d-join .d-btn{min-height:42px;padding:0 12px;font-size:14px}
+.pos-item-setting-row .d-join button[aria-pressed=true]{background:var(--color-primary);border-color:var(--color-primary);color:white}
+.pos-item-stepper{display:flex;align-items:center;gap:2px}
+.pos-item-stepper .d-btn-square{width:40px;min-height:44px}
+.pos-item-stepper label{display:grid;text-align:center;gap:3px;width:68px}
+.pos-item-stepper label>span,.pos-item-stepper small{font-size:12px;line-height:1.3;color:var(--muted)}
+.pos-item-stepper .d-input{width:100%;text-align:center;height:40px;min-height:40px;padding:4px;font-weight:700;font-size:18px;appearance:textfield}
+.pos-item-stepper input::-webkit-inner-spin-button,.pos-item-stepper input::-webkit-outer-spin-button{appearance:none;margin:0}
+.pos-item-discount-notice{margin:0;font-size:13px;line-height:1.5;color:var(--muted)}
+.pos-item-calculation{padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--color-base-200)}
+.pos-item-calculation h3{margin:0 0 12px;font-size:14px}
+.pos-item-calculation dl{margin:0;display:grid;gap:10px}
+.pos-item-calculation dl>div{display:flex;justify-content:space-between;gap:12px;font-size:14px}
+.pos-item-calculation dd{margin:0;text-align:right;font-weight:600}
+.pos-item-calculation .pos-item-net{padding-top:12px;border-top:1px solid var(--line);font-size:18px;font-weight:700}
+.pos-item-net small{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-top:3px}
+.pos-item-settings-actions{display:grid;grid-template-columns:auto 1fr;gap:10px;width:100%}
+.pos-item-settings-actions .d-btn{min-height:48px}
+.pos-item-error{margin:0;color:var(--danger);font-size:14px}
+@media(max-width:380px){.pos-item-setting-row .d-join .d-btn{padding:0 8px;font-size:13px}.pos-item-stepper .d-btn-square{width:34px}.pos-item-setting-row{gap:8px}}

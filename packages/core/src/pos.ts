@@ -21,6 +21,14 @@ export function addDraftItem(draft:PosDraft,itemId:string,versions:ItemVersion[]
  if(existing&&existing.quantity+quantity>999)throw new Error('invalid_quantity');
  return {...draft,startedAt,versions:draft.startedAt?draft.versions:snapshot.versions,lines:existing?draft.lines.map(line=>line===existing?{...line,quantity:line.quantity+quantity}:line):[...draft.lines,{id:crypto.randomUUID(),item:snapshot.item,quantity,note:'',materials:snapshot.materials}]};
 }
+export function addConfiguredDraftItem(draft:PosDraft,itemId:string,versions:ItemVersion[],quantity:number,note:string,at=new Date().toISOString()):PosDraft{
+ note=note.trim();if(note.length>500)throw new Error('invalid_note');
+ if(!note)return addDraftItem(draft,itemId,versions,quantity,at);
+ const added=addDraftItem({...draft,lines:[]},itemId,versions,quantity,at);
+ const existing=draft.lines.find(line=>line.item.id===itemId&&line.note===note);
+ if(existing&&existing.quantity+quantity>999)throw new Error('invalid_quantity');
+ return {...added,lines:existing?draft.lines.map(line=>line===existing?{...line,quantity:line.quantity+quantity}:line):[...draft.lines,{...added.lines[0],note}]};
+}
 export function draftAmounts(draft:PosDraft){const subtotal=draft.lines.reduce((sum,line)=>sum+(line.item.priceKhr??0)*line.quantity,0),total=roundInvoice(subtotal);return {subtotal,total,rounding:total-subtotal};}
 export function holdDraft(workspace:PosWorkspace):PosWorkspace{
  if(!workspace.current.lines.length)return workspace;

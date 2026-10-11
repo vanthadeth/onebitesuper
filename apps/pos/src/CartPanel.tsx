@@ -1,15 +1,17 @@
 import {useState} from 'react';
 import {Plus,Pause,Trash2,ShoppingBag,LockKeyhole,MessageSquareText} from 'lucide-react';
-import {useLanguage,AppDialog} from '@onebite/ui';
+import {useLanguage} from '@onebite/ui';
 import {CartLine} from './CartLine';
 import {HeldCarts} from './HeldCarts';
+import {ItemSettings} from './ItemSettings';
 import {draftAmounts,type PosDraft,type CancelledDraft} from '@onebite/core/pos';
 
 type CartProps={draft:PosDraft;rate:number;busy:boolean;canEdit:boolean;canCancel:boolean;photos?:Record<string,string>;held:PosDraft[];cancelled:CancelledDraft[];heldOpen:boolean;onBack:()=>void;onOpenHeld:(id:string)=>void;onCancelHeld:(id:string)=>void;onHeld:()=>void;onEdit:(id:string,quantity:number,note:string)=>Promise<void>;onQuantity:(id:string,qty:number)=>void;onRemove:(id:string)=>void;onNote:(value:string)=>void;onHold:()=>void;onCancel:()=>void;onCheckout:()=>void};
 export function CartPanel({draft,rate,busy,canEdit,canCancel,photos,held,cancelled,heldOpen,onBack,onOpenHeld,onCancelHeld,onHeld,onEdit,onQuantity,onRemove,onNote,onHold,onCancel,onCheckout}:CartProps){
- const {t,lang}=useLanguage(),amounts=draftAmounts(draft);
- const [noteOpen,setNoteOpen]=useState(false),[edit,setEdit]=useState<{id:string;name:string;quantity:number;note:string}|null>(null),[editError,setEditError]=useState('');
+ const {t}=useLanguage(),amounts=draftAmounts(draft);
+ const [noteOpen,setNoteOpen]=useState(false),[edit,setEdit]=useState<string|null>(null);
  if(heldOpen)return <HeldCarts held={held} cancelled={cancelled} busy={busy} canEdit={canEdit} canCancel={canCancel} onBack={onBack} onOpen={onOpenHeld} onCancel={onCancelHeld}/>;
+ const editedLine=draft.lines.find(line=>line.id===edit);
  const heldCount=held.length;
  const hasItems=draft.lines.length>0;
  const count=draft.lines.reduce((sum,line)=>sum+line.quantity,0);
@@ -18,12 +20,12 @@ export function CartPanel({draft,rate,busy,canEdit,canCancel,photos,held,cancell
    <div className="pos-cart-title-actions"><button className="d-btn d-btn-ghost d-btn-circle pos-new-cart" aria-label={t('ថ្មី','New cart')} title={t('ទុកកន្ត្រក ហើយចាប់ផ្ដើមថ្មី','Hold cart and start fresh')} disabled={busy||!canEdit||!hasItems} onClick={onHold}><Plus size={20}/></button><button className="d-btn d-btn-ghost d-btn-circle" aria-label={t('កន្ត្រកដែលបានទុក','Held carts')} title={t('កន្ត្រកដែលបានទុក','Held carts')} disabled={busy} onClick={onHeld}><Pause size={19}/>{heldCount>0&&<span className="pos-held-count">{heldCount}</span>}</button></div>
   </div>
   <div className="pos-cart-body">
-   {!hasItems?<div className="pos-cart-empty"><ShoppingBag size={40}/><strong>{t('ចាប់ផ្ដើមថ្មី','A fresh start')}</strong><p>{t('ចុចមុខទំនិញ ដើម្បីបន្ថែមក្នុងកន្ត្រក។','Tap an item to add it to your cart.')}</p></div>:<ul className="pos-cart-lines">{draft.lines.map(line=><CartLine key={line.id} line={line} photo={photos?.[line.item.photoPath||'']} disabled={busy||!canEdit} onQuantity={quantity=>onQuantity(line.id,quantity)} onRemove={()=>onRemove(line.id)} onEdit={()=>{setEditError('');setEdit({id:line.id,name:lang==='en'&&line.item.nameEn?line.item.nameEn:line.item.name,quantity:line.quantity,note:line.note});}}/>)}</ul>}
+   {!hasItems?<div className="pos-cart-empty"><ShoppingBag size={40}/><strong>{t('ចាប់ផ្ដើមថ្មី','A fresh start')}</strong><p>{t('ចុចមុខទំនិញ ដើម្បីបន្ថែមក្នុងកន្ត្រក។','Tap an item to add it to your cart.')}</p></div>:<ul className="pos-cart-lines">{draft.lines.map(line=><CartLine key={line.id} line={line} photo={photos?.[line.item.photoPath||'']} disabled={busy||!canEdit} onQuantity={quantity=>onQuantity(line.id,quantity)} onRemove={()=>onRemove(line.id)} onEdit={()=>setEdit(line.id)}/>)}</ul>}
    {(noteOpen||draft.note)&&<label className="pos-note-label">{t('កំណត់សម្គាល់','Order note')}<textarea key={draft.id+draft.note} className="d-textarea" defaultValue={draft.note} maxLength={500} disabled={busy||!canEdit} onBlur={e=>{if(e.target.value!==draft.note)onNote(e.target.value.trim());}} placeholder={t('មិនចាំបាច់','Optional')}/></label>}
   </div>
   <div className="pos-cart-footer"><dl className="pos-totals">{hasItems&&<><div><dt>{t('សរុបរង','Subtotal')}</dt><dd>{amounts.subtotal.toLocaleString()}៛</dd></div>{amounts.rounding!==0&&<div><dt>{t('បង្គត់','Rounding')}</dt><dd>{amounts.rounding>0?'+':''}{amounts.rounding}៛</dd></div>}</>}<div className="pos-total"><dt>{t('សរុប','Total')}</dt><dd>{amounts.total.toLocaleString()}៛<small>≈ ${(amounts.total/rate).toFixed(2)}</small></dd></div></dl>
    <div className="pos-cart-actions"><button className="d-btn d-btn-outline d-btn-square" aria-label={t('លុបកន្ត្រក','Delete cart')} title={t('បោះបង់','Cancel')} disabled={busy||!canCancel||!hasItems} onClick={onCancel}><Trash2 size={19}/></button><button className="d-btn d-btn-outline d-btn-square pos-remarks-action" aria-label={t('កំណត់សម្គាល់','Order note')} title={t('កំណត់សម្គាល់','Order note')} aria-pressed={noteOpen} disabled={busy||!canEdit} onClick={()=>setNoteOpen(value=>!value)}><MessageSquareText size={19}/></button><button className="d-btn d-btn-primary pos-payment" disabled={busy||!hasItems} onClick={onCheckout}>{t('ទទួលប្រាក់','Receive payment')}<LockKeyhole size={16}/></button></div>
    {hasItems&&<div className="pos-cart-meta"><LockKeyhole size={12}/>{t('តម្លៃ និងរូបមន្តបានរក្សាទុក។','Prices and recipes locked for this cart.')}</div>}
   </div>
- {edit&&<AppDialog title={`${t('កែប្រែ','Edit')} · ${edit.name}`} onClose={()=>{if(!busy)setEdit(null);}} footer={<button className="d-btn d-btn-primary" disabled={busy||!Number.isInteger(edit.quantity)||edit.quantity<1||edit.quantity>999||!canEdit} onClick={async()=>{try{await onEdit(edit.id,edit.quantity,edit.note.trim());setEdit(null);}catch{setEditError(t('មិនអាចរក្សាទុក។ សូមព្យាយាមម្ដងទៀត។','Could not save. Please try again.'));}}}>{t('រក្សាទុក','Save changes')}</button>}><label className="pos-note-label">{t('ចំនួន','Quantity')}<input className="d-input" type="number" min={1} max={999} step={1} value={edit.quantity} disabled={busy} onChange={event=>setEdit({...edit,quantity:Number(event.target.value)})}/></label><label className="pos-note-label">{t('កំណត់សម្គាល់មុខទំនិញ','Item remarks')}<textarea className="d-textarea" maxLength={500} value={edit.note} disabled={busy} onChange={event=>setEdit({...edit,note:event.target.value})}/></label>{editError&&<p role="alert">{editError}</p>}</AppDialog>}</section>;
+ {editedLine&&<ItemSettings item={editedLine.item} photo={photos?.[editedLine.item.photoPath||'']} rate={rate} quantity={editedLine.quantity} note={editedLine.note} editing busy={busy} canEdit={canEdit} onClose={()=>setEdit(null)} onSave={(quantity,note)=>onEdit(editedLine.id,quantity,note)}/>}</section>;
 }
