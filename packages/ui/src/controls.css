@@ -73,3 +73,11 @@
 .ob-directory-filter-option[data-state=checked]{color:var(--text-orange);background:var(--soft)}
 
 .ob-dropdown-backdrop{position:fixed;inset:0;z-index:200;pointer-events:auto;background:transparent;touch-action:manipulation}
+
+.ob-directory-search:only-child{grid-column:1/-1}
+.ob-category-filter{display:flex;position:sticky;top:calc(var(--ob-app-header-height,72px) + var(--ob-page-heading-height,56px));z-index:25;align-items:center;gap:24px;max-width:100%;min-width:0;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:0;margin-bottom:16px;border-bottom:1px solid var(--line);background:var(--background,var(--surface))}
+.ob-category-filter::-webkit-scrollbar{display:none}
+.ob-category-option{position:relative;flex:0 0 auto;min-height:44px;padding:12px 2px;background:transparent;border:0;border-radius:0;color:var(--muted);font-size:15px;font-weight:600;white-space:nowrap;cursor:pointer;transition:color .18s ease}
+.ob-category-option:hover,.ob-category-option.is-selected{color:var(--text-orange)}
+.ob-category-option.is-selected::after{content:"";position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--orange);border-radius:3px 3px 0 0}
+.ob-category-option:focus-visible{outline:2px solid var(--orange);outline-offset:-3px;border-radius:4px}

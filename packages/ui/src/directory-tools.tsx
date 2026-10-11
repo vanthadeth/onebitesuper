@@ -19,8 +19,8 @@ function DirectoryFilter({label,value,options,onChange}:{label:string;value:stri
  <Menu.RadioGroup value={value} onValueChange={onChange}>{options.map(option=><Menu.RadioItem key={option.value} value={option.value} className="ob-menu-item ob-directory-filter-option">{option.icon??<ListFilter size={19}/>}<span>{option.label}</span><Menu.ItemIndicator className="ob-directory-filter-check"><Check size={17}/></Menu.ItemIndicator></Menu.RadioItem>)}</Menu.RadioGroup>
  </DropdownContent></DropdownRoot>;
 }
-export function DirectorySegments({label,value,options,onChange}:{label:string;value:string;options:{value:string;label:string}[];onChange:(value:string)=>void}){
- return <DirectoryFilter label={label} value={value} options={options} onChange={onChange}/>;
+export function CategoryFilter({label,value,options,onChange,className=''}:{label:string;value:string;options:{value:string;label:string}[];onChange:(value:string)=>void;className?:string}){
+ return <div className={`ob-category-filter ${className}`} role="group" aria-label={label}>{options.map(option=><button key={option.value} type="button" className={`ob-category-option ${value===option.value?'is-selected':''}`} aria-pressed={value===option.value} onClick={event=>{onChange(option.value);event.currentTarget.scrollIntoView({block:'nearest',inline:'nearest',behavior:'smooth'});}}>{option.label}</button>)}</div>;
 }
 export type DirectoryStatus = 'active'|'inactive'|'all';
 export function DirectoryStatusFilter({label,value,onChange}:{label:string;value:DirectoryStatus;onChange:(value:DirectoryStatus)=>void}){

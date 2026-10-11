@@ -14,7 +14,7 @@ export { ConnectionNotice, SyncToast, type ConnectionStatus, type SyncTask } fro
 
 export { UserAvatar } from './user-avatar';
 
-export { DirectoryTools, DirectorySearch, DirectorySegments, DirectoryStatusFilter, type DirectoryStatus } from './directory-tools';
+export { DirectoryTools, DirectorySearch, CategoryFilter, DirectoryStatusFilter, type DirectoryStatus } from './directory-tools';
 
 export { NewAction } from './actions';
 export { ActiveStatusBadge } from './status-badge';
