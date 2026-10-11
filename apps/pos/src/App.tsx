@@ -10,7 +10,7 @@ import {useWorkspace} from './useWorkspace';
 import {CartPanel} from './CartPanel';
 import {MenuCatalog} from './MenuCatalog';
 import {CashCalculator} from './CashCalculator';
-import icon from '../../../resources/app-icons/pos.svg';
+import icon from '../../../resources/brand/one-bite-icon-orange.svg';
 import logo from '../../../resources/brand/one-bite-logo-orange.svg';
 type Tab='menu'|'carts'|'shift'|'cash'|'hub'|'profile';
 export function App(){

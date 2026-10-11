@@ -145,3 +145,6 @@
  .pos-cart-summary{width:100%;flex:1}
  .ob-dialog:has(.pos-cart) .pos-cart-actions{grid-template-columns:44px minmax(0,1fr)}
 }
+
+.pos-app .ob-app-identity>img{display:block;width:38px;height:38px;object-fit:contain}
+@media(max-width:680px){.pos-app .ob-app-identity>img{width:32px;height:32px}}
