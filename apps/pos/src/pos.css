@@ -57,11 +57,9 @@
 .pos-group-heading small{font-size:.85rem;color:var(--pos-muted)}
 .pos-category-products{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
 .pos-product{border-radius:14px;display:flex;flex-direction:column;height:100%;gap:0}
-.pos-product-image{height:auto;aspect-ratio:3/2;flex-shrink:0}
+.pos-product-image{height:auto;aspect-ratio:1;flex-shrink:0}
 .pos-product-copy{flex:1;padding:14px;gap:8px}
 .pos-product-copy>strong{font-size:1.05rem;line-height:1.5}
-.pos-product-description{font-size:.88rem;line-height:1.55;color:var(--pos-muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.pos-product-contents{font-size:.82rem;line-height:1.6;color:var(--pos-muted);padding-left:16px;margin:0}
 .pos-product-price{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:6px;font-size:1.05rem;font-weight:750;color:var(--color-primary)}
 .pos-product-plus{position:static;border-radius:9px;width:34px;height:34px;background:color-mix(in srgb,var(--color-primary) 12%,var(--color-base-100));color:var(--color-primary)}
 .pos-cart{padding:0;background:var(--color-base-100);border-radius:16px}
