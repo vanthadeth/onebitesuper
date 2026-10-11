@@ -10,3 +10,40 @@
 @media(prefers-reduced-motion:reduce){.pos-product,.pos-hub-card{transition:none;transform:none!important}}
 
 .pos-app .d-btn-primary{color:var(--color-primary-content,#fff)}.pos-product{background:var(--color-base-100)}.pos-product-image,.pos-product-copy{width:100%}.pos-site-picker .ob-select{min-width:0;flex:1}.pos-site-picker .ob-select-button-group{max-width:500px}.pos-line-remove{grid-column:1;justify-self:start;font-size:.8rem;min-height:36px;padding:4px 0;color:var(--pos-muted)}.pos-sidebar nav{margin-top:24px}
+
+/* A compact navigation rail expands on hover or keyboard focus. */
+@media(min-width:681px){
+ .pos-app .pos-sidebar{width:72px;padding:24px 10px;overflow:hidden;transition:width .18s ease;z-index:40}
+ .pos-app .access-workspace{margin-left:72px}
+ .pos-app .pos-sidebar:is(:hover,:has(:focus-visible))+.access-workspace{margin-left:238px}
+ .pos-sidebar .access-brand{height:44px;justify-content:center;display:flex}
+ .pos-sidebar .access-brand .pos-rail-logo{width:40px;height:40px}
+ .pos-sidebar .access-brand .pos-expanded-logo{display:none;width:150px}
+ .pos-app .pos-sidebar nav button{width:100%;padding:12px 16px;white-space:nowrap}
+ .pos-sidebar nav button svg{flex-shrink:0}
+ .pos-sidebar nav button span,.pos-sidebar .access-sidebar-foot{visibility:hidden}
+ .pos-app .pos-sidebar:hover,.pos-app .pos-sidebar:has(:focus-visible){width:238px;box-shadow:8px 0 24px #0001}
+ .pos-sidebar:is(:hover,:has(:focus-visible)) nav button span,.pos-sidebar:is(:hover,:has(:focus-visible)) .access-sidebar-foot{visibility:visible}
+ .pos-sidebar:is(:hover,:has(:focus-visible)) .access-brand .pos-rail-logo{display:none}
+ .pos-sidebar:is(:hover,:has(:focus-visible)) .access-brand .pos-expanded-logo{display:block}
+}
+.pos-cart{display:flex;flex-direction:column;height:100%;overflow:hidden}
+.pos-cart-heading,.pos-cart-footer{flex-shrink:0}
+.pos-cart-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.pos-cart-lines{max-height:none;overflow:visible}
+.pos-cart-empty{flex:1;align-content:center}
+.pos-cart-footer{border-top:1px solid var(--color-base-300)}
+@media(min-width:900px){
+ .pos-app .pos-menu-main{height:calc(100dvh - var(--ob-app-header-height,72px));margin-bottom:0;max-width:none;padding-bottom:16px;display:flex;flex-direction:column;min-height:0}
+ .pos-menu-main>.ob-page-heading,.pos-menu-main>.pos-stage-note{flex-shrink:0}
+ .pos-menu-main .pos-order-layout{flex:1;min-height:0;margin-top:0;align-items:stretch}
+ .pos-menu-main .pos-menu-section{overflow-y:auto;min-height:0;padding-right:4px;overscroll-behavior:contain}
+ .pos-menu-main .pos-product-grid{margin-top:18px}
+ .pos-menu-main .pos-desktop-cart{position:static;min-height:0;height:100%}
+}
+/* The mobile cart sheet fills the screen; only its contents scroll. */
+.ob-dialog:has(.pos-cart){height:100dvh;max-height:100dvh;top:0;bottom:0;transform:translateX(-50%)}
+.ob-dialog:has(.pos-cart)>.modal-inner{overflow:hidden;padding:0;display:flex}
+.ob-dialog:has(.pos-cart) .pos-cart{flex:1;border:0;border-radius:0}
+@media(max-width:680px){.ob-dialog:has(.pos-cart){transform:none;border-radius:0}.pos-expanded-logo{display:none}}
+@media(prefers-reduced-motion:reduce){.pos-app .pos-sidebar{transition:none}}
