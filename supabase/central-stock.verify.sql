@@ -1,0 +1,38 @@
+-- Only synthetic data, all rolled back. Run after the central-stock migration.
+begin;
+create function pg_temp.stock_assert(ok boolean,message text) returns void language plpgsql as $$ begin if not coalesce(ok,false) then raise exception 'Stock check failed: %',message;end if;end $$;
+insert into public.onebite_users(id,name,username,role,active) values ('81111111-1111-4111-8111-111111111111','Stock test Owner','stock-test-owner','Owner',true),('82222222-2222-4222-8222-222222222222','Stock test Cashier','stock-test-cashier','Cashier',true);
+insert into public.onebite_credentials(user_id,pin_hash,must_change) values('81111111-1111-4111-8111-111111111111','test-only',false),('82222222-2222-4222-8222-222222222222','test-only',false);
+insert into public.onebite_sessions(token_hash,user_id,expires_at,mfa_at) values(repeat('8',64),'81111111-1111-4111-8111-111111111111',now()+interval '1 day',now()),(repeat('9',64),'82222222-2222-4222-8222-222222222222',now()+interval '1 day',null);
+insert into public.onebite_role_permissions(role,permission) values('Cashier','inventory.access'),('Cashier','stock.view'),('Cashier','stock.receive') on conflict do nothing;
+select pg_temp.stock_assert(not has_table_privilege('anon','public.onebite_stock_movements','select'),'ledger is private');
+select pg_temp.stock_assert(not has_table_privilege('service_role','public.onebite_stock_movements','update'),'ledger is immutable');
+select pg_temp.stock_assert(not has_function_privilege('authenticated','public.onebite_stock_api(text,jsonb,text)','execute'),'no direct browser posting');
+set local role service_role;
+do $$ declare material jsonb; op jsonb; receipt jsonb;r jsonb;item_id uuid=gen_random_uuid();device uuid=gen_random_uuid();payload jsonb;
+begin
+ material=jsonb_build_object('id',item_id,'kind','material','name','Stock test material','nameEn','','category','','unit','g','priceKhr',null,'packName','','packQuantity',null,'description','','active',true,'photoPath',null,'revision',0,'definition',jsonb_build_object('schema',1,'type','raw_material','canSell',false,'batchYield',1,'effectiveAt',now()-interval '1 second','lines','[]'::jsonb,'conversions','[]'::jsonb));
+ r=public.onebite_inventory_api('save',jsonb_build_object('id',gen_random_uuid(),'fingerprint',repeat('a',64),'item',material),repeat('8',64));perform pg_temp.stock_assert(r ? 'item','fixture material published');
+ payload=jsonb_build_object('lines',jsonb_build_array(jsonb_build_object('itemId',item_id,'unit','g','quantity','0.1')),'reference','Test receipt','remarks','');
+ op=jsonb_build_object('schema',1,'id',gen_random_uuid(),'actorId','81111111-1111-4111-8111-111111111111','siteId',null,'deviceId',device,'kind','stock.opening','shiftId',null,'createdAt',now(),'dependencies','[]'::jsonb,'payload',payload,'fingerprint',repeat('b',64));
+ receipt=public.onebite_stock_api('post',jsonb_build_object('operation',op),repeat('8',64));perform pg_temp.stock_assert(receipt ? 'reference','opening posted');
+ perform pg_temp.stock_assert(public.onebite_stock_api('post',jsonb_build_object('operation',op),repeat('8',64))=receipt,'retry returns identical receipt');
+ perform pg_temp.stock_assert(public.onebite_stock_api('post',jsonb_build_object('operation',jsonb_set(op,'{payload,remarks}','"changed"')),repeat('8',64))->>'error'='operation_conflict','same fingerprint does not permit changed body');
+ perform pg_temp.stock_assert(public.onebite_stock_api('post',jsonb_build_object('operation',op||jsonb_build_object('id',gen_random_uuid())),repeat('8',64))->>'error'='opening_exists','opening cannot be repeated');
+ op=op||jsonb_build_object('id',gen_random_uuid(),'kind','stock.receive','payload',jsonb_set(payload,'{lines,0,quantity}','"0.2"'));
+ receipt=public.onebite_stock_api('post',jsonb_build_object('operation',op),repeat('8',64));perform pg_temp.stock_assert(receipt ? 'reference','receipt posted');
+ r=public.onebite_stock_api('list',jsonb_build_object('deviceId',device,'operationIds',jsonb_build_array(op->>'id')),repeat('8',64));perform pg_temp.stock_assert(r->'balances' @> jsonb_build_array(jsonb_build_object('itemId',item_id,'quantity','0.300000')),'exact decimal sum');perform pg_temp.stock_assert(r->'includedIds' ? (op->>'id'),'snapshot identifies included operation');
+ perform pg_temp.stock_assert(public.onebite_stock_api('post',jsonb_build_object('operation',op),repeat('9',64))->>'error'='invalid_stock_operation','another actor cannot replay an Owner receipt');
+ op=op||jsonb_build_object('id',gen_random_uuid(),'actorId','82222222-2222-4222-8222-222222222222','kind','stock.opening');perform pg_temp.stock_assert(public.onebite_stock_api('post',jsonb_build_object('operation',op),repeat('9',64))->>'error'='forbidden','opening remains Owner-only');
+ op=op||jsonb_build_object('kind','stock.receive');r=public.onebite_stock_api('post',jsonb_build_object('operation',op),repeat('9',64));perform pg_temp.stock_assert(r ? 'reference','delegated receiving is allowed');
+ op=op||jsonb_build_object('id',gen_random_uuid(),'payload',jsonb_set(payload,'{lines,0,quantity}','"0.1234567"'));perform pg_temp.stock_assert(public.onebite_stock_api('post',jsonb_build_object('operation',op),repeat('9',64))->>'error'='invalid_stock_payload','excess precision blocked');
+ op=op||jsonb_build_object('payload',jsonb_set(payload,'{lines,0,unit}','"kg"'));perform pg_temp.stock_assert(public.onebite_stock_api('post',jsonb_build_object('operation',op),repeat('9',64))->>'error'='invalid_stock_item','base unit mismatch blocked');
+ perform pg_temp.stock_assert((select count(*) from public.onebite_stock_movements where operation_id=(op->>'id')::uuid)=0,'invalid unit posted no rows');
+ op=op||jsonb_build_object('id',gen_random_uuid(),'payload',payload||jsonb_build_object('lines',(payload->'lines')||jsonb_build_array(jsonb_build_object('itemId',gen_random_uuid(),'unit','g','quantity','1'))));
+ perform pg_temp.stock_assert(public.onebite_stock_api('post',jsonb_build_object('operation',op),repeat('9',64))->>'error'='invalid_stock_item','missing second item blocks the entire receipt');
+ perform pg_temp.stock_assert((select count(*) from public.onebite_stock_operations where id=(op->>'id')::uuid)=0,'multi-line failure leaves no operation receipt');
+ delete from public.onebite_role_permissions where role='Cashier' and permission='inventory.access';
+ perform pg_temp.stock_assert(not public.onebite_has_permission('Cashier','stock.receive'),'module denial overrides action grant');
+ perform pg_temp.stock_assert(public.onebite_stock_api('list',jsonb_build_object('deviceId',device,'operationIds','[]'::jsonb),repeat('9',64))->>'error'='forbidden','module denial blocks stock reading');
+end $$;
+rollback;

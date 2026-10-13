@@ -31,6 +31,9 @@ export const permissionDefinitions = [
   { id: "roles.manage", group: "Admin", km: "គ្រប់គ្រងតួនាទី និងសិទ្ធិ", en: "Manage role permissions" },
   { id: "settings.manage", group: "Admin", km: "គ្រប់គ្រងការកំណត់កម្មវិធី", en: "Manage app settings" },
   { id: "sites.manage", group: "Admin", km: "គ្រប់គ្រងសាខា", en: "Manage sites" },
+  { id: "stock.view", group: "Inventory", km: "មើលស្តុកកណ្ដាល", en: "View central stock" },
+  { id: "stock.receive", group: "Inventory", km: "ទទួលស្តុកកណ្ដាល", en: "Receive central stock" },
+  { id: "stock.opening", group: "Inventory", km: "កំណត់ស្តុកដើម", en: "Set opening stock (Owner)" },
   { id: "catalog.manage", group: "Inventory", km: "គ្រប់គ្រងមុខម្ហូប និងតម្លៃ", en: "Manage items and prices" },
   { id: "rules.manage", group: "Admin", km: "កំណត់ច្បាប់បញ្ចុះតម្លៃ", en: "Configure promotions and exchange rate" },
   { id: "orders.override", group: "Never", km: "រំលងកម្រិតបញ្ចុះតម្លៃ", en: "Override discount limits" },
@@ -69,7 +72,7 @@ export type AccessState = { version: 1; users: Account[]; sites: AccessSite[]; g
 const posPermissions: Permission[] = ["orders.create", "orders.discount", "orders.complimentary", "orders.cancel_unpaid", "orders.qr_reference", "shifts.manage"];
 export const ceilings: Grants = {
   Cashier: ["pos.access", "attendance.access", "admin.access", ...posPermissions],
-  Supervisor: ["pos.access", "attendance.access", "inventory.access", "admin.access", ...posPermissions, "cash.withdraw", "staff.assign"],
+  Supervisor: ["pos.access", "attendance.access", "inventory.access", "admin.access", ...posPermissions, "cash.withdraw", "staff.assign", "stock.view", "stock.receive"],
   Owner: permissionDefinitions.filter(p=>p.group !== "Never").map(p=>p.id),
 };
 export const unavailablePermissions: Permission[] = ["attendance.access", "rules.manage", "orders.override", "orders.refund"];
@@ -80,7 +83,7 @@ export function permissionAvailable(permission: Permission): boolean {
 export function roleIds(state: AccessState): Role[] { return [...roles, ...(state.customRoles||[]).map(r=>r.id)]; }
 export function roleDisplayName(state: AccessState, role: Role): string { return state.customRoles?.find(r=>r.id===role)?.name || role; }
 export function hasPermission(grants: Permission[], role: Role, permission: Permission): boolean {
-  if(permission==="catalog.manage"&&role!=="Owner")return false;
+  if(["catalog.manage","stock.opening"].includes(permission)&&role!=="Owner")return false;
   const definition=permissionDefinitions.find(p=>p.id===permission);
   if(!definition || !permissionAvailable(permission) || !grants.includes(permission))return false;
   const module=moduleDefinitions.find(m=>m.group===definition.group);
@@ -150,7 +153,7 @@ export function assignSites(state: AccessState, actorId: string, accountId: stri
 }
 function validateGrants(role: Role, permissions: Permission[], previous: Permission[] = []): Permission[] {
   const grants=[...new Set(permissions)];
-  if(role!=="Owner"&&grants.includes("catalog.manage"))throw new AccessError("permission_ceiling");
+  if(role!=="Owner"&&grants.some(p=>["catalog.manage","stock.opening"].includes(p)))throw new AccessError("permission_ceiling");
   // Unreleased grants may remain configured, but cannot be newly enabled.
   if(grants.some(p=>!permissionAvailable(p)&&(!previous.includes(p)||p==="orders.override"||p==="orders.refund")))throw new AccessError("permission_ceiling");
   if(role==="Owner"&&ownerRequiredPermissions.some(p=>!grants.includes(p)))throw new AccessError("immutable_grant");

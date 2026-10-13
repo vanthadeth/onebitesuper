@@ -25,12 +25,12 @@ async function actorKey(store:IDBDatabase,actor:string){const existing=await get
 const encode=(bytes:Uint8Array)=>{let binary='';for(let offset=0;offset<bytes.length;offset+=32768)binary+=String.fromCharCode(...bytes.subarray(offset,offset+32768));return btoa(binary);};
 const decode=(value:string)=>Uint8Array.from(atob(value),char=>char.charCodeAt(0));
 async function encrypt(workspace:OperationalWorkspace,key:CryptoKey,scope:string){const plaintext=new TextEncoder().encode(canonicalJson(workspace));if(plaintext.length>8_000_000)throw new Error('operation_capacity');const iv=crypto.getRandomValues(new Uint8Array(12)),data=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:new TextEncoder().encode(scope)},key,plaintext);return JSON.stringify({iv:encode(iv),data:encode(new Uint8Array(data))});}
-async function read(db:Database,store:IDBDatabase,scope:OperationScope):Promise<OperationalWorkspace>{
- const id=scopeKey(scope),statement=db.prepare('SELECT value FROM workspaces WHERE scope=?');
+async function read(db:Database,store:IDBDatabase,scope:OperationScope,prefix=''):Promise<OperationalWorkspace>{
+ const id=prefix+scopeKey(scope),statement=db.prepare('SELECT value FROM workspaces WHERE scope=?');
  try{statement.bind([id]);if(!statement.step())return {schema:1,revision:0,state:{},operations:[]};const raw=JSON.parse(String(statement.getAsObject().value)),bytes=await crypto.subtle.decrypt({name:'AES-GCM',iv:decode(raw.iv),additionalData:new TextEncoder().encode(id)},await actorKey(store,scope.actorId),decode(raw.data));const workspace=JSON.parse(new TextDecoder().decode(bytes));if(workspace.schema!==1||!Number.isSafeInteger(workspace.revision)||workspace.revision<0||!Array.isArray(workspace.operations))throw new Error('invalid_operation_state');return workspace;
  }finally{statement.free();}
 }
-async function write(db:Database,store:IDBDatabase,scope:OperationScope,workspace:OperationalWorkspace){const id=scopeKey(scope),value=await encrypt(workspace,await actorKey(store,scope.actorId),id);db.run('INSERT INTO workspaces VALUES (?,?) ON CONFLICT(scope) DO UPDATE SET value=excluded.value',[id,value]);}
+async function write(db:Database,store:IDBDatabase,scope:OperationScope,workspace:OperationalWorkspace,prefix=''){const id=prefix+scopeKey(scope),value=await encrypt(workspace,await actorKey(store,scope.actorId),id);db.run('INSERT INTO workspaces VALUES (?,?) ON CONFLICT(scope) DO UPDATE SET value=excluded.value',[id,value]);}
 export async function operationalDeviceId(){const store=await storage();try{return await getOrCreate(store,'meta','device',crypto.randomUUID());}finally{store.close();}}
 export function loadOperationalWorkspace(scope:OperationScope){scope={...scope};validateScope(scope);return serial(()=>database((db,store)=>read(db,store,scope),false));}
 /** Projection and immutable operation share one durable SQLite snapshot. Never acknowledge before IDB commits. */
@@ -62,3 +62,7 @@ async function updateOperation(scope:OperationScope,id:string,revision:number,ch
  },true));
 }
 export const operationalStore:OperationStore={list:async scope=>(await loadOperationalWorkspace(scope)).operations,update:updateOperation};
+
+/** Downloaded cache is separate from local business projections and immutable queued events. */
+export function loadOperationalCache(scope:OperationScope){scope={...scope};validateScope(scope);return serial(()=>database(async(db,store)=>(await read(db,store,scope,'cache:')).state,false));}
+export function saveOperationalCache(scope:OperationScope,state:JsonObject){scope={...scope};validateScope(scope);const sealed=JSON.parse(canonicalJson(state));return serial(()=>database(async(db,store)=>write(db,store,scope,{schema:1,revision:0,state:sealed,operations:[]},'cache:'),true));}

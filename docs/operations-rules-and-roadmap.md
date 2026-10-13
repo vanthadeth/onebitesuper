@@ -40,7 +40,7 @@ Evidence: `apps/pos/src/{App,ItemSettings,useWorkspace,usePos}.tsx/ts`, `package
 
 ## Build progress
 
-The first stage-1 slice is implemented: shared immutable operations, dependency-aware replay and encrypted atomic SQLite projection/outbox storage. See [transaction foundation](transaction-foundation.md) for guarantees, verification and integration limits. Central stock posting, server receipts, operational UI and production transaction sync remain next; stage 1 as a whole is not complete.
+The first stage-1 slice is implemented: shared immutable operations, dependency-aware replay and encrypted atomic SQLite projection/outbox storage. See [transaction foundation](transaction-foundation.md) for guarantees, verification and integration limits. The next slice now connects central opening/receiving to the deployed private ledger/API and Inventory UI; see [central stock](central-stock.md) for permissions and verification limits. The wider financial/stock workflows remain phased, and POS checkout is still gated.
 
 ## Operating rules
 

@@ -36,6 +36,7 @@ async function fixture(page:Page,options:{staff?:boolean;items?:CatalogItem[];si
   if(action==='photo.read')return route.fulfill({json:{photo:photos.get(payload.photoPath)}});
   return route.fulfill({status:400,json:{error:'invalid_action'}});
  });
+ await page.route('**/functions/v1/stock-access',route=>route.fulfill({status:403,json:{error:'forbidden'}}));
  await page.goto('http://127.0.0.1:5175');
  if(!options.signin)await expect(page.getByRole('heading',{name:'Items',exact:true})).toBeVisible();
  return {setOnline:(value:boolean)=>{online=value;},setFailure:(value:string)=>{failSave=value;},items:()=>items,calls:()=>saveCalls};

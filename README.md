@@ -32,11 +32,11 @@ Serve each app on its own HTTPS origin for installation outside localhost. Produ
 
 **Admin:** users, custom roles, module/action permissions, sites, photos, preferences and activity history backed by Supabase. Username/PIN sessions last seven days; only Owners need authenticator verification. Saved Admin data is read-only offline.
 
-**Inventory:** one catalog with item types, categories, sellability, conversions and dated recipes for ingredients, box contents and packaging. Owner edits queue in SQLite and publish through guarded, idempotent APIs. See [unified item catalog](docs/unified-item-catalog.md).
+**Inventory:** one catalog with item types, categories, sellability, conversions and dated recipes for ingredients, box contents and packaging. Owner edits queue in SQLite and publish through guarded, idempotent APIs. The [central Stock page](docs/central-stock.md) now supports opening counts and receiving with exact quantities, private movement history and a durable offline operation queue. See [unified item catalog](docs/unified-item-catalog.md).
 
 No sample accounts, menu or transactions are seeded into the live database. POS draft carts are private to their account/site/device and do not yet synchronize between staff or become business transactions. Real POS sales must wait for the remaining shift, payment and stock-ledger stages.
 
-The [operational transaction foundation](docs/transaction-foundation.md) provides shared durable queue/retry primitives for the next stock and sales stages. It is tested independently and is not yet wired to production posting workflows.
+The [operational transaction foundation](docs/transaction-foundation.md) provides shared durable queue/retry primitives for the next stock and sales stages. It is now used by central-stock opening/receiving; POS financial posting remains gated.
 
 ## Workspace
 

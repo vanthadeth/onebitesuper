@@ -188,6 +188,9 @@ const permissionRowDetails:Partial<Record<Permission,{en:string;km:string;icon:t
  "users.manage":{en:"User accounts",km:"គណនីបុគ្គលិក",icon:UserRound},
  "roles.manage":{en:"Roles & permissions",km:"តួនាទី និងសិទ្ធិ",icon:ShieldCheck},
  "sites.manage":{en:"Sites",km:"សាខា",icon:MapPin},
+ "stock.view":{en:"Central stock",km:"ស្តុកកណ្ដាល",icon:Boxes},
+ "stock.receive":{en:"Receive stock",km:"ទទួលស្តុក",icon:ArrowRightLeft},
+ "stock.opening":{en:"Opening stock (Owner)",km:"ស្តុកដើម (ម្ចាស់)",icon:Plus},
  "catalog.manage":{en:"Items & prices",km:"មុខម្ហូប និងតម្លៃ",icon:Utensils},
  "rules.manage":{en:"Promotions & exchange rate",km:"កម្មវិធីបញ្ចុះតម្លៃ និងអត្រាប្ដូរប្រាក់",icon:SlidersHorizontal},
  "orders.override":{en:"Override discount limits",km:"រំលងកម្រិតបញ្ចុះតម្លៃ",icon:LockKeyhole},
@@ -209,7 +212,7 @@ function RoleEditor({role,creating=false,legacy=false,state,editable,busy,error,
    return <section className={`d-card access-policy-section ${available?"":"unavailable"}`} key={module.id} aria-label={t(module.km,module.en)}>
     <header className="access-policy-header"><h3>{t(module.km,module.en)}{!available&&<small>{t("មិនទាន់មាន","Not available yet")}</small>}</h3><label className="access-policy-module-toggle"><span className={access?"allowed":"denied"}>{access?t("អនុញ្ញាត","Allowed"):t("បដិសេធ","Denied")}</span><SwitchField aria-label={t(`ចូលប្រើម៉ូឌុល ${module.km}`,`Access ${module.en} module`)} checked={access} disabled={!editable||!available||required||busy} onChange={event=>toggle(module.id,event.target.checked)}/></label></header>
     {access&&actions.length>0&&<ul className="access-policy-actions">{actions.map(permission=>{
-     const allowed=(permission.id!=="catalog.manage"||role==="Owner")&&permissionAvailable(permission.id)&&(!legacy||!!ceilings[role]?.includes(permission.id)),required=role==="Owner"&&ownerRequiredPermissions.includes(permission.id),details=permissionRowDetails[permission.id],Icon=details?.icon||KeyRound;
+     const allowed=(!["catalog.manage","stock.opening"].includes(permission.id)||role==="Owner")&&permissionAvailable(permission.id)&&(!legacy||!!ceilings[role]?.includes(permission.id)),required=role==="Owner"&&ownerRequiredPermissions.includes(permission.id),details=permissionRowDetails[permission.id],Icon=details?.icon||KeyRound;
      return <li key={permission.id} className={allowed?"":"locked"}><label title={!allowed?t("មិនទាន់មាន ឬហាមតាមច្បាប់អាជីវកម្ម","Not available yet or forbidden by business rules"):undefined}><Icon size={18}/><span>{details?t(details.km,details.en):t(permission.km,permission.en)}</span><SwitchField aria-label={t(permission.km,permission.en)} aria-description={!allowed?t("មិនទាន់មាន ឬហាមតាមច្បាប់អាជីវកម្ម","Not available yet or forbidden by business rules"):undefined} checked={allowed&&grants.includes(permission.id)} disabled={!editable||!allowed||required||busy} onChange={event=>toggle(permission.id,event.target.checked)}/></label></li>;
     })}</ul>}
    </section>;

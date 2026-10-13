@@ -9,6 +9,7 @@
     "./app-settings": "./src/app-settings.ts",
     "./inventory": "./src/inventory.ts",
     "./pos": "./src/pos.ts",
-    "./operations": "./src/operations.ts"
+    "./operations": "./src/operations.ts",
+    "./stock": "./src/stock.ts"
   }
 }

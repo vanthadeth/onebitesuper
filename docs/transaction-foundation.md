@@ -41,9 +41,9 @@ Consumers must not run simultaneous replay loops as a normal pattern. Revision c
 
 ## Current boundaries and next work
 
-There is no production workflow importing these modules yet, no new HTTP endpoint, no stock/cash ledger, no device claim and no migration in this slice. Existing Inventory catalog publishing and POS drafts remain unchanged. No mock records were inserted and checkout remains gated.
+The following [central stock slice](central-stock.md) now imports these modules for opening/receiving and supplies a deployed private API/stock ledger. Existing Inventory catalog publishing and POS drafts remain separate. Device claim, cash ledger and POS financial posting are not enabled; checkout remains gated. No mock records were inserted.
 
-Next build: the restricted central stock movement/receipt API and ledger, then Owner opening-stock/receiving screens using this atomic queue. Add the relevant action permissions and authoritative payload validation before enabling those screens. Device/shared-shift workflows and live invoices follow the roadmap dependencies.
+The central opening/receiving integration has shipped with explicit action grants and authoritative payload checks. Device/shared-shift workflows and live invoices follow the roadmap dependencies; site transfers/counts need their own location and posting rules.
 
 Before live rollout, implement acknowledged-receipt archival/compaction, bounded projection retention, review/correction UI and update/recovery handling. The present conservative cap is 1,000 retained events per workspace (including acknowledgments); reaching it blocks new commits rather than dropping history. Event payloads are bounded to 256 KB, projections to 1 MB, and the serialized workspace to 8 MB. These are foundation limits, not a production throughput promise.
 

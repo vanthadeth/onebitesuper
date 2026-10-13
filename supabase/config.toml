@@ -9,3 +9,6 @@ verify_jwt = false
 [functions.pos-access]
 # The function and SQL guard validate publishable keys and custom opaque sessions.
 verify_jwt = false
+
+[functions.stock-access]
+verify_jwt = false
