@@ -38,6 +38,10 @@ Evidence: `apps/pos/src/{App,ItemSettings,useWorkspace,usePos}.tsx/ts`, `package
 
 **Release boundary:** the current POS must not be used as the record of live sales. A functioning item-settings popup is not a payment, stock or cash ledger.
 
+## Build progress
+
+The first stage-1 slice is implemented: shared immutable operations, dependency-aware replay and encrypted atomic SQLite projection/outbox storage. See [transaction foundation](transaction-foundation.md) for guarantees, verification and integration limits. Central stock posting, server receipts, operational UI and production transaction sync remain next; stage 1 as a whole is not complete.
+
 ## Operating rules
 
 ### 1. People, authorization and site control

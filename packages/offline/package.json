@@ -7,7 +7,8 @@
     ".": "./src/index.ts",
     "./cleanup": "./src/cleanup.ts",
     "./inventory": "./src/inventory.ts",
-    "./pos": "./src/pos.ts"
+    "./pos": "./src/pos.ts",
+    "./operations": "./src/operations.ts"
   },
   "dependencies": {
     "@onebite/core": "0.1.0"

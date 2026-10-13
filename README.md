@@ -36,6 +36,8 @@ Serve each app on its own HTTPS origin for installation outside localhost. Produ
 
 No sample accounts, menu or transactions are seeded into the live database. POS draft carts are private to their account/site/device and do not yet synchronize between staff or become business transactions. Real POS sales must wait for the remaining shift, payment and stock-ledger stages.
 
+The [operational transaction foundation](docs/transaction-foundation.md) provides shared durable queue/retry primitives for the next stock and sales stages. It is tested independently and is not yet wired to production posting workflows.
+
 ## Workspace
 
 ```text
