@@ -66,3 +66,14 @@ export const operationalStore:OperationStore={list:async scope=>(await loadOpera
 /** Downloaded cache is separate from local business projections and immutable queued events. */
 export function loadOperationalCache(scope:OperationScope){scope={...scope};validateScope(scope);return serial(()=>database(async(db,store)=>(await read(db,store,scope,'cache:')).state,false));}
 export function saveOperationalCache(scope:OperationScope,state:JsonObject){scope={...scope};validateScope(scope);const sealed=JSON.parse(canonicalJson(state));return serial(()=>database(async(db,store)=>write(db,store,scope,{schema:1,revision:0,state:sealed,operations:[]},'cache:'),true));}
+
+/** Origin-wide ordering credential, encrypted at rest and shared by staff using this installation. */
+export function orderingDeviceCredential(){return serial(async()=>{
+ const store=await storage();try{
+  const id=await getOrCreate(store,'meta','device',crypto.randomUUID()),key=await actorKey(store,'ordering-device-key');
+  let sealed=await get<string>(store,'meta','ordering-proof');
+  if(!sealed){const iv=crypto.getRandomValues(new Uint8Array(12)),proof=encode(crypto.getRandomValues(new Uint8Array(32)));const data=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:new TextEncoder().encode(id)},key,new TextEncoder().encode(proof));sealed=await getOrCreate(store,'meta','ordering-proof',JSON.stringify({iv:encode(iv),data:encode(new Uint8Array(data))}));}
+  const raw=JSON.parse(sealed),bytes=await crypto.subtle.decrypt({name:'AES-GCM',iv:decode(raw.iv),additionalData:new TextEncoder().encode(id)},key,decode(raw.data));
+  return {deviceId:id,proof:Array.from(decode(new TextDecoder().decode(bytes)),byte=>byte.toString(16).padStart(2,'0')).join('')};
+ }finally{store.close();}
+});}

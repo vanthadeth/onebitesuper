@@ -18,3 +18,16 @@ test('a denied catalog photo cannot reach private Storage; mutations are unavail
  const original=fetch;let calls=0;globalThis.fetch=async()=>{calls++;return Response.json({error:'forbidden'});};
  try{assert.equal((await handler(request('photo.read',{photoPath:'11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222.jpg'},{Authorization:'Bearer '+'1'.repeat(64)}))).status,403);assert.equal(calls,1);assert.equal((await handler(request('payment.record',{}, {Authorization:'Bearer '+'1'.repeat(64)}))).status,400);assert.equal(calls,1);}finally{globalThis.fetch=original;}
 });
+test('control API hashes device proof and forwards only trusted fields',async()=>{
+ const original=fetch;let body:Record<string,unknown>|undefined;
+ globalThis.fetch=async(url,init)=>{assert.match(String(url),/onebite_pos_control$/);body=JSON.parse(init!.body as string);return Response.json({requestId:'44444444-4444-4444-8444-444444444444'});};
+ try{const response=await handler(request('shift.open',{siteId:0,deviceId:'33333333-3333-4333-8333-333333333333',proof:'a'.repeat(64),requestId:'44444444-4444-4444-8444-444444444444',generation:1,cash:'10000',source:'supply',role:'Owner',actorId:'attacker',proofHash:'attacker'},{Authorization:'Bearer '+'1'.repeat(64)}));assert.equal(response.status,200);const p=body!.p_payload as Record<string,unknown>;assert.equal(p.siteId,0);assert.equal(p.cash,'10000');assert.equal(p.source,'supply');assert.match(String(p.proofHash),/^[a-f0-9]{64}$/);assert.notEqual(p.proofHash,'a'.repeat(64));assert.equal(p.proof,undefined);assert.equal(p.actorId,undefined);assert.equal(p.role,undefined);}finally{globalThis.fetch=original;}
+});
+test('control API rejects malformed device proof and fractional financial values before RPC',async()=>{
+ const original=fetch;let calls=0;globalThis.fetch=async()=>{calls++;return Response.json({});};const payload={siteId:0,deviceId:'33333333-3333-4333-8333-333333333333',proof:'a'.repeat(64),requestId:'44444444-4444-4444-8444-444444444444',generation:1,cash:'0',source:'zero'};
+ try{for(const p of [{...payload,proof:'bad'},{...payload,siteId:-1},{...payload,generation:0.1},{...payload,cash:'1.5'}])assert.equal((await handler(request('shift.open',p,{Authorization:'Bearer '+'1'.repeat(64)}))).status,400);assert.equal(calls,0);}finally{globalThis.fetch=original;}
+});
+test('uncertain RPC transport failures return a retryable status rather than discarding saved financial requests',async()=>{
+ const original=fetch;globalThis.fetch=async()=>{throw new Error('transport interrupted');};
+ try{const response=await handler(request('device.claim',{siteId:0,deviceId:'33333333-3333-4333-8333-333333333333',proof:'a'.repeat(64),requestId:'44444444-4444-4444-8444-444444444444',generation:0},{Authorization:'Bearer '+'1'.repeat(64)}));assert.equal(response.status,503);assert.deepEqual(await response.json(),{error:'request_failed'});}finally{globalThis.fetch=original;}
+});

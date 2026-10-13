@@ -48,3 +48,5 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f supabase/pos-workspace.verify.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261013144924_central_stock_ledger.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/central-stock.verify.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261013153457_pos_devices_shifts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/pos-devices-shifts.verify.sql

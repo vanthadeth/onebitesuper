@@ -32,9 +32,13 @@ The previous app is a browser-local prototype. Its layout and interactions are u
 - Cached menu/authorization can be used for 24 hours offline, within the fixed session expiry. Online permission denial never falls back to cached authorization. Access expiry blocks further draft use but retains saved drafts.
 - Current shared app bar, toast section, profile, Hub in the profile menu, mobile bottom cart bar and sheet, native keyboard support, haptics and reduced-motion behavior.
 
-**Operational boundary:** drafts stay on the creating account/device. They are not uploaded or transferred between staff yet. Refresh synchronizes the menu, not draft transactions. No invoice, shift, payment, cash movement, free allowance or stock movement is posted. The UI labels this stage and gates checkout. It must not be used to record live sales yet. No mock items were added to Supabase.
+**Operational boundary:** drafts stay on the creating account/device. They are not uploaded or transferred between staff yet. Refresh synchronizes the menu, not draft transactions. No invoice, payment, free allowance or sale-related stock movement is posted. The Stage 2 foundation below now records device registration, shifts and opening/retained cash. The UI labels this stage and gates checkout. It must not be used to record live sales yet. No mock items were added to Supabase.
 
-## Stage 2 — device activation, shifts and cash custody
+## Stage 2 — device activation, shifts and cash custody (foundation implemented)
+
+Implemented device registration/release, one shared shift, online authorized opening cash, close-and-retain custody, discrepancy history and idempotent retries. See [POS device and shift foundation](pos-devices-and-shifts.md) for the exact boundary. Staff-to-staff handovers, collections, withdrawals and lost-device recovery remain gated. This is not ready for live sales.
+
+Full Stage 2 scope:
 
 1. Register and claim one ordering POS device per site online; other devices get non-ordering views. Transfer must sync and release the previous device, with an explicit Owner recovery flow.
 2. One shared shift per site, server constraints and event history; startup cash from Supervisor/Owner or held prior-day cash.
