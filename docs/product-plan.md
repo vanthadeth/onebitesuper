@@ -1,6 +1,6 @@
 # OneBite operations system — planning draft
 
-Updated: 2026-10-11. Admin and Inventory catalog are connected to Supabase. POS has an authenticated menu and local SQLite draft workspace; live shift, payment and stock posting follow next. See `pos-build.md` for the implementation stages and `unified-item-catalog.md` for the current item model. The confirmed operating rules below remain the target.
+Updated scope note: 2026-10-13. See [operating rules and roadmap](operations-rules-and-roadmap.md) for the latest source-code comparison and proposed delivery sequence. Admin and Inventory catalog are connected to Supabase. POS has an authenticated menu and local SQLite draft workspace; live shift, payment and stock posting follow next. See `pos-build.md` for the implementation stages and `unified-item-catalog.md` for the current item model. The confirmed operating rules below remain the target.
 
 ## 1. Product scope
 

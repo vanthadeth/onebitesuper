@@ -2,6 +2,8 @@
 
 Four mobile-first business apps share React/TypeScript components, Khmer/English, Supabase identity and an encrypted SQLite offline store. Admin and the Inventory catalog are connected; POS now has an authenticated menu and draft-cart workspace. Attendance is planned.
 
+Read the [operating rules and delivery roadmap](docs/operations-rules-and-roadmap.md) for the restaurant-software comparison, current implementation gaps, confirmed rules and next build stages.
+
 ## Run locally
 
 Requires Node.js 22.12+ (or 24+) and npm.

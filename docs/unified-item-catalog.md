@@ -14,7 +14,7 @@ Raw materials and supplies without a recipe are direct stock inputs. With a reci
 
 Each successful item save atomically appends an immutable snapshot, operation receipt and audit entry. Version history is visible in item details. Effective-date fields explicitly use Asia/Phnom_Penh regardless of the device timezone. A future version is labelled Scheduled. Editing changes the latest catalog definition, while version selection for orders uses both effective and publication timestamps.
 
-The core `snapshotItemForOrder` foundation freezes versions/conversions and computed material requirements at the first item added. Held orders must reuse this snapshot; future or later-published versions do not retroactively affect it. This helper is tested, but the current POS remains a placeholder: it does not yet create orders or post stock deductions.
+The core `snapshotItemForOrder` foundation freezes versions/conversions and computed material requirements at the first item added. Held orders must reuse this snapshot; future or later-published versions do not retroactively affect it. POS now uses this tested helper for its durable draft carts and held orders. It does not yet finalize business invoices or post stock deductions. See [the operating rules and roadmap](operations-rules-and-roadmap.md).
 
 ## Migration and offline behavior
 

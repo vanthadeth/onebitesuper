@@ -1,6 +1,6 @@
 # Inventory — working plan
 
-Updated: 2026-10-10. Milestone 1 implements the separate Inventory catalog app, materials and sellable items, Owner editing, private photos, and SQLite offline sync. Recipes, site overrides, stock movements and sale deductions remain planned. Confirmed requirements and recommendations are separated below. Existing menu prices remain planning/mock values where specified in `menu-plan.md`.
+Updated scope note: 2026-10-13. The catalog now uses one item database with types, independent sellability, item conversions and dated recipes. The later Owner decisions in [unified-item-catalog.md](unified-item-catalog.md) supersede this document's original separate Materials/Sellable first-build screens. Site overrides, stock movements, actual yield records and sale deductions remain planned. See [operating rules and roadmap](operations-rules-and-roadmap.md) for current gaps and delivery stages. Earlier milestone/editor descriptions below are retained as planning history, not proof of implemented stock workflows. Existing menu examples remain planning/mock values where specified in `menu-plan.md`.
 
 ## Confirmed requirements
 
@@ -9,7 +9,7 @@ Updated: 2026-10-10. Milestone 1 implements the separate Inventory catalog app, 
 - Master selling prices, with Owner-controlled site price overrides.
 - Cashiers and supervisors request raw stock. A stock controller dispatches the full request or part of it. Cashiers or supervisors confirm receipt at the destination site.
 - Items can have recipes and step-by-step cooking/packing instructions with photos.
-- Exactly two item types: materials and sellable items. No prepared-item stock or production/preparation transactions.
+- One unified item catalog: finished good, raw material, supplies and component types; independent can-sell flag and category. Reusable recipe components have no separately counted prepared-item stock.
 - Deduct all raw ingredients and packaging automatically on sale.
 - Record actual batch counts/yields for conversions rather than assuming fixed item-wide weight/count ratios. Exact recording and transfer behavior remains to be specified.
 - One central stockroom serves all sites.
