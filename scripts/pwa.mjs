@@ -23,7 +23,7 @@ const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 manifest.name = manifest.short_name = appNames[app];
 // Preserve stable IDs while keeping every start URL and scope app-specific.
 manifest.id = `${base}onebite-${app}`;
-manifest.start_url = base;
+manifest.start_url = `${base}index.html?app=${app}`;
 manifest.scope = base;
 manifest.icons = manifest.icons.map(icon => ({ ...icon, src: `${base}${icon.src.split("/").at(-1)}` }));
 await writeFile(manifestPath, JSON.stringify(manifest, null, 2));
@@ -37,6 +37,6 @@ await writeFile(
   `const CACHE=${JSON.stringify(cache)};const ASSETS=${JSON.stringify(paths.map((path) => `${base}${path}`))};
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith(${JSON.stringify(prefix)})&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));});
-self.addEventListener('fetch',event=>{if(event.request.method!=='GET'||new URL(event.request.url).origin!==self.location.origin||!new URL(event.request.url).pathname.startsWith(${JSON.stringify(base)}))return;event.respondWith(fetch(event.request).catch(()=>caches.open(CACHE).then(async cache=>(await cache.match(event.request,{ignoreVary:true}))||(event.request.mode==='navigate'?cache.match(${JSON.stringify(`${base}index.html`)},{ignoreVary:true}):Response.error()))));});
+self.addEventListener('fetch',event=>{if(event.request.method!=='GET'||new URL(event.request.url).origin!==self.location.origin||!new URL(event.request.url).pathname.startsWith(${JSON.stringify(base)}))return;const path=new URL(event.request.url).pathname;const fresh=path.endsWith('/manifest.webmanifest')||event.request.mode==='navigate';event.respondWith(fetch(event.request,fresh?{cache:'no-cache'}:undefined).catch(()=>caches.open(CACHE).then(async cache=>(await cache.match(event.request,{ignoreVary:true}))||(event.request.mode==='navigate'?cache.match(${JSON.stringify(`${base}index.html`)},{ignoreVary:true}):Response.error()))));});
 `,
 );

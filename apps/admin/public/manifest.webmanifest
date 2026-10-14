@@ -2,7 +2,7 @@
   "id": "./onebite-admin",
   "name": "1B - Admin",
   "short_name": "1B - Admin",
-  "start_url": "./",
+  "start_url": "./index.html?app=admin",
   "scope": "./",
   "display": "standalone",
   "background_color": "#faf9f6",

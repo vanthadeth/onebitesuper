@@ -2,7 +2,7 @@
   "id": "./onebite-pos",
   "name": "1B - POS",
   "short_name": "1B - POS",
-  "start_url": "./",
+  "start_url": "./index.html?app=pos",
   "scope": "./",
   "display": "standalone",
   "background_color": "#faf9f6",

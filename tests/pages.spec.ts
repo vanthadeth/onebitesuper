@@ -1,4 +1,4 @@
-import {mkdtemp,rm} from 'node:fs/promises';
+import {mkdtemp,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import publicConfig from "../config/supabase.public.json" with { type: "json" };
@@ -7,7 +7,7 @@ const base=process.env.PAGES_TEST_BASE_URL||'http://127.0.0.1:5185/onebitesuper/
 test('repository-hosted apps have separate install scopes and clean offline shells',async({page,context})=>{
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));await page.route('**/functions/v1/admin-access',route=>route.abort());
  await page.goto(base);const popup=page.waitForEvent('popup');await page.getByRole('link',{name:/OneBite POS/}).click();const posPage=await popup;posPage.on('pageerror',error=>errors.push(error.message));await expect(posPage.getByRole('heading',{name:'សូមស្វាគមន៍'})).toBeVisible();await expect(posPage.locator('.product-card')).toHaveCount(0);
- const pos=await posPage.evaluate(async()=>{const link=document.querySelector<HTMLLinkElement>('link[rel="manifest"]')!;return(await fetch(link.href)).json();});expect(pos.scope).toBe('/onebitesuper/pos/');expect(pos.start_url).toBe(pos.scope);expect(pos.name).toBe('1B - POS');expect(pos.short_name).toBe(pos.name);
+ const pos=await posPage.evaluate(async()=>{const link=document.querySelector<HTMLLinkElement>('link[rel="manifest"]')!;return(await fetch(link.href)).json();});expect(pos.scope).toBe('/onebitesuper/pos/');expect(pos.start_url).toBe('/onebitesuper/pos/index.html?app=pos');expect(pos.name).toBe('1B - POS');expect(pos.short_name).toBe(pos.name);
  await posPage.evaluate(async()=>{await navigator.serviceWorker.ready;});await posPage.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));await context.setOffline(true);await posPage.reload();await expect(posPage.getByRole('heading',{name:'សូមស្វាគមន៍'})).toBeVisible();await context.setOffline(false);
  await page.goto(base+'admin/');await expect(page.getByRole('button',{name:'ព្យាយាមភ្ជាប់ម្តងទៀត',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'បើកសាកល្បងក្នុងឧបករណ៍',exact:true})).toHaveCount(0);await expect(page.locator('.access-user-row')).toHaveCount(0);
  const admin=await page.evaluate(async()=>{const link=document.querySelector<HTMLLinkElement>('link[rel="manifest"]')!;return(await fetch(link.href)).json();});expect(admin.name).toBe('1B - Admin');expect(admin.short_name).toBe(admin.name);await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content',admin.name);expect(admin.scope).toBe('/onebitesuper/admin/');expect(admin.id).not.toBe(pos.id);
@@ -88,11 +88,11 @@ test('Admin, Inventory and POS can all install in the same browser profile',asyn
  const page=context.pages()[0],cdp=await context.newCDPSession(page);
  try{
   for(const app of ['admin','inventory','pos']){
-   const url=new URL(app+'/',base).href;
+   const url=new URL(app+'/index.html?app='+app,base).href;
    await page.goto(url);await page.evaluate(async()=>{await navigator.serviceWorker.ready;});
    const manifest=await page.evaluate(async()=>{const link=document.querySelector<HTMLLinkElement>('link[rel="manifest"]')!;return(await fetch(link.href)).json();});
    const manifestId=new URL(manifest.id,url).href;
-   expect(installed).not.toContain(manifestId);
+   expect(installed).not.toContain(manifestId);expect(new URL(manifest.start_url,url).href).toBe(url);expect(new URL(manifest.scope,url).pathname).toBe(new URL(app+'/',base).pathname);
    expect((await cdp.send('Page.getInstallabilityErrors')).installabilityErrors).toEqual([]);
    await cdp.send('PWA.install',{manifestId,installUrl:url});installed.push(manifestId);
   }
@@ -106,4 +106,18 @@ test('Admin, Inventory and POS can all install in the same browser profile',asyn
 
 test('All app launch artwork loads before JavaScript on repository-hosted paths',async({page})=>{
  await page.route('**/*.js',route=>route.abort());for(const app of ['pos','admin','inventory']){await page.goto(base+app+'/');const splash=page.locator('.ob-app-splash');await expect(splash).toBeVisible();await expect(splash).toHaveAttribute('data-app',app);await expect(splash).toHaveAttribute('aria-busy','true');await expect.poll(()=>splash.locator('img').evaluateAll(images=>images.length===2&&images.every(img=>(img as HTMLImageElement).naturalWidth>0))).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
+});
+
+
+test('POS replaces the legacy shared worker without clearing saved data',async({page})=>{
+ test.skip(Boolean(process.env.PAGES_TEST_BASE_URL),'Legacy worker fixture is local only.');
+ const fixture=new URL('../dist/pages/sw.js',import.meta.url);
+ await writeFile(fixture,"self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));");
+ try{
+ await page.goto(base);
+ await page.evaluate(async()=>{localStorage.setItem('onebite-install-recovery-check','saved');await navigator.serviceWorker.register('sw.js',{scope:'./'});await navigator.serviceWorker.ready;});
+ await page.goto(base+'pos/');
+ await expect.poll(()=>page.evaluate(async()=>(await navigator.serviceWorker.getRegistrations()).map(r=>new URL(r.scope).pathname))).toEqual([new URL('pos/',base).pathname]);
+ expect(await page.evaluate(()=>localStorage.getItem('onebite-install-recovery-check'))).toBe('saved');
+ }finally{await rm(fixture,{force:true});}
 });
