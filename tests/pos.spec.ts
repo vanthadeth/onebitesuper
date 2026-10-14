@@ -73,3 +73,17 @@ test('menu item settings configure quantities and separate remarks without accid
  await addBox(page);await openCart(page);await expect(page.locator('.pos-cart-lines li')).toHaveCount(2);await expect(page.locator('.pos-line-actions output')).toHaveText(['5','1']);await expect(page.locator('.pos-cart-lines')).toContainText('Separate sauce');await closeCart(page);
  const bounds=(await product.boundingBox())!;await page.mouse.move(bounds.x+10,bounds.y+10);await page.mouse.down();dialog=page.getByRole('dialog',{name:'Item settings · Dumpling box'});await expect(dialog).toBeVisible();await page.mouse.up();await dialog.getByRole('button',{name:'10',exact:true}).click();await expect(dialog.locator('.pos-item-net')).toContainText('50,500');expect(await dialog.evaluate(element=>element.scrollWidth<=element.clientWidth)).toBe(true);await page.screenshot({path:`artifacts/pos-item-settings-${info.project.name}.png`});await dialog.getByRole('button',{name:'Close',exact:true}).click();await page.reload();await openCart(page);await expect(page.locator('.pos-line-actions output')).toHaveText(['5','1']);
 });
+
+test('brand-stamp splash follows initialization and respects reduced motion',async({page},info)=>{
+ await fixture(page);let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+ await page.route('**/functions/v1/pos-access',async route=>{if(route.request().postDataJSON().action==='bootstrap')await gate;return route.fallback();});
+ try{
+  await page.reload();const splash=page.locator('.ob-app-splash');await expect(splash).toBeVisible();await expect(splash).toHaveAttribute('aria-busy','true');await expect(splash.getByRole('status')).toContainText('Preparing POS');await expect(page.locator('.pos-order-layout')).toHaveCount(0);
+  await expect.poll(()=>splash.locator('img').evaluateAll(images=>images.every(img=>(img as HTMLImageElement).naturalWidth>0))).toBe(true);
+  await expect(splash.locator('.ob-splash-stamp')).toHaveCSS('animation-name','ob-splash-float');expect((await splash.locator('.ob-splash-stamp').boundingBox())!.width).toBeLessThan(110);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.screenshot({path:`artifacts/pos-splash-${info.project.name}.png`,animations:'disabled'});
+  await page.emulateMedia({reducedMotion:'reduce'});await expect(splash.locator('.ob-splash-stamp')).toHaveCSS('animation-name','none');await expect(splash.locator('.ob-splash-dots i').first()).toHaveCSS('animation-name','none');
+  await page.evaluate(()=>{document.documentElement.dataset.theme='dark';});await page.screenshot({path:`artifacts/pos-splash-dark-${info.project.name}.png`,animations:'disabled'});
+  release();await expect(page.locator('.pos-order-layout')).toBeVisible();await expect(splash).toHaveCount(0);
+ }finally{release();}
+});

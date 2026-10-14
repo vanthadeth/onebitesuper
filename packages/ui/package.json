@@ -12,7 +12,9 @@
     "./polish.css": "./src/polish.css",
     "./motion.css": "./src/motion.css",
     "./workspace.css": "./src/workspace.css",
-    "./workspace-framework.css": "./src/workspace-framework.css"
+    "./workspace-framework.css": "./src/workspace-framework.css",
+    "./splash.css": "./src/splash.css",
+    "./app-splash": "./src/app-splash.tsx"
   },
   "dependencies": {
     "@onebite/core": "0.1.0",

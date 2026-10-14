@@ -8,6 +8,7 @@ import "@onebite/ui/controls.css";
 import "@onebite/ui/polish.css";
 import "@onebite/ui/motion.css";
 import "./pos.css";
+import "@onebite/ui/splash.css";
 import { InteractionFeedback, LanguageProvider, AppSettingsProvider, registerPwa } from "@onebite/ui";
 import { App } from "./App";
 cleanSampleData();
