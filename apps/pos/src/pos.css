@@ -217,3 +217,9 @@
  .pos-menu-main .pos-desktop-cart{position:sticky;top:0;align-self:start;height:100%;z-index:10;border-radius:20px;box-shadow:0 12px 32px #00000014,0 2px 6px #00000008}
  .pos-desktop-cart>.pos-cart,.pos-desktop-cart>.pos-held-panel{border-radius:20px}
 }
+
+/* One centered frame keeps ultra-wide ordering and header edges aligned. */
+@media(min-width:1201px){
+ .pos-app{--pos-workspace-width:1600px;--pos-workspace-gutter:36px}
+ .pos-app .ob-app-header-row,.pos-app .pos-message-row,.pos-app .access-main{width:100%;max-width:var(--pos-workspace-width);margin-inline:auto;padding-inline:var(--pos-workspace-gutter)}
+}
