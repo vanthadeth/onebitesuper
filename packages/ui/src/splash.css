@@ -1,15 +1,15 @@
-.ob-app-splash{position:fixed;inset:0;z-index:120;display:grid;place-items:center;overflow:auto;padding:24px;background:#fff9f4;color:#3e3026;min-height:100dvh}
+.ob-app-splash{--splash-accent:#f57921;--splash-dot:#b74b00;--splash-label:#8b4926;--splash-halo:#f579211a;position:fixed;inset:0;z-index:120;display:grid;place-items:center;overflow:auto;padding:24px;background:#fff9f4;color:#3e3026;min-height:100dvh}
 .ob-splash-content{display:grid;justify-items:center;gap:28px;max-width:100%;animation:ob-splash-enter .45s cubic-bezier(.2,.7,.3,1) both}
 .ob-splash-brand{display:grid;justify-items:center;gap:14px}
-.ob-splash-stamp{position:relative;isolation:isolate;display:grid;place-items:center;width:96px;height:96px;border-radius:27px;background:#f57921;box-shadow:0 8px 24px #f579211a;animation:ob-splash-float 3.2s ease-in-out infinite}
-.ob-splash-stamp::before{content:"";position:absolute;inset:-7px;border:1px solid #f57921;border-radius:34px;z-index:-1;opacity:0;animation:ob-splash-ripple 2.4s ease-out infinite}
+.ob-splash-stamp{position:relative;isolation:isolate;display:grid;place-items:center;width:96px;height:96px;border-radius:27px;background:var(--splash-accent);box-shadow:0 8px 24px var(--splash-halo);animation:ob-splash-float 3.2s ease-in-out infinite}
+.ob-splash-stamp::before{content:"";position:absolute;inset:-7px;border:1px solid var(--splash-accent);border-radius:34px;z-index:-1;opacity:0;animation:ob-splash-ripple 2.4s ease-out infinite}
 .ob-splash-stamp img{display:block;width:72px;height:69px;object-fit:contain}
 .ob-splash-wordmark{display:block;width:100px;height:auto}
-.ob-splash-app-name{font-size:11px;line-height:1.5;letter-spacing:2px;font-weight:600;text-transform:uppercase;color:#8b4926}
+.ob-splash-app-name{font-size:11px;line-height:1.5;letter-spacing:2px;font-weight:600;text-transform:uppercase;color:var(--splash-label)}
 .ob-splash-status{display:grid;justify-items:center;gap:12px;max-width:100%}
 .ob-splash-status p{margin:0;font-size:14px;line-height:1.7;text-align:center;overflow-wrap:anywhere;color:#6f5c50}
 .ob-splash-dots{display:flex;align-items:center;gap:7px;height:12px}
-.ob-splash-dots i{width:5px;height:5px;border-radius:50%;background:#b74b00;animation:ob-splash-dot 1.2s ease-in-out infinite}
+.ob-splash-dots i{width:5px;height:5px;border-radius:50%;background:var(--splash-dot);animation:ob-splash-dot 1.2s ease-in-out infinite}
 .ob-splash-dots i:nth-child(2){animation-delay:.16s}.ob-splash-dots i:nth-child(3){animation-delay:.32s}
 @keyframes ob-splash-enter{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes ob-splash-float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-3px) rotate(-1deg)}}
@@ -19,3 +19,10 @@
 [data-theme=dark] .ob-splash-app-name{color:#f4af79}[data-theme=dark] .ob-splash-status p{color:#d7c7b9}[data-theme=dark] .ob-splash-dots i{background:#f57921}
 @media(max-height:420px){.ob-splash-content{gap:16px}.ob-splash-brand{gap:9px}.ob-splash-stamp{width:72px;height:72px;border-radius:21px}.ob-splash-stamp img{width:54px;height:51px}.ob-splash-wordmark{width:78px}}
 @media(prefers-reduced-motion:reduce){.ob-splash-content,.ob-splash-stamp,.ob-splash-stamp::before,.ob-splash-dots i{animation:none;transform:none}.ob-splash-stamp::before{display:none}.ob-splash-dots i{opacity:1}}
+
+.ob-app-splash[data-app=admin]{--splash-accent:#282a2e;--splash-dot:#282a2e;--splash-label:#282a2e;--splash-halo:#282a2e12}
+.ob-app-splash[data-app=inventory]{--splash-accent:#3f6b52;--splash-dot:#3f6b52;--splash-label:#3f6b52;--splash-halo:#3f6b521a}
+.ob-app-splash[data-app=attendance]{--splash-accent:#456b8b;--splash-dot:#456b8b;--splash-label:#456b8b;--splash-halo:#456b8b1a}
+[data-theme=dark] .ob-app-splash[data-app=admin] .ob-splash-app-name{color:#e4e4e7}[data-theme=dark] .ob-app-splash[data-app=admin] .ob-splash-dots i{background:#e4e4e7}
+[data-theme=dark] .ob-app-splash[data-app=inventory] .ob-splash-app-name{color:#a9d6b9}[data-theme=dark] .ob-app-splash[data-app=inventory] .ob-splash-dots i{background:#a9d6b9}
+[data-theme=dark] .ob-app-splash[data-app=attendance] .ob-splash-app-name{color:#adcde8}[data-theme=dark] .ob-app-splash[data-app=attendance] .ob-splash-dots i{background:#adcde8}

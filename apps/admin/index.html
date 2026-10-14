@@ -19,7 +19,18 @@
     <title>OneBite Admin</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main class="ob-app-splash" data-app="admin" aria-busy="true">
+        <div class="ob-splash-content">
+          <div class="ob-splash-brand" aria-hidden="true">
+            <div class="ob-splash-stamp"><img src="../../resources/brand/one-bite-icon-white.svg" alt="" /></div>
+            <img class="ob-splash-wordmark" src="../../resources/brand/one-bite-wordmark-orange.svg" alt="" />
+            <span class="ob-splash-app-name">Admin</span>
+          </div>
+          <div class="ob-splash-status" role="status"><p>កំពុងរៀបចំ Admin…</p><span class="ob-splash-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+        </div>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

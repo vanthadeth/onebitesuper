@@ -104,6 +104,6 @@ test('Admin, Inventory and POS can all install in the same browser profile',asyn
  }
 });
 
-test('POS launch artwork loads before JavaScript on repository-hosted paths',async({page})=>{
- await page.route('**/*.js',route=>route.abort());await page.goto(base+'pos/');const splash=page.locator('.ob-app-splash');await expect(splash).toBeVisible();await expect(splash).toHaveAttribute('aria-busy','true');await expect.poll(()=>splash.locator('img').evaluateAll(images=>images.length===2&&images.every(img=>(img as HTMLImageElement).naturalWidth>0))).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+test('All app launch artwork loads before JavaScript on repository-hosted paths',async({page})=>{
+ await page.route('**/*.js',route=>route.abort());for(const app of ['pos','admin','inventory']){await page.goto(base+app+'/');const splash=page.locator('.ob-app-splash');await expect(splash).toBeVisible();await expect(splash).toHaveAttribute('data-app',app);await expect(splash).toHaveAttribute('aria-busy','true');await expect.poll(()=>splash.locator('img').evaluateAll(images=>images.length===2&&images.every(img=>(img as HTMLImageElement).naturalWidth>0))).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
 });

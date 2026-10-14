@@ -1,3 +1,4 @@
+import '@onebite/ui/splash.css';
 import {cleanSampleData} from "@onebite/offline/cleanup";
 import React from "react";
 import { createRoot } from "react-dom/client";

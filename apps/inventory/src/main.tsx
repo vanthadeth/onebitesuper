@@ -1,3 +1,4 @@
+import '@onebite/ui/splash.css';
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import '@onebite/ui/daisy.css';
