@@ -205,3 +205,15 @@
 .pos-order-gate .d-btn{min-height:28px;height:auto;padding:3px 8px;font-size:13px;white-space:nowrap;color:var(--text-orange)}
 .pos-order-gate-short{display:none}
 @media(max-width:680px){.pos-message-row{gap:8px;padding:4px 12px}.pos-order-gate{gap:6px}.pos-order-gate-full{display:none}.pos-order-gate-short{display:inline;font-size:13px}}
+
+/* Large-screen ordering workspace: a scrolling selection surface and floating cart. */
+@media(min-width:900px){
+ .pos-app .pos-menu-main{padding:16px 24px}
+ .pos-menu-main .pos-order-layout{grid-template-columns:minmax(0,1fr) clamp(340px,28vw,400px);gap:24px;align-items:stretch}
+ .pos-menu-main .pos-menu-section{padding:18px;border:1px solid var(--color-base-300);border-radius:20px;background:var(--color-base-100);scrollbar-gutter:stable}
+ .pos-menu-main .ob-directory-search{margin-bottom:16px}
+ .pos-menu-main .ob-category-filter{top:0;z-index:5;background:var(--color-base-100);margin-bottom:18px}
+ .pos-menu-main .pos-category-products{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px}
+ .pos-menu-main .pos-desktop-cart{position:sticky;top:0;align-self:start;height:100%;z-index:10;border-radius:20px;box-shadow:0 12px 32px #00000014,0 2px 6px #00000008}
+ .pos-desktop-cart>.pos-cart,.pos-desktop-cart>.pos-held-panel{border-radius:20px}
+}
