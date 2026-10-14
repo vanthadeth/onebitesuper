@@ -1,20 +1,26 @@
-# Vercel deployment
+# Separate-origin app hosting
 
-OneBite uses two projects connected to the same GitHub repository, `vanthadeth/onebitesuper`. Both projects use the repository root, Node.js 24 and the `main` production branch.
+Use one project per built app, connected to `vanthadeth/onebitesuper`, with repository root, Node.js 24 and `main` as the production branch. Each project serves one app at `/`; do not serve all apps through path rewrites on one host.
 
-`vercel.json` sets `npm ci`, `npm run build:vercel` and output directory `dist`. The build script validates `ONEBITE_APP`, builds that workspace and copies its output into `dist`. Shared packages, logos and fonts remain available from the repository root. Service workers have revalidation headers; each app has its own origin and install identity.
+`vercel.json` uses `npm ci`, `npm run build:vercel` and output directory `dist`. The build script accepts POS, Admin or Inventory, forces root-relative assets and generates each app's manifest and service worker.
 
-| Project name | Required variables |
-| --- | --- |
-| `onebite-pos` | `ONEBITE_APP=pos` |
-| `onebite-admin` | `ONEBITE_APP=admin`; `VITE_SUPABASE_URL=https://iizosglpofempyjvepyr.supabase.co`; `VITE_SUPABASE_PUBLISHABLE_KEY` set to the active project publishable key |
+| Project | Build variable | Proposed custom host |
+| --- | --- | --- |
+| `onebite-pos` | `ONEBITE_APP=pos` | `pos.<owned-domain>` |
+| `onebite-admin` | `ONEBITE_APP=admin` | `admin.<owned-domain>` |
+| `onebite-inventory` | `ONEBITE_APP=inventory` | `inventory.<owned-domain>` |
 
-Configure variables for Production and Preview environments. Use the public publishable key from Supabase project settings. Do not use a service-role or secret key. Local `.env.local` and `.secrets/` files are ignored and must not be uploaded.
+Attendance is not built yet. Reserve `attendance.<owned-domain>` for later. The landing page can remain on GitHub Pages until the final host URLs are known.
 
-The current POS remains a sample-data preview. Admin has a deployed account backend, but complete live authentication verification is pending. Deploying the frontend does not complete that verification or authorize real financial operation.
+All apps continue using the existing centralized Supabase database. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` for Production and Preview, if overriding the checked-in public configuration. Never use a service-role or secret key in frontend builds.
 
-## Verification after deployment
+## Cutover
 
-Confirm both deployment URLs load successfully, the correct app renders at each URL, manifest identifiers differ, service workers and icons return their proper content types, and the Admin setup/status request reaches Supabase. Verify mobile installation and cached app-shell behavior over HTTPS. Record the actual URLs here only after successful deployment.
+1. Confirm the user's owned domain, hosting provider and target account/projects.
+2. Build each app separately; check names, IDs, start URLs, root scopes, icons and worker responses.
+3. Deploy and attach each selected custom domain. Use the DNS records provided by the hosting service and confirm HTTPS before updating app links.
+4. Verify Android Chrome installation of all three apps on the same phone, plus sign-in and offline reopening.
+5. Sync all pending work on old URLs before retiring old installations. Cookies, remembered login, SQLite/IndexedDB and offline queues are isolated by origin and do not automatically move to the new hosts. Do not clear old app storage before syncing.
+6. Update the landing page to verified host URLs. Keep old URLs available during cutover; avoid unconditional redirects that strand offline data.
 
-Deployment status: awaiting Vercel account connection; no Vercel deployment has been created from this workspace yet.
+Domain and provider selection are pending. This document does not mean the new hosts have been deployed.
